@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an idea or a larger change. Please agree on it here before writing code.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe how you plan your work today and where mythings gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and SPEC.md (§1 non-goals and §15 v2 ideas).
+          required: true
+        - label: I'd like to implement this myself once the approach is agreed.

@@ -1,0 +1,26 @@
+# Workers static assets: the app shell and service worker must always be
+# revalidated, so installed apps pick up a new release on the next check.
+# Hashed files under /assets/ never change and can be cached forever.
+#
+# Security headers for every page and file. The script-src hash is the inline
+# theme script in index.html; tests/client/headers.test.ts fails if they drift.
+# connect-src names the hosted instance's origin: self-hosters change it to theirs.
+# HSTS only takes effect over HTTPS (browsers ignore it on http://localhost).
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-UtkWITkrBs/La3CISGFlTpyKtoj0R7FPFKM0iaCV+nc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss://mythings.dynocoder.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=(), hid=(), midi=(), browsing-topics=()
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

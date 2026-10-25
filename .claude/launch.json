@@ -1,0 +1,25 @@
+{
+	"version": "0.0.1",
+	"configurations": [
+		{
+			"name": "dev",
+			"runtimeExecutable": "corepack",
+			"runtimeArgs": ["pnpm", "dev"],
+			"port": 5173
+		},
+		{
+			"name": "preview",
+			"runtimeExecutable": "corepack",
+			"runtimeArgs": [
+				"pnpm",
+				"exec",
+				"vite",
+				"preview",
+				"--port",
+				"4173",
+				"--strictPort"
+			],
+			"port": 4173
+		}
+	]
+}

@@ -1,0 +1,17 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"composite": true,
+		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.sw.tsbuildinfo",
+		"lib": ["ES2023", "WebWorker"],
+		"types": []
+	},
+	// The worker also bundles the DOM-free sync code it shares with the page.
+	"include": [
+		"src/sw.ts",
+		"src/db/local.ts",
+		"src/sync/outbox.ts",
+		"src/sync/transport.ts",
+		"shared"
+	]
+}

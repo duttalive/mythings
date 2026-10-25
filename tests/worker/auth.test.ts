@@ -1,0 +1,329 @@
+import { env } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
+import { sha256Hex } from "../../worker/crypto";
+import app from "../../worker/index";
+import {
+	api,
+	PASSWORD,
+	sessionCookie,
+	signup,
+	signupCode,
+	uniqueEmail,
+} from "./helpers";
+
+const DAY = 24 * 60 * 60 * 1000;
+
+async function sessionRow(cookie: string) {
+	const token = cookie.split("=")[1] ?? "";
+	return env.DB.prepare("SELECT * FROM sessions WHERE token_hash = ?")
+		.bind(await sha256Hex(token))
+		.first<{ user_id: string; expires_at: number }>();
+}
+
+describe("signup", () => {
+	it("creates the user once the emailed code is confirmed, with a hardened session cookie", async () => {
+		const email = uniqueEmail();
+		const started = await api("/auth/signup", {
+			method: "POST",
+			body: {
+				email: `  ${email.toUpperCase()} `,
+				password: PASSWORD,
+				tz: "Australia/Sydney",
+			},
+		});
+		expect(started.status).toBe(202);
+		expect(await started.json()).toEqual({ pending: true, email });
+		expect(started.headers.get("set-cookie")).toBeNull();
+		const res = await api("/auth/signup/verify", {
+			method: "POST",
+			body: { email, code: await signupCode(email), password: PASSWORD },
+		});
+		expect(res.status).toBe(201);
+		const body = await res.json<{
+			id: string;
+			email: string;
+			tz: string;
+			settings: object;
+		}>();
+		expect(body).toEqual({
+			id: expect.any(String),
+			email,
+			tz: "Australia/Sydney",
+			settings: {},
+		});
+
+		const setCookie = res.headers.get("set-cookie") ?? "";
+		expect(setCookie).toMatch(/HttpOnly/i);
+		expect(setCookie).toMatch(/Secure/i);
+		expect(setCookie).toMatch(/SameSite=Lax/i);
+		expect(setCookie).toMatch(/Path=\//);
+		expect(setCookie).toMatch(/Max-Age=2592000/);
+
+		const me = await api("/me", { cookie: sessionCookie(res) });
+		expect(await me.json()).toEqual(body);
+	});
+
+	it("stores only a hash of the session token", async () => {
+		const { cookie } = await signup();
+		const token = cookie.split("=")[1] ?? "";
+		const raw = await env.DB.prepare(
+			"SELECT 1 FROM sessions WHERE token_hash = ?",
+		)
+			.bind(token)
+			.first();
+		expect(raw).toBeNull();
+		expect(await sessionRow(cookie)).not.toBeNull();
+	});
+
+	it("doesn't create a second account for an email, regardless of case", async () => {
+		const { email } = await signup();
+		const res = await api("/auth/signup", {
+			method: "POST",
+			body: { email: email.toUpperCase(), password: PASSWORD },
+		});
+		expect(res.status).toBe(202);
+		const pending = await env.DB.prepare(
+			"SELECT 1 FROM pending_signups WHERE email = ?",
+		)
+			.bind(email)
+			.first();
+		expect(pending).toBeNull();
+	});
+
+	it("validates input", async () => {
+		const res = await api("/auth/signup", {
+			method: "POST",
+			body: { email: "not-an-email", password: "short", tz: "Mars/Olympus" },
+		});
+		expect(res.status).toBe(400);
+		const body = await res.json<{
+			error: string;
+			issues: { path: string[] }[];
+		}>();
+		expect(body.error).toBe("invalid_input");
+		expect(body.issues.map((i) => i.path[0]).sort()).toEqual([
+			"email",
+			"password",
+			"tz",
+		]);
+	});
+
+	it("rejects malformed JSON", async () => {
+		const res = await api("/auth/signup", { method: "POST", rawBody: "{nope" });
+		expect(res.status).toBe(400);
+		expect(await res.json()).toEqual({ error: "invalid_json" });
+	});
+
+	it("is blocked when signups are closed", async () => {
+		const res = await app.request(
+			"/api/auth/signup",
+			{
+				method: "POST",
+				headers: {
+					origin: "http://localhost",
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({ email: uniqueEmail(), password: PASSWORD }),
+			},
+			{ ...env, SIGNUPS_OPEN: "false" },
+		);
+		expect(res.status).toBe(403);
+		expect(await res.json()).toEqual({ error: "signups_closed" });
+	});
+});
+
+describe("login", () => {
+	it("starts a new session with the right password", async () => {
+		const { email, cookie: first } = await signup();
+		const res = await api("/auth/login", {
+			method: "POST",
+			body: { email: email.toUpperCase(), password: PASSWORD },
+		});
+		expect(res.status).toBe(200);
+		expect(await res.json()).toMatchObject({ email });
+		const second = sessionCookie(res);
+		expect(second).not.toBe(first);
+		expect((await api("/me", { cookie: second })).status).toBe(200);
+	});
+
+	it("gives the same error for a wrong password and an unknown email", async () => {
+		const { email } = await signup();
+		const wrong = await api("/auth/login", {
+			method: "POST",
+			body: { email, password: "wrong password" },
+		});
+		const unknown = await api("/auth/login", {
+			method: "POST",
+			body: { email: uniqueEmail(), password: PASSWORD },
+		});
+		for (const res of [wrong, unknown]) {
+			expect(res.status).toBe(401);
+			expect(await res.json()).toEqual({ error: "invalid_credentials" });
+			expect(res.headers.get("set-cookie")).toBeNull();
+		}
+	});
+
+	it("rate-limits repeated attempts for the same IP and email", async () => {
+		const { email } = await signup();
+		const attempt = () =>
+			api("/auth/login", {
+				method: "POST",
+				body: { email, password: "wrong password" },
+				headers: { "cf-connecting-ip": "203.0.113.7" },
+			});
+		for (let i = 0; i < 5; i++) expect((await attempt()).status).toBe(401);
+		const blocked = await attempt();
+		expect(blocked.status).toBe(429);
+		expect(await blocked.json()).toEqual({ error: "too_many_attempts" });
+	});
+
+	it("rate-limits one IP trying passwords across many emails", async () => {
+		const attempt = () =>
+			api("/auth/login", {
+				method: "POST",
+				body: { email: uniqueEmail(), password: "wrong password" },
+				headers: { "cf-connecting-ip": "203.0.113.8" },
+			});
+		for (let i = 0; i < 5; i++) expect((await attempt()).status).toBe(401);
+		expect((await attempt()).status).toBe(429);
+	});
+
+	it("rate-limits one email tried from many IPs", async () => {
+		const { email } = await signup();
+		// api() sends each request from a different IP.
+		const attempt = () =>
+			api("/auth/login", {
+				method: "POST",
+				body: { email, password: "wrong password" },
+			});
+		for (let i = 0; i < 5; i++) expect((await attempt()).status).toBe(401);
+		expect((await attempt()).status).toBe(429);
+	});
+});
+
+describe("sessions", () => {
+	it("requires a valid session for /me", async () => {
+		expect((await api("/me")).status).toBe(401);
+		const res = await api("/me", { cookie: "mt_session=garbage" });
+		expect(res.status).toBe(401);
+		expect(await res.json()).toEqual({ error: "unauthorized" });
+	});
+
+	it("logout ends the session server-side", async () => {
+		const { cookie } = await signup();
+		const res = await api("/auth/logout", { method: "POST", cookie });
+		expect(res.status).toBe(200);
+		const cleared = res.headers.get("set-cookie") ?? "";
+		expect(cleared).toMatch(/mt_session=;.*Max-Age=0/);
+		// Cleared with the same attributes it was set with.
+		expect(cleared).toMatch(/HttpOnly/i);
+		expect(cleared).toMatch(/Secure/i);
+		expect(cleared).toMatch(/SameSite=Lax/i);
+		expect(await sessionRow(cookie)).toBeNull();
+		expect((await api("/me", { cookie })).status).toBe(401);
+	});
+
+	it("rejects expired sessions", async () => {
+		const { cookie } = await signup();
+		const token = cookie.split("=")[1] ?? "";
+		await env.DB.prepare(
+			"UPDATE sessions SET expires_at = ? WHERE token_hash = ?",
+		)
+			.bind(Date.now() - 1, await sha256Hex(token))
+			.run();
+		expect((await api("/me", { cookie })).status).toBe(401);
+	});
+
+	it("slides the expiry forward once the session is a day old", async () => {
+		const { cookie } = await signup();
+		const fresh = await api("/me", { cookie });
+		expect(fresh.headers.get("set-cookie")).toBeNull();
+
+		const token = cookie.split("=")[1] ?? "";
+		await env.DB.prepare(
+			"UPDATE sessions SET expires_at = ? WHERE token_hash = ?",
+		)
+			.bind(Date.now() + 2 * DAY, await sha256Hex(token))
+			.run();
+		const res = await api("/me", { cookie });
+		expect(res.status).toBe(200);
+		expect(res.headers.get("set-cookie")).toMatch(/mt_session=/);
+		const row = await sessionRow(cookie);
+		expect(row?.expires_at).toBeGreaterThan(Date.now() + 29 * DAY);
+	});
+});
+
+describe("PATCH /me", () => {
+	it("updates the time zone and merges settings", async () => {
+		const { cookie } = await signup();
+		await api("/me", {
+			method: "PATCH",
+			cookie,
+			body: { settings: { theme: "dark" } },
+		});
+		const res = await api("/me", {
+			method: "PATCH",
+			cookie,
+			body: { tz: "America/New_York", settings: { weekStart: 1 } },
+		});
+		expect(res.status).toBe(200);
+		const expected = {
+			tz: "America/New_York",
+			settings: { theme: "dark", weekStart: 1 },
+		};
+		expect(await res.json()).toMatchObject(expected);
+		expect(await (await api("/me", { cookie })).json()).toMatchObject(expected);
+	});
+
+	it("rejects unknown settings and bad time zones", async () => {
+		const { cookie } = await signup();
+		for (const body of [
+			{ settings: { fontSize: 20 } },
+			{ tz: "Nowhere/Land" },
+			{ email: "x@y.z" },
+		]) {
+			const res = await api("/me", { method: "PATCH", cookie, body });
+			expect(res.status).toBe(400);
+		}
+	});
+});
+
+describe("origin check", () => {
+	it("rejects state-changing requests without a matching Origin", async () => {
+		const body = { email: uniqueEmail(), password: PASSWORD };
+		for (const origin of ["https://evil.example", ""]) {
+			const res = await api("/auth/signup", {
+				method: "POST",
+				body,
+				headers: { origin },
+			});
+			expect(res.status).toBe(403);
+			expect(await res.json()).toEqual({ error: "bad_origin" });
+		}
+	});
+
+	it("accepts the configured APP_ORIGIN", async () => {
+		const res = await api("/auth/signup", {
+			method: "POST",
+			body: { email: uniqueEmail(), password: PASSWORD },
+			headers: { origin: env.APP_ORIGIN },
+		});
+		expect(res.status).toBe(202);
+	});
+
+	it("allows GET requests from anywhere", async () => {
+		const res = await api("/health", {
+			headers: { origin: "https://evil.example" },
+		});
+		expect(res.status).toBe(200);
+	});
+});
+
+describe("auth config", () => {
+	it("reports the auth mode and whether signups are open", async () => {
+		expect(await (await api("/auth/config")).json()).toEqual({
+			mode: "password",
+			signupsOpen: true,
+		});
+	});
+});

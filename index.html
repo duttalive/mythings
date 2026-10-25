@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+		<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" sizes="48x48" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+		<meta name="description" content="A calm, local-first to-do list." />
+		<title>mythings</title>
+		<script>
+			// Apply the chosen theme and text size before first paint (src/lib/theme.ts, src/lib/textSize.ts).
+			(() => {
+				try {
+					const theme = localStorage.getItem("mythings:theme");
+					if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+					const scale = { small: "87.5%", large: "112.5%", larger: "125%" }[localStorage.getItem("mythings:textSize")];
+					if (scale) document.documentElement.style.setProperty("--text-scale", scale);
+				} catch {}
+			})();
+		</script>
+	</head>
+	<body>
+		<div id="root"></div>
+		<script type="module" src="/src/main.tsx"></script>
+	</body>
+</html>

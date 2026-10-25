@@ -1,0 +1,12 @@
+# Copy to .dev.vars (git-ignored) for local development.
+# Generate with: corepack pnpm vapid
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+
+# Local development: email links and the CSRF check point at the dev server.
+APP_ORIGIN=http://localhost:5173
+# Keep emails local (codes and reset links at http://localhost:5173/api/dev/mail).
+DEV_MAILBOX=true
+
+# Production keeps sign-ups closed (wrangler.jsonc); open them locally.
+SIGNUPS_OPEN=true

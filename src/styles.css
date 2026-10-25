@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+@theme {
+	--font-sans:
+		"Lexend Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+		sans-serif;
+	--color-accent: var(--accent);
+	--color-on-accent: var(--on-accent);
+	--color-today: #f5c518;
+	--color-evening: #5b5fc7;
+	--color-overdue: var(--overdue);
+	--color-on-overdue: var(--on-overdue);
+	--color-done: #30a46c;
+}
+
+/* Light by default; dark follows the system unless the user picked a theme (data-theme on <html>). */
+:root {
+	--bg: #ffffff;
+	--bg-sidebar: #f5f5f7;
+	--fg: #1d1d1f;
+	--fg-muted: #5f5f64;
+	--border: #e5e5ea;
+	--hover: #ebebef;
+	--selected: #dfe3ee;
+	--checkbox: #8e8e95;
+	--card: #ffffff;
+	--card-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.08);
+	--accent: #2f63e6;
+	--on-accent: #ffffff;
+	--overdue: #cf2a30;
+	--on-overdue: #ffffff;
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--bg: #1c1c1e;
+		--bg-sidebar: #232326;
+		--fg: #f5f5f7;
+		--fg-muted: #a8a8ae;
+		--border: #38383c;
+		--hover: #2c2c30;
+		--selected: #34363f;
+		--checkbox: #77777e;
+		--card: #2a2a2e;
+		--card-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 20px rgb(0 0 0 / 0.35);
+		--accent: #7a9dff;
+		--on-accent: #0b1530;
+		--overdue: #ff6369;
+		--on-overdue: #1c1c1e;
+		color-scheme: dark;
+	}
+}
+
+:root[data-theme="dark"] {
+	--bg: #1c1c1e;
+	--bg-sidebar: #232326;
+	--fg: #f5f5f7;
+	--fg-muted: #a8a8ae;
+	--border: #38383c;
+	--hover: #2c2c30;
+	--selected: #34363f;
+	--checkbox: #77777e;
+	--card: #2a2a2e;
+	--card-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 20px rgb(0 0 0 / 0.35);
+	--accent: #7a9dff;
+	--on-accent: #0b1530;
+	--overdue: #ff6369;
+	--on-overdue: #1c1c1e;
+	color-scheme: dark;
+}
+
+html,
+body,
+#root {
+	height: 100%;
+}
+
+/* Text size (Settings → Appearance, per device): everything is in rem, so this
+   scales text and spacing together. Set on <html> by src/lib/textSize.ts. */
+html {
+	font-size: var(--text-scale, 100%);
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--fg);
+	font-family: var(--font-sans);
+	font-size: 0.9375rem;
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Checkmark pop when a to-do is completed. */
+@keyframes pop {
+	0% {
+		transform: scale(0.4);
+		opacity: 0;
+	}
+	70% {
+		transform: scale(1.15);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+/* Phones and tablets (SPEC §10.1). */
+@media (pointer: coarse) {
+	/* iOS zooms the page into any field under 16px when it gets focus. */
+	input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+	textarea,
+	select {
+		font-size: max(16px, 1em);
+	}
+}
+
+/* On narrow screens popovers (When, Deadline, Tags, Move…) become bottom sheets.
+   Radix positions popovers with inline styles, so this has to override them. */
+/* biome-ignore-start lint/complexity/noImportantStyles: beats Radix's inline positioning */
+@media (max-width: 639px) {
+	[data-radix-popper-content-wrapper]:has(> [data-popover-content]) {
+		position: fixed !important;
+		inset: auto 0 0 0 !important;
+		transform: none !important;
+		/* will-change: transform would trap the backdrop below inside the sheet. */
+		will-change: auto !important;
+		min-width: 0 !important;
+		z-index: 60 !important;
+	}
+	/* A dim backdrop; tapping it closes the sheet like any outside tap. */
+	[data-radix-popper-content-wrapper]:has(> [data-popover-content])::before {
+		content: "";
+		position: fixed;
+		inset: 0;
+		z-index: -1;
+		background: rgb(0 0 0 / 0.3);
+		animation: fade-in 150ms ease-out;
+	}
+	[data-popover-content] {
+		width: 100% !important;
+		max-width: none !important;
+		max-height: 85dvh;
+		overflow-y: auto;
+		border-radius: 1rem 1rem 0 0 !important;
+		padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom)) !important;
+		animation: slide-up 200ms ease-out !important;
+	}
+}
+/* biome-ignore-end lint/complexity/noImportantStyles: see above */
+
+/* Entrances (SPEC §10.8: subtle, 150–200ms). */
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+}
+
+@keyframes pop-in {
+	from {
+		opacity: 0;
+		transform: scale(0.97) translateY(-4px);
+	}
+}
+
+@keyframes slide-up {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+}
+
+@keyframes card-open {
+	from {
+		opacity: 0.4;
+		transform: scaleY(0.96);
+	}
+}
+
+@utility animate-fade-in {
+	animation: fade-in 150ms ease-out;
+}
+
+@utility animate-pop-in {
+	animation: pop-in 160ms ease-out;
+	transform-origin: var(--radix-popover-content-transform-origin, top);
+}
+
+@utility animate-slide-up {
+	animation: slide-up 180ms ease-out;
+}
+
+@utility animate-card-open {
+	animation: card-open 180ms ease-out;
+	transform-origin: top;
+}
+
+/* Motion is decoration only; switch it all off when asked. */
+/* biome-ignore-start lint/complexity/noImportantStyles: must beat every component's own animation */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	::before,
+	::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+/* biome-ignore-end lint/complexity/noImportantStyles: see above */
