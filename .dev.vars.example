@@ -8,5 +8,5 @@ APP_ORIGIN=http://localhost:5173
 # Keep emails local (codes and reset links at http://localhost:5173/api/dev/mail).
 DEV_MAILBOX=true
 
-# Production keeps sign-ups closed (wrangler.jsonc); open them locally.
+# Allow new accounts locally (the tests sign up).
 SIGNUPS_OPEN=true

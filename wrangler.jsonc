@@ -52,8 +52,8 @@
 		"APP_ORIGIN": "https://mythings.dynocoder.com",
 		// "password" (built-in accounts) or "access" (behind Cloudflare Access)
 		"AUTH_MODE": "password",
-		// New accounts are closed in production; .dev.vars opens them locally.
-		"SIGNUPS_OPEN": "false",
+		// "true": anyone can create an account (the hosted instance is open to all).
+		"SIGNUPS_OPEN": "true",
 		// Only used when AUTH_MODE is "access", e.g. "myteam.cloudflareaccess.com"
 		"ACCESS_TEAM_DOMAIN": "",
 		"ACCESS_AUD": "",

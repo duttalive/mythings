@@ -7,7 +7,7 @@ mythings follows the Things 3 way of working (Inbox → Today → Upcoming → A
 [![CI](https://github.com/duttalive/mythings/actions/workflows/ci.yml/badge.svg)](https://github.com/duttalive/mythings/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 
-- **Hosted instance:** https://mythings.dynocoder.com (new accounts are by invitation for now)
+- **Hosted instance:** https://mythings.dynocoder.com (free; anyone can create an account)
 - **What's new:** [CHANGELOG.md](CHANGELOG.md), also shown in the app at `/changelog`
 - **Full design:** [SPEC.md](SPEC.md)
 
@@ -65,7 +65,7 @@ Variables are set in `wrangler.jsonc` under `vars`. `.dev.vars` overrides them l
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `APP_ORIGIN`                       | The app's public origin. Used in email links and to reject cross-site requests.                           |
 | `AUTH_MODE`                        | `password` (built-in email and password accounts) or `access` (the app sits behind Cloudflare Access).    |
-| `SIGNUPS_OPEN`                     | `"true"` to allow new accounts. The committed config says `"false"`.                                      |
+| `SIGNUPS_OPEN`                     | `"true"` to allow new accounts (the hosted instance is open). Set `"false"` for a private instance.       |
 | `MAIL_FROM`                        | Sender address for sign-up codes and password reset emails (Cloudflare Email Sending).                    |
 | `VAPID_SUBJECT`                    | A `mailto:` or `https:` contact for push services.                                                        |
 | `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` | Required in `access` mode, e.g. `myteam.cloudflareaccess.com` and the Access application's AUD tag.       |
