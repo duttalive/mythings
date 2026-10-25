@@ -31,7 +31,7 @@ jobs:
       # Uses the Google Chrome that GitHub's Ubuntu runners come with.
       - run: pnpm e2e
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-traces
           path: test-results/
