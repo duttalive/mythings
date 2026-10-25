@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { Me } from "../../shared/schema";
 import { ApiError, api } from "../api";
+import { HomePage } from "../home/HomePage";
 import { applyTheme } from "../lib/theme";
 import { forgetPushSubscription } from "../push/notifications";
 import { clearCachedUser, loadCachedUser, saveCachedUser } from "./cachedUser";
@@ -31,6 +32,8 @@ export function useAuth(): AuthContextValue {
 	return value;
 }
 
+const AUTH_PATHS = new Set(["/", "/login", "/signup"]);
+
 type State =
 	| { status: "loading" }
 	| { status: "signedOut" }
@@ -45,14 +48,30 @@ type State =
  */
 export function AuthGate({ children }: { children: ReactNode }) {
 	const [state, setState] = useState<State>({ status: "loading" });
+	// Signed out, the path picks the page: / is the home page, /signup and
+	// /login the forms, anything else sign-in.
+	const [path, setPath] = useState(window.location.pathname);
+	useEffect(() => {
+		const sync = () => setPath(window.location.pathname);
+		window.addEventListener("popstate", sync);
+		return () => window.removeEventListener("popstate", sync);
+	}, []);
+	const go = useCallback((to: string) => {
+		window.history.pushState(null, "", to);
+		setPath(to);
+	}, []);
 
 	const signIn = useCallback((user: Me) => {
+		// The app has no /login or /signup page: land on Today.
+		if (AUTH_PATHS.has(window.location.pathname))
+			window.history.replaceState(null, "", "/today");
 		saveCachedUser(user);
 		setState({ status: "signedIn", user });
 	}, []);
 
 	const signedOut = useCallback(() => {
 		clearCachedUser();
+		setPath(window.location.pathname);
 		setState({ status: "signedOut" });
 	}, []);
 
@@ -90,6 +109,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 			window.location.href = res.redirect;
 			return;
 		}
+		setPath(window.location.pathname);
 		setState({ status: "signedOut" });
 	}, []);
 
@@ -107,9 +127,22 @@ export function AuthGate({ children }: { children: ReactNode }) {
 		state.status !== "loading"
 	)
 		return <ResetPasswordPage onSignedIn={signIn} />;
-	if (state.status === "loading") return null;
+	// First visit to the home page: show it straight away instead of a blank
+	// screen while we ask the server (a device that was signed in has a cached user).
+	if (state.status === "loading")
+		return path === "/" && !loadCachedUser() ? <HomePage go={go} /> : null;
 	if (state.status === "offline") return <OfflineStart onRetry={check} />;
-	if (state.status === "signedOut") return <LoginPage onSignedIn={signIn} />;
+	if (state.status === "signedOut") {
+		if (path === "/") return <HomePage go={go} />;
+		return (
+			<LoginPage
+				key={path}
+				initialMode={path === "/signup" ? "signup" : "login"}
+				onSignedIn={signIn}
+				onHome={() => go("/")}
+			/>
+		);
+	}
 	return (
 		<AuthContext
 			value={{

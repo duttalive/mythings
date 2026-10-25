@@ -13,7 +13,8 @@ A free, open-source, local-first to-do app (Things 3–style). The hosted instan
 - Sizes are in rem: the per-device Text size setting scales the root font size (`src/lib/textSize.ts`). Don't add `px` font sizes.
 - Phones: use Tailwind's `pointer-coarse:` variant for finger-sized targets (rows ≥ 44px tall), keep fields ≥ 16px on touch (global rule in `styles.css`), and popovers turn into bottom sheets under 640px. The desktop sidebar width is per device (`SidebarResizer.tsx`).
 - Auth: sign-up is two steps — `POST /api/auth/signup` emails a 6-digit code (pending row in `pending_signups`; an existing account gets a "you already have an account" email and the same 202), `POST /api/auth/signup/verify` takes the code *and the password* and creates the account. Password reset links come from `POST /api/auth/forgot` (all work after the response). Neither reveals which emails have accounts; keep it that way. Sign-out always confirms (`SignOutButton`) and drops this browser's push subscription.
-- Production sign-ups are closed (`SIGNUPS_OPEN: "false"`); `.dev.vars` sets it `true` for dev and e2e.
+- Production sign-ups are open (`SIGNUPS_OPEN: "true"`, since 1.3.0); `.dev.vars` sets it `true` for dev and e2e too.
+- Signed-out visitors at `/` see the public home page (`src/home/HomePage.tsx`); `/login` and `/signup` show the auth forms, and any other path shows sign-in. `/changelog` is public too.
 - Security headers: pages and files get them from `public/_headers` (CSP with a hash of the inline script in `index.html`; `tests/client/headers.test.ts` catches drift, so update the hash when that script changes), the API from `securityHeaders` in `worker/index.ts`. `/api/dev/mail` only answers loopback requests.
 
 ## Commands (run pnpm via corepack)

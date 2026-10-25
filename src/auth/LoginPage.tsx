@@ -183,8 +183,17 @@ function VerifyEmail({
 	);
 }
 
-export function LoginPage({ onSignedIn }: { onSignedIn: (user: Me) => void }) {
-	const [mode, setMode] = useState<Mode>("login");
+export function LoginPage({
+	initialMode = "login",
+	onSignedIn,
+	onHome,
+}: {
+	initialMode?: "login" | "signup";
+	onSignedIn: (user: Me) => void;
+	/** Back to the public home page (from the logo). */
+	onHome?: () => void;
+}) {
+	const [mode, setMode] = useState<Mode>(initialMode);
 	const [signupsOpen, setSignupsOpen] = useState(false);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -260,7 +269,17 @@ export function LoginPage({ onSignedIn }: { onSignedIn: (user: Me) => void }) {
 	return (
 		<main className="flex min-h-full items-center justify-center px-4 py-12">
 			<div className="w-full max-w-sm">
-				<img src="/favicon.svg" alt="" className="mx-auto size-12" />
+				<a
+					href="/"
+					onClick={(e) => {
+						if (!onHome) return;
+						e.preventDefault();
+						onHome();
+					}}
+					className="mx-auto block w-fit rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+				>
+					<img src="/favicon.svg" alt="mythings home" className="size-12" />
+				</a>
 				<h1 className="mt-5 text-center text-2xl font-bold">
 					{mode === "login"
 						? "Sign in to mythings"

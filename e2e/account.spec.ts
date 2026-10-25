@@ -119,3 +119,39 @@ test("the password can be shown and hidden while typing it", async ({
 		page.getByRole("button", { name: "Show password" }),
 	).toBeVisible();
 });
+
+test("the home page introduces the app and leads to sign-up and sign-in", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await expect(
+		page.getByRole("heading", { level: 1, name: /calm place/ }),
+	).toBeVisible();
+	// The preview's to-dos can be ticked off.
+	const preview = page.getByRole("checkbox", { name: "Complete Call Mum" });
+	await preview.check();
+	await expect(preview).toBeChecked();
+
+	await page
+		.getByRole("link", { name: /Get started/ })
+		.first()
+		.click();
+	await expect(page).toHaveURL(/\/signup$/);
+	await expect(
+		page.getByRole("heading", { name: "Create your account" }),
+	).toBeVisible();
+
+	await page.getByRole("link", { name: "mythings home" }).click();
+	await expect(page).toHaveURL(/\/$/);
+	await page
+		.getByRole("navigation", { name: "Site" })
+		.getByRole("link", { name: "Sign in" })
+		.click();
+	await expect(
+		page.getByRole("heading", { name: "Sign in to mythings" }),
+	).toBeVisible();
+	await page.goBack();
+	await expect(
+		page.getByRole("link", { name: /Get started/ }).first(),
+	).toBeVisible();
+});
