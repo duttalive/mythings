@@ -2,6 +2,14 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 1.3.0 — 2026-10-25
+
+Open to everyone, with a proper front door.
+
+- Anyone can create a free account again.
+- A new home page at mythings.dynocoder.com shows what mythings does, with a small Today list you can try.
+- Sign-up and sign-in have their own addresses (/signup and /login), and the logo takes you back home.
+
 ## Version 1.2.1 — 2026-10-25
 
 - Tighter limits on password guessing and reset emails

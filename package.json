@@ -5,7 +5,7 @@
 	"license": "AGPL-3.0-only",
 	"homepage": "https://mythings.dynocoder.com",
 	"repository": "github:duttalive/mythings",
-	"version": "1.2.1",
+	"version": "1.3.0",
 	"type": "module",
 	"packageManager": "pnpm@10.34.8",
 	"scripts": {
