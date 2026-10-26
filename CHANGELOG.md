@@ -2,6 +2,10 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 1.5.0 — 2026-10-26
+
+- Hide or show an area's projects in the sidebar with the arrow next to the area. A hidden area shows how many projects it holds, stays that way on all your devices, and opens again when you go to one of its projects.
+
 ## Version 1.4.0 — 2026-10-26
 
 Easier sign-up, your name, and clear policies.
