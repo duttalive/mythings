@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { expectSynced, row, rowTitles, signUp } from "./helpers";
 
 async function newList(page: Page, kind: "New Project" | "New Area") {
@@ -23,11 +23,11 @@ async function addTodo(page: Page, title: string) {
 	await expect(row(page, title)).toBeVisible();
 }
 
-/** Drags a row onto another with the mouse (past dnd-kit's 6px threshold). */
-async function drag(page: Page, from: string, to: string) {
-	const source = await row(page, from).boundingBox();
-	const target = await row(page, to).boundingBox();
-	if (!source || !target) throw new Error("rows not visible");
+/** Drags one element onto another with the mouse (past dnd-kit's 6px threshold). */
+async function dragBox(page: Page, from: Locator, to: Locator) {
+	const source = await from.boundingBox();
+	const target = await to.boundingBox();
+	if (!source || !target) throw new Error("not visible");
 	await page.mouse.move(source.x + 40, source.y + source.height / 2);
 	await page.mouse.down();
 	await page.mouse.move(source.x + 40, source.y + source.height / 2 - 10, {
@@ -36,6 +36,10 @@ async function drag(page: Page, from: string, to: string) {
 	await page.mouse.move(target.x + 40, target.y + 4, { steps: 15 });
 	await page.mouse.up();
 }
+
+/** Drags a row onto another. */
+const drag = (page: Page, from: string, to: string) =>
+	dragBox(page, row(page, from), row(page, to));
 
 test("area → project → heading → to-dos; reorder by dragging survives a reload", async ({
 	page,
@@ -89,4 +93,61 @@ test("area → project → heading → to-dos; reorder by dragging survives a re
 		"Pack books",
 	]);
 	await expect(page.getByRole("region", { name: "Packing" })).toBeVisible();
+});
+
+test("areas, projects outside areas, and projects within an area reorder in the sidebar and stay put", async ({
+	page,
+}) => {
+	await signUp(page);
+	const sidebar = page.getByRole("navigation", { name: "Lists" });
+	const link = (name: string) => sidebar.getByRole("link", { name });
+	/** Areas and projects in sidebar order. */
+	const order = () =>
+		sidebar
+			.getByRole("link")
+			.evaluateAll((links) =>
+				links
+					.map((a) => a.textContent?.trim() ?? "")
+					.filter((t) => /^(Area|Loose|In) /.test(t)),
+			);
+
+	for (const title of ["Loose 1", "Loose 2"]) {
+		await page.goto("/today");
+		await newList(page, "New Project");
+		await typeTitle(page, "New Project", title);
+		await expect(link(title)).toBeVisible();
+	}
+	for (const area of ["Area A", "Area B"]) {
+		await newList(page, "New Area");
+		await typeTitle(page, "New Area", area);
+		await expect(link(area)).toBeVisible();
+	}
+	// New projects from an area's page go into that area.
+	for (const title of ["In B 1", "In B 2"]) {
+		await link("Area B").click();
+		await newList(page, "New Project");
+		await typeTitle(page, "New Project", title);
+		await expect(link(title)).toBeVisible();
+	}
+	await expect
+		.poll(order)
+		.toEqual(["Loose 1", "Loose 2", "Area A", "Area B", "In B 1", "In B 2"]);
+
+	await dragBox(page, link("Loose 2"), link("Loose 1"));
+	await expect
+		.poll(order)
+		.toEqual(["Loose 2", "Loose 1", "Area A", "Area B", "In B 1", "In B 2"]);
+	// An area moves with its projects.
+	await dragBox(page, link("Area B"), link("Area A"));
+	await expect
+		.poll(order)
+		.toEqual(["Loose 2", "Loose 1", "Area B", "In B 1", "In B 2", "Area A"]);
+	await dragBox(page, link("In B 2"), link("In B 1"));
+	const moved = ["Loose 2", "Loose 1", "Area B", "In B 2", "In B 1", "Area A"];
+	await expect.poll(order).toEqual(moved);
+	await expectSynced(page);
+
+	await page.reload();
+	await expect(link("Area A")).toBeVisible();
+	expect(await order()).toEqual(moved);
 });
