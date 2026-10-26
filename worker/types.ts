@@ -8,6 +8,7 @@ export type AppEnv = {
 export type UserRow = {
 	id: string;
 	email: string;
+	name: string | null;
 	password_hash: string;
 	tz: string;
 	settings: string;
@@ -18,6 +19,7 @@ export function toMe(row: UserRow): Me {
 	return {
 		id: row.id,
 		email: row.email,
+		name: row.name ?? null,
 		tz: row.tz,
 		settings: JSON.parse(row.settings),
 	};

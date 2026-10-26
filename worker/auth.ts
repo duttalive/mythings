@@ -6,6 +6,7 @@ import {
 	credentialsSchema,
 	forgotPasswordSchema,
 	resetPasswordSchema,
+	signupLinkSchema,
 	signupSchema,
 	verifySignupSchema,
 } from "../shared/schema";
@@ -23,7 +24,7 @@ import {
 	type Mail,
 	resetPasswordMail,
 	sendMail,
-	signupCodeMail,
+	signupLinkMail,
 } from "./mail";
 import {
 	createSession,
@@ -89,29 +90,21 @@ auth.get("/config", (c) =>
 	c.json({ mode: c.env.AUTH_MODE, signupsOpen: c.env.SIGNUPS_OPEN === "true" }),
 );
 
-/** How long a sign-up code works, and how many guesses it allows. */
-export const SIGNUP_CODE_TTL_MS = 15 * 60 * 1000;
-export const SIGNUP_CODE_ATTEMPTS = 5;
-
-const codeHash = (email: string, code: string) => sha256Hex(`${email}:${code}`);
-
-/** Six random digits. */
-function newCode(): string {
-	const [n = 0] = crypto.getRandomValues(new Uint32Array(1));
-	return String(n % 1_000_000).padStart(6, "0");
-}
+/** How long a sign-up link works. */
+export const SIGNUP_LINK_TTL_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Step 1 of signing up: emails a 6-digit code. No account exists until the
- * code is confirmed. Asking again (e.g. "Resend code") replaces the code.
+ * Step 1 of signing up: emails a link to finish creating the account. No
+ * account exists until the link is opened and a password chosen. Asking
+ * again (e.g. "Resend") replaces the link.
  *
  * Answers the same whether or not the email already has an account (that
- * address gets a "you already have an account" email instead of a code), so
+ * address gets a "you already have an account" email instead of a link), so
  * it can't be used to find out which emails are registered.
  */
 auth.post("/signup", passwordModeOnly, async (c) => {
 	if (c.env.SIGNUPS_OPEN !== "true") throw new ApiError(403, "signups_closed");
-	const { email, tz } = await readJson(c, signupSchema);
+	const { name, email, tz } = await readJson(c, signupSchema);
 	const ip = clientIp(c);
 	await limit(c.env.SIGNUP_LIMITER, ip);
 	await limitAddress(c.env.SIGNUP_LIMITER, ip, email);
@@ -123,33 +116,40 @@ auth.post("/signup", passwordModeOnly, async (c) => {
 	// Both branches do the same work (a hash and a two-statement write), so
 	// response timing doesn't reveal whether the email has an account.
 	const now = Date.now();
-	const code = newCode();
-	const hash = await codeHash(email, code);
+	const token = randomToken();
+	const tokenHash = await sha256Hex(token);
 	const purgeExpired = c.env.DB.prepare(
-		"DELETE FROM pending_signups WHERE expires_at <= ?",
+		"DELETE FROM signup_links WHERE expires_at <= ?",
 	).bind(now);
 	let mail: Mail;
 	if (existing) {
 		await c.env.DB.batch([
 			purgeExpired,
-			c.env.DB.prepare("DELETE FROM pending_signups WHERE email = ?").bind(
-				email,
-			),
+			c.env.DB.prepare("DELETE FROM signup_links WHERE email = ?").bind(email),
 		]);
-		mail = accountExistsMail(email, `${c.env.APP_ORIGIN}/today`);
+		mail = accountExistsMail(email, `${c.env.APP_ORIGIN}/login`);
 	} else {
-		// The password is set at step 2, so whoever enters the code chooses it:
-		// someone else asking for a code for this address can't plant theirs.
+		// The password is chosen on the page the link opens, so whoever can read
+		// this email chooses it: someone else signing up with this address
+		// can't plant theirs.
 		await c.env.DB.batch([
 			purgeExpired,
 			c.env.DB.prepare(
-				`INSERT INTO pending_signups (email, password_hash, tz, code_hash, attempts, expires_at, created_at)
-				 VALUES (?, '', ?, ?, 0, ?, ?)
-				 ON CONFLICT(email) DO UPDATE SET tz = excluded.tz,
-				   code_hash = excluded.code_hash, attempts = 0, expires_at = excluded.expires_at`,
-			).bind(email, tz ?? "UTC", hash, now + SIGNUP_CODE_TTL_MS, now),
+				`INSERT INTO signup_links (email, name, tz, token_hash, expires_at, created_at)
+				 VALUES (?, ?, ?, ?, ?, ?)
+				 ON CONFLICT(email) DO UPDATE SET name = excluded.name, tz = excluded.tz,
+				   token_hash = excluded.token_hash, expires_at = excluded.expires_at`,
+			).bind(
+				email,
+				name,
+				tz ?? "UTC",
+				tokenHash,
+				now + SIGNUP_LINK_TTL_MS,
+				now,
+			),
 		]);
-		mail = signupCodeMail(email, code);
+		const link = `${c.env.APP_ORIGIN}/verify-email?token=${encodeURIComponent(token)}`;
+		mail = signupLinkMail(email, link);
 	}
 	try {
 		await sendMail(c.env, mail);
@@ -160,62 +160,62 @@ auth.post("/signup", passwordModeOnly, async (c) => {
 	return c.json({ pending: true, email }, 202);
 });
 
-/** Step 2: the right code creates the account and signs in. */
+type SignupLink = { email: string; name: string; tz: string };
+
+async function findSignupLink(
+	env: AppEnv["Bindings"],
+	token: string,
+): Promise<SignupLink & { token_hash: string }> {
+	const link = await env.DB.prepare(
+		"SELECT email, name, tz, token_hash FROM signup_links WHERE token_hash = ? AND expires_at > ?",
+	)
+		.bind(await sha256Hex(token), Date.now())
+		.first<SignupLink & { token_hash: string }>();
+	if (!link) throw new ApiError(400, "link_expired");
+	return link;
+}
+
+/** The page the link opens asks which sign-up it is, to show the email and name. */
+auth.post("/signup/link", passwordModeOnly, async (c) => {
+	if (c.env.SIGNUPS_OPEN !== "true") throw new ApiError(403, "signups_closed");
+	const { token } = await readJson(c, signupLinkSchema);
+	await limit(c.env.SIGNUP_LIMITER, clientIp(c), "verify");
+	const { email, name } = await findSignupLink(c.env, token);
+	return c.json({ email, name });
+});
+
+/** Step 2: the link's token, a name and a password create the account and sign in. */
 auth.post("/signup/verify", passwordModeOnly, async (c) => {
 	if (c.env.SIGNUPS_OPEN !== "true") throw new ApiError(403, "signups_closed");
-	const { email, code, password } = await readJson(c, verifySignupSchema);
+	const { token, name, password } = await readJson(c, verifySignupSchema);
 	await limit(c.env.SIGNUP_LIMITER, clientIp(c), "verify");
 
-	const pending = await c.env.DB.prepare(
-		"SELECT * FROM pending_signups WHERE email = ?",
-	)
-		.bind(email)
-		.first<{
-			tz: string;
-			code_hash: string;
-			attempts: number;
-			expires_at: number;
-		}>();
-	if (!pending || pending.expires_at <= Date.now())
-		throw new ApiError(400, "code_expired");
-	if (pending.code_hash !== (await codeHash(email, code))) {
-		// Counted in the database, so parallel guesses can't share one attempt.
-		const counted = await c.env.DB.prepare(
-			"UPDATE pending_signups SET attempts = attempts + 1 WHERE email = ? RETURNING attempts",
-		)
-			.bind(email)
-			.first<{ attempts: number }>();
-		if (!counted || counted.attempts >= SIGNUP_CODE_ATTEMPTS) {
-			await c.env.DB.prepare("DELETE FROM pending_signups WHERE email = ?")
-				.bind(email)
-				.run();
-			throw new ApiError(400, "code_expired");
-		}
-		throw new ApiError(400, "invalid_code");
-	}
-	// Spent before creating the account, so the code can't be used twice at once.
+	const link = await findSignupLink(c.env, token);
+	// Spent before creating the account, so the link can't be used twice at once.
 	const claimed = await c.env.DB.prepare(
-		"DELETE FROM pending_signups WHERE email = ? AND code_hash = ?",
+		"DELETE FROM signup_links WHERE token_hash = ?",
 	)
-		.bind(email, pending.code_hash)
+		.bind(link.token_hash)
 		.run();
-	if (claimed.meta.changes !== 1) throw new ApiError(400, "code_expired");
+	if (claimed.meta.changes !== 1) throw new ApiError(400, "link_expired");
 
 	const user: UserRow = {
 		id: ulid(),
-		email,
+		email: link.email,
+		name,
 		password_hash: await hashPassword(password),
-		tz: pending.tz,
+		tz: link.tz,
 		settings: "{}",
 		created_at: Date.now(),
 	};
 	try {
 		await c.env.DB.prepare(
-			"INSERT INTO users (id, email, password_hash, tz, settings, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+			"INSERT INTO users (id, email, name, password_hash, tz, settings, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		)
 			.bind(
 				user.id,
 				user.email,
+				user.name,
 				user.password_hash,
 				user.tz,
 				user.settings,

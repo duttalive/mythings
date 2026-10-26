@@ -29,7 +29,7 @@ mythings follows the Things 3 way of working (Inbox → Today → Upcoming → A
 | Client (`src/`)          | React 19 PWA, Vite, TanStack Router, Tailwind CSS v4, Dexie (IndexedDB)    |
 | API (`worker/`)          | Hono on Cloudflare Workers                                                 |
 | Per-user data            | One Durable Object per user (SQLite): the source of truth, realtime hub and alarms for repeats, reminders and Trash |
-| Accounts                 | Cloudflare D1: users, sessions, push subscriptions, sign-up codes and password resets |
+| Accounts                 | Cloudflare D1: users, sessions, push subscriptions, sign-up links and password resets |
 | Shared code (`shared/`)  | zod schemas, list views, date and repeat logic used by client and server   |
 
 Each change is an operation stored in a local outbox and pushed to the user's Durable Object, which applies it, assigns a revision and broadcasts it to the user's other devices. See [SPEC.md §7](SPEC.md#7-sync-protocol) for the protocol.
@@ -47,7 +47,7 @@ corepack pnpm db:migrate:local
 corepack pnpm dev
 ```
 
-Open http://localhost:5173 and sign up. Locally, emails aren't sent: read the sign-up code (and any password reset link) at http://localhost:5173/api/dev/mail.
+Open http://localhost:5173 and sign up. Locally, emails aren't sent: open the sign-up link (and any password reset link) from at http://localhost:5173/api/dev/mail.
 
 For reminders while developing, add a VAPID key pair to `.dev.vars`:
 
@@ -66,7 +66,7 @@ Variables are set in `wrangler.jsonc` under `vars`. `.dev.vars` overrides them l
 | `APP_ORIGIN`                       | The app's public origin. Used in email links and to reject cross-site requests.                           |
 | `AUTH_MODE`                        | `password` (built-in email and password accounts) or `access` (the app sits behind Cloudflare Access).    |
 | `SIGNUPS_OPEN`                     | `"true"` to allow new accounts (the hosted instance is open). Set `"false"` for a private instance.       |
-| `MAIL_FROM`                        | Sender address for sign-up codes and password reset emails (Cloudflare Email Sending).                    |
+| `MAIL_FROM`                        | Sender address for sign-up links and password reset emails (Cloudflare Email Sending).                    |
 | `VAPID_SUBJECT`                    | A `mailto:` or `https:` contact for push services.                                                        |
 | `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` | Required in `access` mode, e.g. `myteam.cloudflareaccess.com` and the Access application's AUD tag.       |
 | `DEV_MAILBOX`                      | `"true"` only in local development: emails are kept in memory and shown at `/api/dev/mail`.               |
@@ -85,8 +85,9 @@ mythings runs on a single Cloudflare Worker with static assets, D1, Durable Obje
    - `routes`: your custom domain (or remove `routes` and set `"workers_dev": true`);
    - `APP_ORIGIN`, `MAIL_FROM` and `VAPID_SUBJECT`;
    - `SIGNUPS_OPEN`: `"true"` until your account exists.
-4. In `public/_headers`, change `wss://mythings.dynocoder.com` in `connect-src` to your own origin, so the realtime connection is allowed.
-5. Onboard your sending domain in the Cloudflare dashboard (Email Service → Email Sending). Sign-up needs it to send the confirmation code. If you'd rather not send email, use `AUTH_MODE: "access"` behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/).
+4. The Privacy Policy and Terms of Service (`src/routes/legal.tsx`) describe the hosted instance: change the operator, contact address and providers to yours.
+5. In `public/_headers`, change `wss://mythings.dynocoder.com` in `connect-src` to your own origin, so the realtime connection is allowed.
+6. Onboard your sending domain in the Cloudflare dashboard (Email Service → Email Sending). Sign-up needs it to send the confirmation link. If you'd rather not send email, use `AUTH_MODE: "access"` behind [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/).
 6. Generate VAPID keys with `corepack pnpm vapid`, then store each one with `corepack pnpm exec wrangler secret put VAPID_PUBLIC_KEY` (and `VAPID_PRIVATE_KEY`).
 7. Deploy with `corepack pnpm run deploy`. This builds the app, applies D1 migrations and deploys the Worker.
 8. Create your account, then set `SIGNUPS_OPEN` back to `"false"` and deploy again if the instance is just for you.

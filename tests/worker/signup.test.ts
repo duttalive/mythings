@@ -1,23 +1,24 @@
 import { createExecutionContext, env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { sha256Hex } from "../../worker/crypto";
 import app from "../../worker/index";
 import {
 	api,
 	mailTo,
 	PASSWORD,
 	signup,
-	signupCode,
+	signupToken,
 	uniqueEmail,
 } from "./helpers";
 
-async function start(email: string, password = PASSWORD) {
-	return api("/auth/signup", { method: "POST", body: { email, password } });
+async function start(email: string, name = "Test User") {
+	return api("/auth/signup", { method: "POST", body: { name, email } });
 }
 
-async function verify(email: string, code: string, password = PASSWORD) {
+async function verify(token: string, password = PASSWORD, name = "Test User") {
 	return api("/auth/signup/verify", {
 		method: "POST",
-		body: { email, code, password },
+		body: { token, name, password },
 	});
 }
 
@@ -28,106 +29,136 @@ const userCount = async (email: string) =>
 			.first<{ n: number }>()
 	)?.n;
 
-const otherCode = (code: string) => (code === "000000" ? "111111" : "000000");
+const login = (email: string, password = PASSWORD) =>
+	api("/auth/login", { method: "POST", body: { email, password } });
+
+/** Calls an auth route with sign-ups closed. */
+const whileClosed = (path: string, body: unknown) =>
+	app.fetch(
+		new Request(`https://example.com/api${path}`, {
+			method: "POST",
+			headers: {
+				origin: "https://example.com",
+				"content-type": "application/json",
+			},
+			body: JSON.stringify(body),
+		}),
+		{ ...env, SIGNUPS_OPEN: "false" },
+		createExecutionContext(),
+	);
 
 describe("sign-up email verification", () => {
-	it("emails a 6-digit code and creates no account until it's confirmed", async () => {
+	it("emails a link and creates no account until it's opened", async () => {
 		const email = uniqueEmail();
 		expect((await start(email)).status).toBe(202);
 		const [mail] = await mailTo(email);
-		expect(mail?.subject).toMatch(/^\d{6} is your mythings code$/);
-		expect(mail?.text).toContain(mail?.subject.slice(0, 6));
+		expect(mail?.subject).toBe("Confirm your email for mythings");
+		expect(mail?.text).toContain(
+			`${env.APP_ORIGIN}/verify-email?token=${await signupToken(email)}\n`,
+		);
 		expect(await userCount(email)).toBe(0);
-		expect(
-			(
-				await api("/auth/login", {
-					method: "POST",
-					body: { email, password: PASSWORD },
-				})
-			).status,
-		).toBe(401);
+		expect((await login(email)).status).toBe(401);
 
-		expect((await verify(email, await signupCode(email))).status).toBe(201);
+		const res = await verify(await signupToken(email));
+		expect(res.status).toBe(201);
 		expect(await userCount(email)).toBe(1);
+		expect((await login(email)).status).toBe(200);
 	});
 
-	it("rejects a wrong code and still accepts the right one", async () => {
+	it("stores only a hash of the link's token", async () => {
 		const email = uniqueEmail();
 		await start(email);
-		const code = await signupCode(email);
-		const wrong = await verify(email, otherCode(code));
-		expect(wrong.status).toBe(400);
-		expect(await wrong.json()).toEqual({ error: "invalid_code" });
-		expect((await verify(email, code)).status).toBe(201);
+		const token = await signupToken(email);
+		const row = await env.DB.prepare(
+			"SELECT token_hash FROM signup_links WHERE email = ?",
+		)
+			.bind(email)
+			.first<{ token_hash: string }>();
+		expect(row?.token_hash).toBe(await sha256Hex(token));
 	});
 
-	it("gives up after 5 wrong guesses", async () => {
+	it("shows whose sign-up a link is for, and nothing for a bad link", async () => {
 		const email = uniqueEmail();
-		await start(email);
-		const code = await signupCode(email);
-		const errors: string[] = [];
-		for (let i = 0; i < 5; i++)
-			errors.push(
-				(await (await verify(email, otherCode(code))).json<{ error: string }>())
-					.error,
-			);
-		expect(errors).toEqual([
-			"invalid_code",
-			"invalid_code",
-			"invalid_code",
-			"invalid_code",
-			"code_expired",
-		]);
-		expect((await verify(email, code)).status).toBe(400);
+		await start(email, "Ada");
+		const token = await signupToken(email);
+		const res = await api("/auth/signup/link", {
+			method: "POST",
+			body: { token },
+		});
+		expect(await res.json()).toEqual({ email, name: "Ada" });
+		const bad = await api("/auth/signup/link", {
+			method: "POST",
+			body: { token: "x".repeat(43) },
+		});
+		expect(bad.status).toBe(400);
+		expect(await bad.json()).toEqual({ error: "link_expired" });
 	});
 
-	it("expires after 15 minutes", async () => {
+	it("uses the name chosen when finishing, which can differ from step 1", async () => {
+		const email = uniqueEmail();
+		await start(email, "Someone else");
+		const res = await verify(await signupToken(email), PASSWORD, " Ada ");
+		expect(await res.json()).toMatchObject({ email, name: "Ada" });
+	});
+
+	it("expires after 24 hours", async () => {
 		const email = uniqueEmail();
 		await start(email);
+		const row = await env.DB.prepare(
+			"SELECT expires_at - created_at AS ttl FROM signup_links WHERE email = ?",
+		)
+			.bind(email)
+			.first<{ ttl: number }>();
+		expect(row?.ttl).toBe(24 * 60 * 60 * 1000);
 		await env.DB.prepare(
-			"UPDATE pending_signups SET expires_at = ? WHERE email = ?",
+			"UPDATE signup_links SET expires_at = ? WHERE email = ?",
 		)
 			.bind(Date.now() - 1, email)
 			.run();
-		const res = await verify(email, await signupCode(email));
-		expect(await res.json()).toEqual({ error: "code_expired" });
+		const res = await verify(await signupToken(email));
+		expect(await res.json()).toEqual({ error: "link_expired" });
+		expect(await userCount(email)).toBe(0);
 	});
 
-	it("a resend replaces the code", async () => {
+	it("a resend replaces the link: only the newest works", async () => {
 		const email = uniqueEmail();
 		await start(email);
-		const first = await signupCode(email);
+		const first = await signupToken(email);
 		await start(email);
-		const second = await signupCode(email);
-		if (first !== second) expect((await verify(email, first)).status).toBe(400);
-		expect((await verify(email, second)).status).toBe(201);
+		const second = await signupToken(email);
+		expect(second).not.toBe(first);
+		expect((await verify(first)).status).toBe(400);
+		expect((await verify(second)).status).toBe(201);
 	});
 
-	it("sets the password given with the code, not one someone else sent at step 1", async () => {
+	it("sets the password chosen on the link's page; step 1 takes none", async () => {
 		const email = uniqueEmail();
-		await start(email, "the owner's password");
-		await start(email, "an attacker's password");
-		const res = await verify(
-			email,
-			await signupCode(email),
-			"the owner's password",
-		);
-		expect(res.status).toBe(201);
-		const login = (password: string) =>
-			api("/auth/login", { method: "POST", body: { email, password } });
-		expect((await login("an attacker's password")).status).toBe(401);
-		expect((await login("the owner's password")).status).toBe(200);
+		// Someone else can start a sign-up for this address, but only the
+		// inbox's owner gets the link and chooses the password.
+		await start(email);
+		expect(
+			(await verify(await signupToken(email), "the owner's password")).status,
+		).toBe(201);
+		expect((await login(email, "the owner's password")).status).toBe(200);
 	});
 
-	it("needs a valid password with the code", async () => {
+	it("needs a valid password and a name to finish", async () => {
 		const email = uniqueEmail();
 		await start(email);
-		const res = await verify(email, await signupCode(email), "short");
-		expect(res.status).toBe(400);
-		expect(await res.json()).toMatchObject({ error: "invalid_input" });
+		const token = await signupToken(email);
+		for (const [password, name] of [
+			["short", "Ada"],
+			[PASSWORD, "  "],
+		] as const) {
+			const res = await verify(token, password, name);
+			expect(res.status).toBe(400);
+			expect(await res.json()).toMatchObject({ error: "invalid_input" });
+		}
+		// A failed attempt doesn't spend the link.
+		expect((await verify(token)).status).toBe(201);
 	});
 
-	it("answers the same for emails that already have an account, and sends no code", async () => {
+	it("answers the same for emails that already have an account, and sends no link", async () => {
 		const { email } = await signup();
 		const fresh = await start(uniqueEmail());
 		const res = await start(email);
@@ -135,80 +166,51 @@ describe("sign-up email verification", () => {
 		expect(await res.json()).toEqual({ pending: true, email });
 		const [mail] = await mailTo(email);
 		expect(mail?.subject).toBe("You already have a mythings account");
-		expect(mail?.text).not.toMatch(/\d{6}/);
+		expect(mail?.text).not.toContain("verify-email");
 		const pending = await env.DB.prepare(
-			"SELECT 1 FROM pending_signups WHERE email = ?",
+			"SELECT 1 FROM signup_links WHERE email = ?",
 		)
 			.bind(email)
 			.first();
 		expect(pending).toBeNull();
 	});
 
-	it("counts parallel wrong guesses separately", async () => {
+	it("a link works only once", async () => {
 		const email = uniqueEmail();
 		await start(email);
-		const code = await signupCode(email);
-		await Promise.all(
-			Array.from({ length: 5 }, () => verify(email, otherCode(code))),
-		);
-		expect((await verify(email, code)).status).toBe(400);
-	});
-
-	it("a code works only once", async () => {
-		const email = uniqueEmail();
-		await start(email);
-		const code = await signupCode(email);
-		const results = await Promise.all([
-			verify(email, code),
-			verify(email, code),
-		]);
+		const token = await signupToken(email);
+		const results = await Promise.all([verify(token), verify(token)]);
 		expect(results.map((r) => r.status).sort()).toEqual([201, 400]);
 		expect(await userCount(email)).toBe(1);
+		expect(await (await verify(token)).json()).toEqual({
+			error: "link_expired",
+		});
 	});
 
 	it('is closed when SIGNUPS_OPEN isn\'t "true"', async () => {
-		const res = await app.fetch(
-			new Request("https://example.com/api/auth/signup", {
-				method: "POST",
-				headers: {
-					origin: "https://example.com",
-					"content-type": "application/json",
-				},
-				body: JSON.stringify({ email: uniqueEmail(), password: PASSWORD }),
-			}),
-			{ ...env, SIGNUPS_OPEN: "false" },
-			createExecutionContext(),
-		);
+		const res = await whileClosed("/auth/signup", {
+			name: "Test",
+			email: uniqueEmail(),
+		});
 		expect(res.status).toBe(403);
 		expect(await res.json()).toEqual({ error: "signups_closed" });
 	});
 
-	it("won't confirm a code while sign-ups are closed", async () => {
+	it("won't finish a sign-up while sign-ups are closed", async () => {
 		const email = uniqueEmail();
 		expect((await start(email)).status).toBe(202);
-		const res = await app.fetch(
-			new Request("https://example.com/api/auth/signup/verify", {
-				method: "POST",
-				headers: {
-					origin: "https://example.com",
-					"content-type": "application/json",
-				},
-				body: JSON.stringify({
-					email,
-					code: await signupCode(email),
-					password: PASSWORD,
-				}),
-			}),
-			{ ...env, SIGNUPS_OPEN: "false" },
-			createExecutionContext(),
-		);
+		const res = await whileClosed("/auth/signup/verify", {
+			token: await signupToken(email),
+			name: "Test",
+			password: PASSWORD,
+		});
 		expect(res.status).toBe(403);
 		expect(await res.json()).toEqual({ error: "signups_closed" });
 		expect(await userCount(email)).toBe(0);
 	});
 
-	it("needs a 6-digit code", async () => {
-		const res = await verify(uniqueEmail(), "12ab");
+	it("needs a well-formed token", async () => {
+		const res = await verify("short");
 		expect(res.status).toBe(400);
 		expect(await res.json()).toMatchObject({ error: "invalid_input" });
 	});

@@ -37,25 +37,37 @@ export const changePasswordSchema = z.object({
 	newPassword: passwordSchema,
 });
 
-export const verifySignupSchema = z.object({
+/** A person's name as they'd like to be addressed. Empty means not set. */
+export const nameSchema = z
+	.string()
+	.trim()
+	.max(100, "Use at most 100 characters")
+	.regex(/^[^\p{Cc}]*$/u, "Remove the special characters");
+
+const tokenSchema = z.string().min(20).max(200);
+
+/** Sign-up step 1: who's signing up. The email gets a link to finish. */
+export const signupSchema = z.object({
+	name: nameSchema.pipe(z.string().min(1, "Enter your name")),
 	email: emailSchema,
-	code: z
-		.string()
-		.trim()
-		.regex(/^\d{6}$/),
-	/** Chosen here, at step 2, so only whoever can read the code sets it. */
+	tz: timeZoneSchema.optional(),
+});
+
+/** Opening the emailed link: which sign-up it belongs to. */
+export const signupLinkSchema = z.object({ token: tokenSchema });
+
+export const verifySignupSchema = z.object({
+	token: tokenSchema,
+	name: nameSchema.pipe(z.string().min(1, "Enter your name")),
+	/** Chosen here, on the page the link opens, so only whoever can read the email sets it. */
 	password: passwordSchema,
 });
 
 export const forgotPasswordSchema = z.object({ email: emailSchema });
 
 export const resetPasswordSchema = z.object({
-	token: z.string().min(20).max(200),
+	token: tokenSchema,
 	password: passwordSchema,
-});
-
-export const signupSchema = credentialsSchema.extend({
-	tz: timeZoneSchema.optional(),
 });
 
 /** User preferences (SPEC §10.9). Every key is optional; missing keys use defaults on the client. */
@@ -71,6 +83,8 @@ export const settingsSchema = z
 
 export const updateMeSchema = z
 	.object({
+		/** An empty name clears it. */
+		name: nameSchema,
 		tz: timeZoneSchema,
 		settings: settingsSchema,
 	})
@@ -82,6 +96,8 @@ export type Settings = z.infer<typeof settingsSchema>;
 export type Me = {
 	id: string;
 	email: string;
+	/** Null until the person sets one (accounts from before 1.4.0). */
+	name: string | null;
 	tz: string;
 	settings: Settings;
 };

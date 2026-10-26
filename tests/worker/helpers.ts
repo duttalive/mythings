@@ -57,24 +57,28 @@ export async function mailTo(email: string): Promise<SentMail[]> {
 	return res.json();
 }
 
-/** The 6-digit code from the newest sign-up email. */
-export async function signupCode(email: string): Promise<string> {
+/** The token from the newest sign-up link emailed to an address. */
+export async function signupToken(email: string): Promise<string> {
 	const [mail] = await mailTo(email);
-	const code = mail?.subject.match(/^(\d{6}) /)?.[1];
-	expect(code).toBeTruthy();
-	return code as string;
+	const token = mail?.text.match(/\/verify-email\?token=([\w-]+)/)?.[1];
+	expect(token).toBeTruthy();
+	return token as string;
 }
 
-/** Signs up all the way: asks for a code, then confirms it. */
-export async function signup(email = uniqueEmail(), password = PASSWORD) {
+/** Signs up all the way: asks for a link, then opens it and chooses a password. */
+export async function signup(
+	email = uniqueEmail(),
+	password = PASSWORD,
+	name = "Test User",
+) {
 	const started = await api("/auth/signup", {
 		method: "POST",
-		body: { email, password },
+		body: { name, email },
 	});
 	expect(started.status).toBe(202);
 	const res = await api("/auth/signup/verify", {
 		method: "POST",
-		body: { email, code: await signupCode(email), password },
+		body: { token: await signupToken(email), name, password },
 	});
 	expect(res.status).toBe(201);
 	return { res, email, password, cookie: sessionCookie(res) };

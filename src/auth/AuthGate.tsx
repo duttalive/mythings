@@ -14,6 +14,7 @@ import { forgetPushSubscription } from "../push/notifications";
 import { clearCachedUser, loadCachedUser, saveCachedUser } from "./cachedUser";
 import { LoginPage } from "./LoginPage";
 import { ResetPasswordPage } from "./ResetPasswordPage";
+import { VerifyEmailPage } from "./VerifyEmailPage";
 
 type AuthContextValue = {
 	user: Me;
@@ -127,6 +128,12 @@ export function AuthGate({ children }: { children: ReactNode }) {
 		state.status !== "loading"
 	)
 		return <ResetPasswordPage onSignedIn={signIn} />;
+	// So does a sign-up link (it may be opened on a device someone else uses).
+	if (
+		window.location.pathname === "/verify-email" &&
+		state.status !== "loading"
+	)
+		return <VerifyEmailPage onSignedIn={signIn} />;
 	// First visit to the home page: show it straight away instead of a blank
 	// screen while we ask the server (a device that was signed in has a cached user).
 	if (state.status === "loading")

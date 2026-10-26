@@ -66,28 +66,29 @@ If you didn't ask for this, ignore this email; your password won't change.`,
 	};
 }
 
-/** The sign-up confirmation email with its 6-digit code. */
-export function signupCodeMail(to: string, code: string): Mail {
+/** The sign-up confirmation email. The link is single-use and expires in 24 hours. */
+export function signupLinkMail(to: string, link: string): Mail {
+	const url = escapeHtml(link);
 	return {
 		to,
-		subject: `${code} is your mythings code`,
-		text: `Welcome to mythings! Enter this code to confirm your email and finish creating your account:
+		subject: "Confirm your email for mythings",
+		text: `Welcome to mythings! Open this link to confirm your email and finish creating your account:
 
-${code}
+${link}
 
-It works for 15 minutes. If you didn't try to sign up, ignore this email; no account is created.`,
+It works once, for 24 hours. If you didn't try to sign up, ignore this email; no account is created.`,
 		html: `<!doctype html><html><body style="margin:0;padding:24px;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1d1d1f">
 <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#fff;border-radius:16px;padding:32px">
 <tr><td>
 <h1 style="margin:0 0 16px;font-size:20px">Confirm your email</h1>
-<p style="margin:0 0 20px;line-height:1.5">Welcome to mythings! Enter this code to finish creating your account:</p>
-<p style="margin:0 0 20px;font-size:32px;font-weight:700;letter-spacing:8px;font-family:ui-monospace,Menlo,monospace">${code}</p>
-<p style="margin:0;font-size:13px;color:#5f5f64;line-height:1.5">It works for 15 minutes. If you didn't try to sign up, ignore this email; no account is created.</p>
+<p style="margin:0 0 24px;line-height:1.5">Welcome to mythings! Confirm your email and choose a password to finish creating your account. The link works once, for 24 hours.</p>
+<p style="margin:0 0 24px"><a href="${url}" style="display:inline-block;background:#2f63e6;color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:10px">Confirm email</a></p>
+<p style="margin:0;font-size:13px;color:#5f5f64;line-height:1.5">If you didn't try to sign up, ignore this email; no account is created.<br>Or paste this link into your browser: ${url}</p>
 </td></tr></table></body></html>`,
 	};
 }
 
-/** Sent instead of a code when someone signs up with an email that already has an account. */
+/** Sent instead of a sign-up link when someone signs up with an email that already has an account. */
 export function accountExistsMail(to: string, signInUrl: string): Mail {
 	const url = escapeHtml(signInUrl);
 	return {

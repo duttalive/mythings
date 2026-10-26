@@ -3,7 +3,7 @@ import type { Me } from "../../shared/schema";
 import { ApiError, api } from "../api";
 import { PasswordInput } from "../components/PasswordInput";
 
-type Mode = "login" | "signup" | "forgot" | "verify";
+type Mode = "login" | "signup" | "forgot" | "sent";
 
 const MESSAGES: Record<string, string> = {
 	invalid_credentials: "Incorrect email or password.",
@@ -12,15 +12,15 @@ const MESSAGES: Record<string, string> = {
 	email_taken: "An account with this email already exists.",
 	too_many_attempts: "Too many attempts. Wait a minute and try again.",
 	signups_closed: "Sign-ups are closed on this server.",
-	invalid_code: "That code isn't right. Check the email and try again.",
-	code_expired: "This code has expired. Send a new one.",
+	link_expired:
+		"This link has expired or was already used. Sign up again for a new one.",
 	email_failed: "We couldn't send the email just now. Please try again.",
 };
 
 const FIELD_MESSAGES: Record<string, string> = {
 	email: "Enter a valid email address.",
 	password: "Password must be at least 8 characters.",
-	code: "Enter the 6-digit code from the email.",
+	name: "Enter your name (up to 100 characters).",
 };
 
 function messageFor(err: unknown): string {
@@ -41,35 +41,29 @@ const inputClass =
 
 const timeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-/** Sign-up step 1: emails a confirmation code (also used to resend it). */
-const startSignup = (email: string, password: string) =>
+/** Sign-up step 1: emails a link to finish (also used to resend it). */
+const startSignup = (name: string, email: string) =>
 	api("/auth/signup", {
 		method: "POST",
-		body: { email, password, tz: timeZone() },
+		body: { name, email, tz: timeZone() },
 	});
 
-/** Sign-up step 2: the code from the email creates the account. */
-function VerifyEmail({
+/** Seconds before "Resend" works again. */
+const RESEND_COOLDOWN_S = 60;
+
+/** After step 1: the link is in the email; opening it finishes sign-up. */
+function CheckEmail({
 	email,
-	password,
 	onResend,
 	onBack,
-	onSignedIn,
 }: {
 	email: string;
-	password: string;
 	onResend: () => Promise<unknown>;
 	onBack: () => void;
-	onSignedIn: (user: Me) => void;
 }) {
-	const [code, setCode] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
-	const [busy, setBusy] = useState(false);
-	/** Seconds until "Resend code" works again. */
-	const [cooldown, setCooldown] = useState(30);
-	const codeId = useId();
-	const errorId = useId();
+	const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_S);
 
 	useEffect(() => {
 		if (cooldown <= 0) return;
@@ -77,32 +71,13 @@ function VerifyEmail({
 		return () => clearTimeout(timer);
 	}, [cooldown]);
 
-	async function verify(e: FormEvent) {
-		e.preventDefault();
-		setBusy(true);
-		setError(null);
-		setNotice(null);
-		try {
-			onSignedIn(
-				await api<Me>("/auth/signup/verify", {
-					method: "POST",
-					body: { email, code, password },
-				}),
-			);
-		} catch (err) {
-			setError(messageFor(err));
-			setBusy(false);
-		}
-	}
-
 	async function resend() {
 		setError(null);
 		setNotice(null);
-		setCooldown(30);
+		setCooldown(RESEND_COOLDOWN_S);
 		try {
 			await onResend();
-			setCode("");
-			setNotice("A new code is on its way.");
+			setNotice("A new link is on its way. Only the newest link works.");
 		} catch (err) {
 			setError(messageFor(err));
 		}
@@ -110,54 +85,25 @@ function VerifyEmail({
 
 	return (
 		<main className="flex min-h-full items-center justify-center px-4 py-12">
-			<div className="w-full max-w-sm">
+			<div className="w-full max-w-sm text-center">
 				<img src="/favicon.svg" alt="" className="mx-auto size-12" />
-				<h1 className="mt-5 text-center text-2xl font-bold">
-					Check your email
-				</h1>
-				<p className="mt-2 text-center text-sm text-[var(--fg-muted)]">
-					We sent a 6-digit code to <strong>{email}</strong>. Enter it to finish
-					creating your account.
+				<h1 className="mt-5 text-2xl font-bold">Check your email</h1>
+				<p className="mt-2 text-[var(--fg-muted)]">
+					We sent a link to{" "}
+					<strong className="text-[var(--fg)]">{email}</strong>. Open it to
+					confirm your email and choose a password. It works for 24 hours.
 				</p>
-				<form onSubmit={verify} className="mt-8 flex flex-col gap-4" noValidate>
-					<div className="flex flex-col gap-1.5">
-						<label htmlFor={codeId} className="text-sm font-medium">
-							Code
-						</label>
-						<input
-							id={codeId}
-							// biome-ignore lint/a11y/noAutofocus: the screen exists to type the code
-							autoFocus
-							inputMode="numeric"
-							autoComplete="one-time-code"
-							pattern="[0-9]*"
-							maxLength={6}
-							required
-							value={code}
-							onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-							aria-describedby={error ? errorId : undefined}
-							className={`${inputClass} text-center text-2xl tracking-[0.5em]`}
-						/>
-					</div>
-					{error && (
-						<p id={errorId} role="alert" className="text-sm text-overdue">
-							{error}
-						</p>
-					)}
-					{notice && (
-						<p role="status" className="text-sm text-[var(--fg-muted)]">
-							{notice}
-						</p>
-					)}
-					<button
-						type="submit"
-						disabled={busy || code.length !== 6}
-						className="mt-2 rounded-lg bg-accent px-3 py-2 font-medium text-on-accent transition-opacity hover:opacity-90 disabled:opacity-60"
-					>
-						{busy ? "…" : "Verify and create account"}
-					</button>
-				</form>
-				<p className="mt-6 text-center text-sm text-[var(--fg-muted)]">
+				{error && (
+					<p role="alert" className="mt-6 text-sm text-overdue">
+						{error}
+					</p>
+				)}
+				{notice && (
+					<p role="status" className="mt-6 text-sm text-[var(--fg-muted)]">
+						{notice}
+					</p>
+				)}
+				<p className="mt-6 text-sm text-[var(--fg-muted)]">
 					No email? Check spam, or{" "}
 					<button
 						type="button"
@@ -165,11 +111,11 @@ function VerifyEmail({
 						disabled={cooldown > 0}
 						className="font-medium text-accent disabled:text-[var(--fg-muted)]"
 					>
-						{cooldown > 0 ? `resend in ${cooldown}s` : "resend the code"}
+						{cooldown > 0 ? `resend in ${cooldown}s` : "send it again"}
 					</button>
 					.
 				</p>
-				<p className="mt-2 text-center text-sm">
+				<p className="mt-2 text-sm">
 					<button
 						type="button"
 						onClick={onBack}
@@ -180,6 +126,23 @@ function VerifyEmail({
 				</p>
 			</div>
 		</main>
+	);
+}
+
+/** "By creating an account you agree to…", under the sign-up buttons. */
+export function AgreementLine() {
+	return (
+		<p className="text-center text-xs text-[var(--fg-muted)]">
+			By creating an account you agree to the{" "}
+			<a href="/terms" className="underline hover:text-[var(--fg)]">
+				Terms of Service
+			</a>{" "}
+			and{" "}
+			<a href="/privacy" className="underline hover:text-[var(--fg)]">
+				Privacy Policy
+			</a>
+			.
+		</p>
 	);
 }
 
@@ -195,12 +158,14 @@ export function LoginPage({
 }) {
 	const [mode, setMode] = useState<Mode>(initialMode);
 	const [signupsOpen, setSignupsOpen] = useState(false);
+	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 	/** The forgot-password email went out (or would have, for an unknown address). */
 	const [sentTo, setSentTo] = useState<string | null>(null);
+	const nameId = useId();
 	const emailId = useId();
 	const passwordId = useId();
 	const errorId = useId();
@@ -227,9 +192,9 @@ export function LoginPage({
 		}
 		if (mode === "signup") {
 			try {
-				// Step 1: we email a code; the account is created once it's confirmed.
-				await startSignup(email, password);
-				setMode("verify");
+				// Step 1: we email a link; the account is created from the page it opens.
+				await startSignup(name, email);
+				setMode("sent");
 			} catch (err) {
 				setError(messageFor(err));
 			}
@@ -255,14 +220,12 @@ export function LoginPage({
 		setSentTo(null);
 	}
 
-	if (mode === "verify")
+	if (mode === "sent")
 		return (
-			<VerifyEmail
+			<CheckEmail
 				email={email}
-				password={password}
-				onResend={() => startSignup(email, password)}
+				onResend={() => startSignup(name, email)}
 				onBack={() => switchMode("signup")}
-				onSignedIn={onSignedIn}
 			/>
 		);
 
@@ -322,6 +285,23 @@ export function LoginPage({
 						className="mt-8 flex flex-col gap-4"
 						noValidate
 					>
+						{mode === "signup" && (
+							<div className="flex flex-col gap-1.5">
+								<label htmlFor={nameId} className="text-sm font-medium">
+									Name
+								</label>
+								<input
+									id={nameId}
+									autoComplete="name"
+									required
+									maxLength={100}
+									value={name}
+									onChange={(e) => setName(e.target.value)}
+									aria-describedby={error ? errorId : undefined}
+									className={inputClass}
+								/>
+							</div>
+						)}
 						<div className="flex flex-col gap-1.5">
 							<label htmlFor={emailId} className="text-sm font-medium">
 								Email
@@ -337,27 +317,23 @@ export function LoginPage({
 								className={inputClass}
 							/>
 						</div>
-						{mode !== "forgot" && (
+						{mode === "login" && (
 							<div className="flex flex-col gap-1.5">
 								<div className="flex items-baseline justify-between">
 									<label htmlFor={passwordId} className="text-sm font-medium">
 										Password
 									</label>
-									{mode === "login" && (
-										<button
-											type="button"
-											onClick={() => switchMode("forgot")}
-											className="text-sm text-accent"
-										>
-											Forgot password?
-										</button>
-									)}
+									<button
+										type="button"
+										onClick={() => switchMode("forgot")}
+										className="text-sm text-accent"
+									>
+										Forgot password?
+									</button>
 								</div>
 								<PasswordInput
 									id={passwordId}
-									autoComplete={
-										mode === "login" ? "current-password" : "new-password"
-									}
+									autoComplete="current-password"
 									required
 									minLength={8}
 									value={password}
@@ -387,6 +363,7 @@ export function LoginPage({
 										? "Create account"
 										: "Send reset link"}
 						</button>
+						{mode === "signup" && <AgreementLine />}
 					</form>
 				)}
 

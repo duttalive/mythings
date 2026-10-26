@@ -226,9 +226,15 @@ export function HomePage({ go }: Props) {
 						mythings {APP_VERSION} · Inspired by Things 3; not affiliated with
 						Cultured Code.
 					</p>
-					<nav aria-label="Footer" className="flex gap-4">
+					<nav aria-label="Footer" className="flex flex-wrap gap-x-4 gap-y-2">
 						<a href="/changelog" className="hover:text-[var(--fg)]">
 							Changelog
+						</a>
+						<a href="/privacy" className="hover:text-[var(--fg)]">
+							Privacy
+						</a>
+						<a href="/terms" className="hover:text-[var(--fg)]">
+							Terms
 						</a>
 						<a href={REPO_URL} className="hover:text-[var(--fg)]">
 							Source code

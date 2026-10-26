@@ -308,13 +308,15 @@ The Worker authenticates `GET /api/sync/ws` (session + same-origin `Origin`), th
 
 | Method | Path                       | Purpose                                                                                             |
 | ------ | -------------------------- | --------------------------------------------------------------------------------------------------- |
-| POST   | `/auth/signup`             | `{email, password}` → creates user, sets session cookie. Can be disabled with `SIGNUPS_OPEN=false`. |
+| POST   | `/auth/signup`             | `{name, email}` → emails a 24-hour link to `/verify-email?token=` (no account yet). Can be disabled with `SIGNUPS_OPEN=false`. |
+| POST   | `/auth/signup/link`        | `{token}` → `{email, name}` for the page the link opens                                             |
+| POST   | `/auth/signup/verify`      | `{token, name, password}` → creates user, sets session cookie                                       |
 | POST   | `/auth/login`              | `{email, password}` → session cookie                                                                |
 | POST   | `/auth/logout`             | clears session                                                                                      |
 | POST   | `/auth/password`           | `{currentPassword, newPassword}` → changes it and signs out other devices                           |
 | POST   | `/auth/logout-all`         | ends every session of the user, this one included                                                   |
-| GET    | `/me`                      | `{id, email, tz, settings}`                                                                         |
-| PATCH  | `/me`                      | update `tz`, settings                                                                               |
+| GET    | `/me`                      | `{id, email, name, tz, settings}`                                                                       |
+| PATCH  | `/me`                      | update `name`, `tz`, settings                                                                       |
 | GET    | `/sync/ws`                 | WebSocket upgrade → forwarded to `USER_STORE.idFromName(userId)`                                    |
 | POST   | `/sync/push`               | fallback push: `{ops}` → `{acked, errors, rows, purged, rev}`                                       |
 | GET    | `/sync/pull?since=&limit=` | fallback pull → `{rows, purged, rev, more}`; continue from `rev` while `more`                       |
@@ -332,7 +334,7 @@ The Worker authenticates `GET /api/sync/ws` (session + same-origin `Origin`), th
 
 **D1 schema:**
 ```sql
-CREATE TABLE users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL,
+CREATE TABLE users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT, password_hash TEXT NOT NULL,
   tz TEXT NOT NULL DEFAULT 'UTC', settings TEXT NOT NULL DEFAULT '{}', created_at INTEGER NOT NULL);
 CREATE TABLE sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id),
   expires_at INTEGER NOT NULL, user_agent TEXT);

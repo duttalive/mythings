@@ -7,7 +7,7 @@ import {
 	PASSWORD,
 	sessionCookie,
 	signup,
-	signupCode,
+	signupToken,
 	uniqueEmail,
 } from "./helpers";
 
@@ -21,13 +21,13 @@ async function sessionRow(cookie: string) {
 }
 
 describe("signup", () => {
-	it("creates the user once the emailed code is confirmed, with a hardened session cookie", async () => {
+	it("creates the user once the emailed link is opened, with a hardened session cookie", async () => {
 		const email = uniqueEmail();
 		const started = await api("/auth/signup", {
 			method: "POST",
 			body: {
+				name: "  Ada Lovelace ",
 				email: `  ${email.toUpperCase()} `,
-				password: PASSWORD,
 				tz: "Australia/Sydney",
 			},
 		});
@@ -36,18 +36,24 @@ describe("signup", () => {
 		expect(started.headers.get("set-cookie")).toBeNull();
 		const res = await api("/auth/signup/verify", {
 			method: "POST",
-			body: { email, code: await signupCode(email), password: PASSWORD },
+			body: {
+				token: await signupToken(email),
+				name: "Ada Lovelace",
+				password: PASSWORD,
+			},
 		});
 		expect(res.status).toBe(201);
 		const body = await res.json<{
 			id: string;
 			email: string;
+			name: string;
 			tz: string;
 			settings: object;
 		}>();
 		expect(body).toEqual({
 			id: expect.any(String),
 			email,
+			name: "Ada Lovelace",
 			tz: "Australia/Sydney",
 			settings: {},
 		});
@@ -79,11 +85,11 @@ describe("signup", () => {
 		const { email } = await signup();
 		const res = await api("/auth/signup", {
 			method: "POST",
-			body: { email: email.toUpperCase(), password: PASSWORD },
+			body: { name: "Someone", email: email.toUpperCase() },
 		});
 		expect(res.status).toBe(202);
 		const pending = await env.DB.prepare(
-			"SELECT 1 FROM pending_signups WHERE email = ?",
+			"SELECT 1 FROM signup_links WHERE email = ?",
 		)
 			.bind(email)
 			.first();
@@ -93,7 +99,7 @@ describe("signup", () => {
 	it("validates input", async () => {
 		const res = await api("/auth/signup", {
 			method: "POST",
-			body: { email: "not-an-email", password: "short", tz: "Mars/Olympus" },
+			body: { name: " ", email: "not-an-email", tz: "Mars/Olympus" },
 		});
 		expect(res.status).toBe(400);
 		const body = await res.json<{
@@ -103,7 +109,7 @@ describe("signup", () => {
 		expect(body.error).toBe("invalid_input");
 		expect(body.issues.map((i) => i.path[0]).sort()).toEqual([
 			"email",
-			"password",
+			"name",
 			"tz",
 		]);
 	});
@@ -123,7 +129,7 @@ describe("signup", () => {
 					origin: "http://localhost",
 					"content-type": "application/json",
 				},
-				body: JSON.stringify({ email: uniqueEmail(), password: PASSWORD }),
+				body: JSON.stringify({ name: "Test", email: uniqueEmail() }),
 			},
 			{ ...env, SIGNUPS_OPEN: "false" },
 		);
@@ -275,6 +281,36 @@ describe("PATCH /me", () => {
 		expect(await (await api("/me", { cookie })).json()).toMatchObject(expected);
 	});
 
+	it("sets, changes and clears the name", async () => {
+		const { cookie } = await signup();
+		const rename = (name: string) =>
+			api("/me", { method: "PATCH", cookie, body: { name } });
+		expect(await (await rename("  Grace Hopper ")).json()).toMatchObject({
+			name: "Grace Hopper",
+		});
+		expect(await (await api("/me", { cookie })).json()).toMatchObject({
+			name: "Grace Hopper",
+		});
+		// Other changes leave it alone.
+		await api("/me", { method: "PATCH", cookie, body: { tz: "Asia/Tokyo" } });
+		expect(await (await api("/me", { cookie })).json()).toMatchObject({
+			name: "Grace Hopper",
+		});
+		expect(await (await rename("")).json()).toMatchObject({ name: null });
+		expect((await rename("x".repeat(101))).status).toBe(400);
+		expect((await rename("line\nbreak")).status).toBe(400);
+	});
+
+	it("keeps accounts from before names working: name is null until set", async () => {
+		const { cookie, email } = await signup();
+		await env.DB.prepare("UPDATE users SET name = NULL WHERE email = ?")
+			.bind(email)
+			.run();
+		const me = await api("/me", { cookie });
+		expect(me.status).toBe(200);
+		expect(await me.json()).toMatchObject({ email, name: null });
+	});
+
 	it("rejects unknown settings and bad time zones", async () => {
 		const { cookie } = await signup();
 		for (const body of [
@@ -290,7 +326,7 @@ describe("PATCH /me", () => {
 
 describe("origin check", () => {
 	it("rejects state-changing requests without a matching Origin", async () => {
-		const body = { email: uniqueEmail(), password: PASSWORD };
+		const body = { name: "Test", email: uniqueEmail() };
 		for (const origin of ["https://evil.example", ""]) {
 			const res = await api("/auth/signup", {
 				method: "POST",
@@ -305,7 +341,7 @@ describe("origin check", () => {
 	it("accepts the configured APP_ORIGIN", async () => {
 		const res = await api("/auth/signup", {
 			method: "POST",
-			body: { email: uniqueEmail(), password: PASSWORD },
+			body: { name: "Test", email: uniqueEmail() },
 			headers: { origin: env.APP_ORIGIN },
 		});
 		expect(res.status).toBe(202);

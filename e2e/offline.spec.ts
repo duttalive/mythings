@@ -63,3 +63,29 @@ test(`${EDITS} offline edits sync without loss or duplicates`, async ({
 	await open(other, "/logbook");
 	await expect(row(other, "Offline 1")).toBeVisible();
 });
+
+test("the legal pages open offline once the app is installed", async ({
+	browser,
+}) => {
+	const context = await browser.newContext();
+	const page = await context.newPage();
+	await page.goto("/");
+	// The service worker has cached the app shell and controls the page.
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await page.reload();
+	await expect
+		.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller))
+		.toBe(true);
+
+	await context.setOffline(true);
+	for (const [path, title] of [
+		["/privacy", "Privacy Policy"],
+		["/terms", "Terms of Service"],
+	] as const) {
+		await page.goto(path);
+		await expect(
+			page.getByRole("heading", { level: 1, name: title }),
+		).toBeVisible();
+	}
+	await context.close();
+});

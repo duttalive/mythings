@@ -37,23 +37,32 @@ function allTimeZones(current: string): string[] {
 function useSaveProfile() {
 	const { user, updateUser } = useAuth();
 	const [error, setError] = useState<string | null>(null);
-	const save = async (patch: { tz?: string; settings?: Settings }) => {
+	const save = async (patch: {
+		name?: string;
+		tz?: string;
+		settings?: Settings;
+	}) => {
 		const before = user;
 		setError(null);
 		updateUser({
 			...user,
+			name: patch.name === undefined ? user.name : patch.name.trim() || null,
 			tz: patch.tz ?? user.tz,
 			settings: { ...user.settings, ...patch.settings },
 		});
 		try {
 			updateUser(await api<Me>("/me", { method: "PATCH", body: patch }));
+			return true;
 		} catch (err) {
 			updateUser(before);
 			setError(
-				err instanceof ApiError
-					? "Couldn't save that change."
-					: "You're offline — settings need a connection to change.",
+				err instanceof ApiError && err.code === "invalid_input"
+					? (err.body.issues?.[0]?.message ?? "Couldn't save that change.")
+					: err instanceof ApiError
+						? "Couldn't save that change."
+						: "You're offline — settings need a connection to change.",
 			);
+			return false;
 		}
 	};
 	return { user, save, error };
@@ -200,6 +209,17 @@ export function SettingsPage() {
 						What's new
 					</a>
 				</div>
+				<div className="flex items-center justify-between gap-4 py-2">
+					<p className="text-sm">Legal</p>
+					<span className="flex flex-wrap justify-end gap-2">
+						<a href="/privacy" className={secondaryButtonClass}>
+							Privacy Policy
+						</a>
+						<a href="/terms" className={secondaryButtonClass}>
+							Terms of Service
+						</a>
+					</span>
+				</div>
 			</Section>
 		</ListPage>
 	);
@@ -324,6 +344,57 @@ function DataSettings() {
 	);
 }
 
+/** The person's name; empty removes it. */
+function NameSetting() {
+	const { user, save, error } = useSaveProfile();
+	const [draft, setDraft] = useState(user.name ?? "");
+	const [saved, setSaved] = useState(false);
+	const id = useId();
+	const hintId = useId();
+	const changed = draft.trim() !== (user.name ?? "");
+
+	const submit = async (e: FormEvent) => {
+		e.preventDefault();
+		setSaved(false);
+		if (await save({ name: draft })) {
+			setDraft(draft.trim());
+			setSaved(true);
+		}
+	};
+
+	return (
+		<form onSubmit={submit} className="flex flex-col gap-1 py-2 text-sm">
+			<label htmlFor={id} className="font-medium">
+				Name
+			</label>
+			<div className="flex gap-2">
+				<input
+					id={id}
+					autoComplete="name"
+					maxLength={100}
+					value={draft}
+					onChange={(e) => {
+						setDraft(e.target.value);
+						setSaved(false);
+					}}
+					aria-describedby={hintId}
+					className={inputClass}
+				/>
+				<button type="submit" disabled={!changed} className={buttonClass}>
+					Save
+				</button>
+			</div>
+			<p
+				id={hintId}
+				role={error ? "alert" : "status"}
+				className={`text-xs ${error ? "text-overdue" : "text-[var(--fg-muted)]"}`}
+			>
+				{error ?? (saved ? "Saved." : "Leave it empty to remove your name.")}
+			</p>
+		</form>
+	);
+}
+
 function AccountSettings() {
 	const { user, sessionExpired } = useAuth();
 	const [passwordMode, setPasswordMode] = useState(false);
@@ -348,6 +419,7 @@ function AccountSettings() {
 				</p>
 				<SignOutButton className={secondaryButtonClass} />
 			</div>
+			<NameSetting />
 			{passwordMode && (
 				<>
 					<ChangePassword />

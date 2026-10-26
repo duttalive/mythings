@@ -196,7 +196,7 @@ describe("rate limits", () => {
 		for (let i = 0; i < 6; i++) {
 			const res = await api("/auth/signup", {
 				method: "POST",
-				body: { email: uniqueEmail(), password: PASSWORD },
+				body: { name: "Test", email: uniqueEmail() },
 				headers,
 			});
 			statuses.push(res.status);
@@ -246,7 +246,7 @@ describe("rate limits", () => {
 		for (let i = 0; i < 6; i++) {
 			const res = await api("/auth/signup", {
 				method: "POST",
-				body: { email, password: PASSWORD },
+				body: { name: "Test", email },
 			});
 			signups.push(res.status);
 		}

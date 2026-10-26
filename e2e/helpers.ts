@@ -14,32 +14,35 @@ export async function signUp(
 ): Promise<string> {
 	await page.goto("/today");
 	await page.getByRole("button", { name: "Create an account" }).click();
+	await page.getByLabel("Name").fill("E2E Tester");
 	await page.getByLabel("Email").fill(email);
-	await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
 	await page.getByRole("button", { name: "Create account" }).click();
 	await expect(
 		page.getByRole("heading", { name: "Check your email" }),
 	).toBeVisible();
-	await page.getByLabel("Code").fill(await signupCode(page, email));
-	await page.getByRole("button", { name: "Verify and create account" }).click();
+	await page.goto(await signupLink(page, email));
+	await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+	await page.getByRole("button", { name: "Create account" }).click();
 	await expectReady(page);
 	return email;
 }
 
-/** The newest sign-up code emailed to an address (the local dev mailbox). */
-export async function signupCode(page: Page, email: string): Promise<string> {
-	let code: string | undefined;
+/** The newest sign-up link emailed to an address (the local dev mailbox), as a path. */
+export async function signupLink(page: Page, email: string): Promise<string> {
+	let link: string | undefined;
 	await expect
 		.poll(async () => {
 			const res = await page.request.get(
 				`/api/dev/mail?to=${encodeURIComponent(email)}`,
 			);
-			const mails = (await res.json()) as { subject: string }[];
-			code = mails.find((m) => /^\d{6} /.test(m.subject))?.subject.slice(0, 6);
-			return code;
+			const mails = (await res.json()) as { text: string }[];
+			link = mails
+				.map((m) => m.text.match(/\/verify-email\?token=[\w-]+/)?.[0])
+				.find(Boolean);
+			return link;
 		})
 		.toBeTruthy();
-	return code as string;
+	return link as string;
 }
 
 export async function signIn(page: Page, email: string): Promise<void> {
