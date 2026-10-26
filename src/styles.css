@@ -25,6 +25,10 @@
 	--checkbox: #8e8e95;
 	--card: #ffffff;
 	--card-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.08);
+	/* Segmented controls: the track, the selected option, and its text. */
+	--segment: #ebebef;
+	--segment-on: #ffffff;
+	--on-segment-on: #1d1d1f;
 	--accent: #2f63e6;
 	--on-accent: #ffffff;
 	--overdue: #cf2a30;
@@ -44,6 +48,10 @@
 		--checkbox: #77777e;
 		--card: #2a2a2e;
 		--card-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 20px rgb(0 0 0 / 0.35);
+		/* The selected option stands out 3.3:1 from the track; its text is 4.7:1. */
+		--segment: #232326;
+		--segment-on: #737379;
+		--on-segment-on: #ffffff;
 		--accent: #7a9dff;
 		--on-accent: #0b1530;
 		--overdue: #ff6369;
@@ -63,6 +71,10 @@
 	--checkbox: #77777e;
 	--card: #2a2a2e;
 	--card-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 20px rgb(0 0 0 / 0.35);
+	/* The selected option stands out 3.3:1 from the track; its text is 4.7:1. */
+	--segment: #232326;
+	--segment-on: #737379;
+	--on-segment-on: #ffffff;
 	--accent: #7a9dff;
 	--on-accent: #0b1530;
 	--overdue: #ff6369;

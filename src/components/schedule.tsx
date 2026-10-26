@@ -319,7 +319,7 @@ function RepeatEditor({
 			<div
 				role="radiogroup"
 				aria-label="Repeat type"
-				className="grid grid-cols-2 rounded-lg bg-[var(--hover)] p-0.5 text-xs"
+				className="grid grid-cols-2 rounded-lg bg-[var(--segment)] p-0.5 text-xs ring-1 ring-[var(--border)] ring-inset"
 			>
 				{(["fixed", "afterCompletion"] as const).map((mode) => (
 					// biome-ignore lint/a11y/useSemanticElements: a segmented control
@@ -329,7 +329,7 @@ function RepeatEditor({
 						role="radio"
 						aria-checked={form.mode === mode}
 						onClick={() => set({ mode })}
-						className={`rounded-md px-2 py-1 font-medium ${form.mode === mode ? "bg-[var(--card)] shadow-sm" : "text-[var(--fg-muted)]"}`}
+						className={`rounded-md px-2 py-1 font-medium ${form.mode === mode ? "bg-[var(--segment-on)] text-[var(--on-segment-on)] shadow-sm" : "text-[var(--fg-muted)] hover:text-[var(--fg)]"}`}
 					>
 						{mode === "fixed" ? "On a schedule" : "After completion"}
 					</button>

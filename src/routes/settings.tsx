@@ -638,12 +638,12 @@ function Segmented<T extends string>({
 			role="radiogroup"
 			aria-labelledby={ids.labelId}
 			aria-describedby={ids.hintId}
-			className="flex rounded-lg bg-[var(--hover)] p-0.5 text-sm"
+			className="flex rounded-lg bg-[var(--segment)] p-0.5 text-sm ring-1 ring-[var(--border)] ring-inset"
 		>
 			{options.map(([option, label]) => (
 				<label
 					key={option}
-					className="relative flex-1 cursor-pointer rounded-md px-2 py-1 text-center has-[:checked]:bg-[var(--card)] has-[:checked]:font-medium has-[:checked]:shadow-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
+					className="relative flex-1 cursor-pointer rounded-md px-2 py-1 text-center text-[var(--fg-muted)] hover:text-[var(--fg)] has-[:checked]:bg-[var(--segment-on)] has-[:checked]:font-medium has-[:checked]:text-[var(--on-segment-on)] has-[:checked]:shadow-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
 				>
 					<input
 						type="radio"
