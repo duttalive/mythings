@@ -15,7 +15,7 @@ export const TABLES: Record<EntityName, string> = {
 
 export const ENTITY_NAMES = Object.keys(TABLES) as EntityName[];
 
-const BOOLEAN_FIELDS = new Set(["evening", "archived", "done"]);
+const BOOLEAN_FIELDS = new Set(["evening", "archived", "done", "collapsed"]);
 const JSON_FIELDS = new Set(["tagIds", "repeat"]);
 
 const toColumn = (field: string) =>

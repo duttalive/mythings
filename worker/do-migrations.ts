@@ -133,4 +133,8 @@ export const DO_MIGRATIONS: string[] = [
 		reminder_at INTEGER NOT NULL
 	);
 	`,
+	`
+	-- Areas can be collapsed in the sidebar (synced, so it follows the user).
+	ALTER TABLE areas ADD COLUMN collapsed INTEGER NOT NULL DEFAULT 0;
+	`,
 ];

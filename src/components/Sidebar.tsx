@@ -1,6 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
-import { Link, type LinkProps } from "@tanstack/react-router";
-import { type ReactNode, useMemo } from "react";
+import { Link, type LinkProps, useRouterState } from "@tanstack/react-router";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
+import type { Area } from "../../shared/schema";
 import {
 	bySortKey,
 	projectProgress,
@@ -12,10 +13,12 @@ import { useListData } from "../data";
 import { type DragData, useDndRegistry } from "../dnd/DndProvider";
 import { canDrop, type SidebarTarget } from "../dnd/drop";
 import { DragItem, placed, SortableList } from "../dnd/sortable";
+import { useOps } from "../sync/hooks";
 import {
 	AreaIcon,
 	BoxIcon,
 	CalendarIcon,
+	ChevronIcon,
 	GearIcon,
 	InboxIcon,
 	LayersIcon,
@@ -102,9 +105,53 @@ function Badge({
 	);
 }
 
+/**
+ * Collapsing an area hides its projects. It's stored on the area, so it
+ * syncs to the user's other devices; it isn't an undoable edit.
+ */
+function useAreaCollapse() {
+	const { data } = useListData();
+	const ops = useOps();
+	const setCollapsed = useCallback(
+		(area: Area, collapsed: boolean) =>
+			void ops
+				.apply(
+					[
+						{
+							type: "upsert",
+							entity: "area",
+							id: area.id,
+							patch: { collapsed },
+						},
+					],
+					{ undoable: false },
+				)
+				.catch(console.error),
+		[ops],
+	);
+
+	// Going to a project in a collapsed area (from search, a link, a new
+	// project) opens the area, once per visit, so the project can be seen.
+	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const handled = useRef<string | null>(null);
+	useEffect(() => {
+		if (handled.current === pathname) return;
+		const id = /^\/project\/([^/]+)/.exec(pathname)?.[1];
+		const project = id ? data.projects.find((p) => p.id === id) : undefined;
+		// Wait for the project if the data isn't there yet.
+		if (id && !project) return;
+		handled.current = pathname;
+		const area = project && data.areas.find((a) => a.id === project.areaId);
+		if (area?.collapsed) setCollapsed(area, false);
+	}, [pathname, data.projects, data.areas, setCollapsed]);
+
+	return setCollapsed;
+}
+
 export function Sidebar() {
 	const { data, ctx } = useListData();
 	const { user } = useAuth();
+	const setCollapsed = useAreaCollapse();
 	const counts = useMemo(() => sidebarCounts(data, ctx), [data, ctx]);
 	const tree = useMemo(() => sidebarTree(data), [data]);
 	const tags = useMemo(
@@ -249,30 +296,74 @@ export function Sidebar() {
 						),
 					}}
 				>
-					{tree.areas.map(({ area, projects }) => (
-						<div key={area.id} className="mt-5 flex flex-col gap-px">
-							<DragItem
-								as="div"
-								kind="area"
-								id={area.id}
-								target={{ type: "area", id: area.id }}
-								className={dropHighlight}
-							>
-								<NavItem
-									to="/area/$areaId"
-									params={{ areaId: area.id }}
-									icon={
-										<AreaIcon className="size-[18px] text-[var(--fg-muted)]" />
-									}
-								>
-									<span className="font-semibold">
-										{area.title || "New Area"}
-									</span>
-								</NavItem>
-							</DragItem>
-							{projectGroup(area.id, projects)}
-						</div>
-					))}
+					{tree.areas.map(({ area, projects }) => {
+						const title = area.title || "New Area";
+						// Rows synced before collapsing existed have no flag: open.
+						const collapsed = area.collapsed === true;
+						const toggle = projects.length > 0;
+						const groupId = `sidebar-area-${area.id}`;
+						return (
+							<div key={area.id} className="mt-5 flex flex-col gap-px">
+								<div className="relative">
+									<DragItem
+										as="div"
+										kind="area"
+										id={area.id}
+										target={{ type: "area", id: area.id }}
+										className={dropHighlight}
+									>
+										<NavItem
+											to="/area/$areaId"
+											params={{ areaId: area.id }}
+											icon={
+												<AreaIcon className="size-[18px] text-[var(--fg-muted)]" />
+											}
+											badge={
+												toggle && (
+													<>
+														{collapsed && (
+															<span className="text-xs text-[var(--fg-muted)] tabular-nums">
+																<span aria-hidden>{projects.length}</span>
+																<span className="sr-only">
+																	({projects.length} hidden{" "}
+																	{projects.length === 1
+																		? "project"
+																		: "projects"}
+																	)
+																</span>
+															</span>
+														)}
+														{/* Room for the arrow, which sits on top of the link. */}
+														<span className="w-4 shrink-0 pointer-coarse:w-8" />
+													</>
+												)
+											}
+										>
+											<span className="font-semibold">{title}</span>
+										</NavItem>
+									</DragItem>
+									{toggle && (
+										<button
+											type="button"
+											onClick={() => setCollapsed(area, !collapsed)}
+											aria-expanded={!collapsed}
+											aria-controls={collapsed ? undefined : groupId}
+											aria-label={`${collapsed ? "Show" : "Hide"} projects in ${title}`}
+											title={collapsed ? "Show projects" : "Hide projects"}
+											className="absolute top-1/2 right-1 -translate-y-1/2 rounded p-0.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:right-0 pointer-coarse:p-3.5"
+										>
+											<ChevronIcon
+												className={`size-3.5 pointer-coarse:size-4 transition-transform duration-150 ${collapsed ? "" : "rotate-90"}`}
+											/>
+										</button>
+									)}
+								</div>
+								{!collapsed && (
+									<div id={groupId}>{projectGroup(area.id, projects)}</div>
+								)}
+							</div>
+						);
+					})}
 				</SortableList>
 
 				{tags.length > 0 && (

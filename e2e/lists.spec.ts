@@ -151,3 +151,41 @@ test("areas, projects outside areas, and projects within an area reorder in the 
 	await expect(link("Area A")).toBeVisible();
 	expect(await order()).toEqual(moved);
 });
+
+test("an area's projects can be hidden in the sidebar, stay hidden, and show again when one is opened", async ({
+	page,
+}) => {
+	await signUp(page);
+	const sidebar = page.getByRole("navigation", { name: "Lists" });
+	await newList(page, "New Area");
+	await typeTitle(page, "New Area", "Home");
+	for (const title of ["Garden", "Move"]) {
+		await sidebar.getByRole("link", { name: "Home" }).click();
+		await newList(page, "New Project");
+		await typeTitle(page, "New Project", title);
+		await expect(sidebar.getByRole("link", { name: title })).toBeVisible();
+	}
+
+	await page.goto("/today");
+	await sidebar.getByRole("button", { name: "Hide projects in Home" }).click();
+	await expect(sidebar.getByRole("link", { name: "Garden" })).toBeHidden();
+	await expect(
+		sidebar.getByRole("link", { name: "Home (2 hidden projects)" }),
+	).toBeVisible();
+	// The arrow doesn't open the area.
+	await expect(page).toHaveURL(/\/today$/);
+	await expectSynced(page);
+
+	await page.reload();
+	const show = sidebar.getByRole("button", { name: "Show projects in Home" });
+	await expect(show).toHaveAttribute("aria-expanded", "false");
+	await expect(sidebar.getByRole("link", { name: "Garden" })).toBeHidden();
+
+	// Opening one of its projects opens the area.
+	await sidebar.getByRole("link", { name: /^Home/ }).click();
+	await page.locator("main").getByRole("link", { name: "Garden" }).click();
+	await expect(sidebar.getByRole("link", { name: "Garden" })).toBeVisible();
+	await expect(
+		sidebar.getByRole("button", { name: "Hide projects in Home" }),
+	).toHaveAttribute("aria-expanded", "true");
+});

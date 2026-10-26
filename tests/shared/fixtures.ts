@@ -74,7 +74,14 @@ export function project(overrides: Partial<Project> = {}): Project {
 }
 
 export function area(overrides: Partial<Area> = {}): Area {
-	return { ...base(), title: "Area", sortKey: "a0", tagIds: [], ...overrides };
+	return {
+		...base(),
+		title: "Area",
+		sortKey: "a0",
+		tagIds: [],
+		collapsed: false,
+		...overrides,
+	};
 }
 
 export function heading(

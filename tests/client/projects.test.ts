@@ -79,6 +79,7 @@ const area = (overrides: Partial<Area> = {}): Area => ({
 	title: "",
 	sortKey: "a0",
 	tagIds: [],
+	collapsed: false,
 	...overrides,
 });
 

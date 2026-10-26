@@ -253,6 +253,8 @@ const areaFields = z.object({
 	title: titleSchema,
 	sortKey: sortKeySchema,
 	tagIds: tagIdsSchema,
+	/** Its projects are hidden in the sidebar. */
+	collapsed: z.boolean(),
 });
 
 const projectFields = z.object({

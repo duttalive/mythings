@@ -131,6 +131,7 @@ const area = (title: string): Area => ({
 	title,
 	sortKey: "a0",
 	tagIds: [],
+	collapsed: false,
 });
 
 describe("parseQuickEntry", () => {

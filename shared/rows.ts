@@ -15,7 +15,13 @@ export const DEFAULTS: {
 		"id" | "createdAt" | "updatedAt" | "rev"
 	>;
 } = {
-	area: { deletedAt: null, title: "", sortKey: "a0", tagIds: [] },
+	area: {
+		deletedAt: null,
+		title: "",
+		sortKey: "a0",
+		tagIds: [],
+		collapsed: false,
+	},
 	project: {
 		deletedAt: null,
 		title: "",
@@ -93,8 +99,9 @@ export function buildRow(
 	now: number,
 	headingProject: (headingId: string) => string | undefined,
 ): Fields {
+	// Defaults first, so rows stored before a field existed get it too.
 	const row: Fields = existing
-		? { ...existing, ...patch }
+		? { ...DEFAULTS[entity], ...existing, ...patch }
 		: { ...DEFAULTS[entity], createdAt: clientTs, ...patch, id, rev: 0 };
 	row.updatedAt = now;
 	if (entity === "todo" || entity === "project")

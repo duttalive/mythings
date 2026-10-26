@@ -110,6 +110,23 @@ describe("push and pull", () => {
 		expect(pulled.rows).toEqual(result.rows);
 	});
 
+	it("stores whether an area is collapsed, open by default", async () => {
+		const id = ulid();
+		await ok(upsert("area", id, { title: "Home" }));
+		expect(await get("area", id)).toMatchObject({ collapsed: false });
+		await ok(upsert("area", id, { collapsed: true }));
+		expect(await get("area", id)).toMatchObject({
+			title: "Home",
+			collapsed: true,
+		});
+		// Other edits leave it alone.
+		await ok(upsert("area", id, { title: "House" }));
+		expect(await get("area", id)).toMatchObject({ collapsed: true });
+		expect(
+			(await rejected(upsert("area", id, { collapsed: "yes" }))).code,
+		).toBe("invalid_op");
+	});
+
 	it("ignores an op it has already applied", async () => {
 		const op = upsert("todo", ulid(), { title: "Once" });
 		const first = await ok(op);
