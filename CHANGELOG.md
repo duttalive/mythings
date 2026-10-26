@@ -2,6 +2,16 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 1.4.0 — 2026-10-26
+
+Easier sign-up, your name, and clear policies.
+
+- Sign up with your name and email: we send you a link, and you choose your password on the page it opens. No more codes to type.
+- Add or change your name in Settings → Account.
+- New Privacy Policy and Terms of Service pages, linked from sign-up, the home page and Settings → About. They work offline too.
+- Clearer messages when you need to wait before trying again.
+- You'll be asked to sign in again after a long time, even on a device you use every day.
+
 ## Version 1.3.0 — 2026-10-25
 
 Open to everyone, with a proper front door.
