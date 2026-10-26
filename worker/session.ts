@@ -5,7 +5,10 @@ import type { AppEnv, UserRow } from "./types";
 
 export const SESSION_COOKIE = "mt_session";
 const DAY_MS = 24 * 60 * 60 * 1000;
+/** A session ends after this long unused... */
 export const SESSION_TTL_MS = 30 * DAY_MS;
+/** ...and this long after sign-in, however active. */
+export const SESSION_MAX_AGE_MS = 180 * DAY_MS;
 // Sliding expiry: extend at most once a day so reads don't write on every request.
 const REFRESH_AFTER_MS = DAY_MS;
 
@@ -19,12 +22,16 @@ const cookieOptions = (c: Context<AppEnv>) =>
 		sameSite: "Lax",
 	}) as const;
 
-function writeCookie(c: Context<AppEnv>, token: string) {
+function writeCookie(c: Context<AppEnv>, token: string, expiresAt: number) {
 	setCookie(c, SESSION_COOKIE, token, {
 		...cookieOptions(c),
-		maxAge: SESSION_TTL_MS / 1000,
+		maxAge: Math.round((expiresAt - Date.now()) / 1000),
 	});
 }
+
+/** The next expiry: 30 days from now, but never past the session's maximum age. */
+const nextExpiry = (now: number, createdAt: number) =>
+	Math.min(now + SESSION_TTL_MS, createdAt + SESSION_MAX_AGE_MS);
 
 export async function createSession(
 	c: Context<AppEnv>,
@@ -37,15 +44,16 @@ export async function createSession(
 			"DELETE FROM sessions WHERE user_id = ? AND expires_at <= ?",
 		).bind(userId, now),
 		c.env.DB.prepare(
-			"INSERT INTO sessions (token_hash, user_id, expires_at, user_agent) VALUES (?, ?, ?, ?)",
+			"INSERT INTO sessions (token_hash, user_id, expires_at, user_agent, created_at) VALUES (?, ?, ?, ?, ?)",
 		).bind(
 			await sha256Hex(token),
 			userId,
 			now + SESSION_TTL_MS,
 			c.req.header("user-agent") ?? null,
+			now,
 		),
 	]);
-	writeCookie(c, token);
+	writeCookie(c, token, now + SESSION_TTL_MS);
 }
 
 export async function getSessionUser(
@@ -57,24 +65,28 @@ export async function getSessionUser(
 	const tokenHash = await sha256Hex(token);
 	const now = Date.now();
 	const row = await c.env.DB.prepare(
-		`SELECT u.*, s.expires_at AS session_expires_at
+		`SELECT u.*, s.expires_at AS session_expires_at, s.created_at AS session_created_at
 		 FROM sessions s JOIN users u ON u.id = s.user_id
-		 WHERE s.token_hash = ? AND s.expires_at > ?`,
+		 WHERE s.token_hash = ? AND s.expires_at > ? AND s.created_at > ?`,
 	)
-		.bind(tokenHash, now)
-		.first<UserRow & { session_expires_at: number }>();
+		.bind(tokenHash, now, now - SESSION_MAX_AGE_MS)
+		.first<
+			UserRow & { session_expires_at: number; session_created_at: number }
+		>();
 	if (!row) return null;
 
-	if (row.session_expires_at - now < SESSION_TTL_MS - REFRESH_AFTER_MS) {
+	// Sliding expiry, refreshed at most once a day, up to the maximum age.
+	const expiresAt = nextExpiry(now, row.session_created_at);
+	if (expiresAt - row.session_expires_at > REFRESH_AFTER_MS) {
 		await c.env.DB.prepare(
 			"UPDATE sessions SET expires_at = ? WHERE token_hash = ?",
 		)
-			.bind(now + SESSION_TTL_MS, tokenHash)
+			.bind(expiresAt, tokenHash)
 			.run();
-		writeCookie(c, token);
+		writeCookie(c, token, expiresAt);
 	}
 
-	const { session_expires_at: _, ...user } = row;
+	const { session_expires_at: _, session_created_at: __, ...user } = row;
 	return user;
 }
 

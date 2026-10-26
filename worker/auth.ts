@@ -20,6 +20,12 @@ import {
 } from "./crypto";
 import { ApiError, readJson } from "./http";
 import {
+	checkLoginLock,
+	clearLoginFailures,
+	countEmail,
+	recordLoginFailure,
+} from "./limits";
+import {
 	accountExistsMail,
 	type Mail,
 	resetPasswordMail,
@@ -108,6 +114,7 @@ auth.post("/signup", passwordModeOnly, async (c) => {
 	const ip = clientIp(c);
 	await limit(c.env.SIGNUP_LIMITER, ip);
 	await limitAddress(c.env.SIGNUP_LIMITER, ip, email);
+	if (ip !== null) await countEmail(c.env, "signup", email);
 
 	const existing = await c.env.DB.prepare("SELECT 1 FROM users WHERE email = ?")
 		.bind(email)
@@ -242,6 +249,7 @@ auth.post("/login", passwordModeOnly, async (c) => {
 	await limit(c.env.LOGIN_LIMITER, ip);
 	await limit(c.env.LOGIN_LIMITER, ip, email);
 	await limitAddress(c.env.LOGIN_LIMITER, ip, email);
+	await checkLoginLock(c.env, email);
 
 	const user = await c.env.DB.prepare("SELECT * FROM users WHERE email = ?")
 		.bind(email)
@@ -250,7 +258,11 @@ auth.post("/login", passwordModeOnly, async (c) => {
 		password,
 		user?.password_hash ?? (await getDummyHash()),
 	);
-	if (!user || !ok) throw new ApiError(401, "invalid_credentials");
+	if (!user || !ok) {
+		await recordLoginFailure(c.env, email);
+		throw new ApiError(401, "invalid_credentials");
+	}
+	await clearLoginFailures(c.env, email).run();
 
 	if (needsRehash) {
 		await c.env.DB.prepare("UPDATE users SET password_hash = ? WHERE id = ?")
@@ -313,6 +325,7 @@ auth.post("/forgot", passwordModeOnly, async (c) => {
 	await limit(c.env.RESET_LIMITER, ip);
 	await limit(c.env.RESET_LIMITER, ip, email);
 	await limitAddress(c.env.RESET_LIMITER, ip, email);
+	if (ip !== null) await countEmail(c.env, "reset", email);
 	// Everything after this point runs after the response, so how long the
 	// response takes doesn't reveal whether the account exists.
 	c.executionCtx.waitUntil(
@@ -364,6 +377,7 @@ auth.post("/reset", passwordModeOnly, async (c) => {
 			row.id,
 		),
 		c.env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(row.id),
+		clearLoginFailures(c.env, row.email),
 	]);
 	await createSession(c, row.id);
 	return c.json(toMe(row));

@@ -11,6 +11,10 @@ const MESSAGES: Record<string, string> = {
 		"This reset link has expired or was already used. Ask for a new one.",
 	email_taken: "An account with this email already exists.",
 	too_many_attempts: "Too many attempts. Wait a minute and try again.",
+	too_many_emails:
+		"We've sent several emails to this address today. Check your spam folder, or try again tomorrow.",
+	login_locked:
+		"Too many unsuccessful sign-ins. Try again in 15 minutes, or reset your password.",
 	signups_closed: "Sign-ups are closed on this server.",
 	link_expired:
 		"This link has expired or was already used. Sign up again for a new one.",

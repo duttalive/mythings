@@ -1,3 +1,4 @@
+import { env } from "cloudflare:test";
 import { exports } from "cloudflare:workers";
 import { expect } from "vitest";
 
@@ -82,4 +83,13 @@ export async function signup(
 	});
 	expect(res.status).toBe(201);
 	return { res, email, password, cookie: sessionCookie(res) };
+}
+
+/** Pretends the last account email to an address went out over a minute ago. */
+export async function skipEmailCooldown(email: string): Promise<void> {
+	await env.DB.prepare(
+		"UPDATE email_sends SET last_sent_at = last_sent_at - 61000 WHERE email = ?",
+	)
+		.bind(email)
+		.run();
 }

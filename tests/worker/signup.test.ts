@@ -8,6 +8,7 @@ import {
 	PASSWORD,
 	signup,
 	signupToken,
+	skipEmailCooldown,
 	uniqueEmail,
 } from "./helpers";
 
@@ -124,6 +125,7 @@ describe("sign-up email verification", () => {
 		const email = uniqueEmail();
 		await start(email);
 		const first = await signupToken(email);
+		await skipEmailCooldown(email);
 		await start(email);
 		const second = await signupToken(email);
 		expect(second).not.toBe(first);
@@ -160,6 +162,7 @@ describe("sign-up email verification", () => {
 
 	it("answers the same for emails that already have an account, and sends no link", async () => {
 		const { email } = await signup();
+		await skipEmailCooldown(email);
 		const fresh = await start(uniqueEmail());
 		const res = await start(email);
 		expect(res.status).toBe(fresh.status);

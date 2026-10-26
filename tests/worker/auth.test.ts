@@ -8,6 +8,7 @@ import {
 	sessionCookie,
 	signup,
 	signupToken,
+	skipEmailCooldown,
 	uniqueEmail,
 } from "./helpers";
 
@@ -83,6 +84,7 @@ describe("signup", () => {
 
 	it("doesn't create a second account for an email, regardless of case", async () => {
 		const { email } = await signup();
+		await skipEmailCooldown(email);
 		const res = await api("/auth/signup", {
 			method: "POST",
 			body: { name: "Someone", email: email.toUpperCase() },
@@ -361,5 +363,76 @@ describe("auth config", () => {
 			mode: "password",
 			signupsOpen: true,
 		});
+	});
+});
+
+describe("failed sign-in lock", () => {
+	const login = (email: string, password: string) =>
+		api("/auth/login", { method: "POST", body: { email, password } });
+	// The per-address rate limit allows 5 tries a minute, so start at 9 failures.
+	const nineFailures = (email: string) =>
+		env.DB.prepare("INSERT INTO login_failures (email, failures) VALUES (?, 9)")
+			.bind(email)
+			.run();
+
+	it("locks an email for 15 minutes on the 10th failure in a row, known or not", async () => {
+		const { email } = await signup();
+		for (const address of [email, uniqueEmail()]) {
+			await nineFailures(address);
+			expect((await login(address, "wrong password")).status).toBe(401);
+			const locked = await login(address, PASSWORD);
+			expect(locked.status).toBe(429);
+			expect(await locked.json()).toEqual({ error: "login_locked" });
+		}
+		const row = await env.DB.prepare(
+			"SELECT locked_until FROM login_failures WHERE email = ?",
+		)
+			.bind(email)
+			.first<{ locked_until: number }>();
+		expect(row?.locked_until).toBeGreaterThan(Date.now() + 14 * 60 * 1000);
+		expect(row?.locked_until).toBeLessThanOrEqual(Date.now() + 15 * 60 * 1000);
+
+		await env.DB.prepare(
+			"UPDATE login_failures SET locked_until = ? WHERE email = ?",
+		)
+			.bind(Date.now() - 1, email)
+			.run();
+		expect((await login(email, PASSWORD)).status).toBe(200);
+	});
+
+	it("counts failures and starts over after a successful sign-in", async () => {
+		const { email } = await signup();
+		await login(email, "wrong password");
+		await login(email, "wrong password");
+		const failures = () =>
+			env.DB.prepare("SELECT failures FROM login_failures WHERE email = ?")
+				.bind(email)
+				.first<{ failures: number }>();
+		expect((await failures())?.failures).toBe(2);
+		expect((await login(email, PASSWORD)).status).toBe(200);
+		expect(await failures()).toBeNull();
+	});
+});
+
+describe("session lifetime", () => {
+	it("ends a session 180 days after sign-in, however active", async () => {
+		const { cookie } = await signup();
+		const hash = await sha256Hex(cookie.split("=")[1] ?? "");
+		const created = Date.now() - 170 * DAY;
+		await env.DB.prepare(
+			"UPDATE sessions SET created_at = ?, expires_at = ? WHERE token_hash = ?",
+		)
+			.bind(created, Date.now() + 60 * 60 * 1000, hash)
+			.run();
+		// Near the end, sliding stops at the maximum age.
+		expect((await api("/me", { cookie })).status).toBe(200);
+		expect((await sessionRow(cookie))?.expires_at).toBe(created + 180 * DAY);
+
+		await env.DB.prepare(
+			"UPDATE sessions SET created_at = ? WHERE token_hash = ?",
+		)
+			.bind(Date.now() - 180 * DAY - 1, hash)
+			.run();
+		expect((await api("/me", { cookie })).status).toBe(401);
 	});
 });

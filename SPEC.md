@@ -327,8 +327,10 @@ The Worker authenticates `GET /api/sync/ws` (session + same-origin `Origin`), th
 
 **Auth:**
 - Passwords: PBKDF2-SHA256 via WebCrypto, 100k iterations (the Workers runtime has historically capped PBKDF2 at 100k), 16-byte salt. The hash stores its iteration count (`pbkdf2_sha256$<iter>$<salt>$<hash>`) so it can be raised later; weaker hashes are upgraded on successful login.
-- Sessions: a random 32-byte token in an `HttpOnly; Secure; SameSite=Lax` cookie; store only its SHA-256 in D1; 30-day sliding expiry.
-- Rate-limit login with the Workers Rate Limiting binding (5/min per IP+email).
+- Sessions: a random 32-byte token in an `HttpOnly; Secure; SameSite=Lax` cookie; store only its SHA-256 in D1; 30-day sliding expiry, and at most 180 days after sign-in.
+- Rate limits (Workers Rate Limiting binding, `wrangler.jsonc`): login 5/min per IP, IP+email and email; sign-up 5/min per IP and per address; reset 3/min per IP, IP+email and address.
+- Longer limits in D1 (`worker/limits.ts`): account emails (sign-up, reset) to one address at most once a minute and 5 times a day; 10 failed sign-ins in a row lock that email's password sign-in for 15 minutes (counted for unknown emails too; cleared by a successful sign-in or a reset).
+- Links: sign-up 24 hours, password reset 1 hour; both single-use, only the newest works.
 - Check `Origin` against `APP_ORIGIN` on state-changing requests and on the WS upgrade.
 - _Single-user alternative:_ put the whole app behind **Cloudflare Access** and derive the user from the email claim of the `Cf-Access-Jwt-Assertion` JWT, verified against the team's certs (`ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`). Make this switchable with `AUTH_MODE=password|access`.
 

@@ -1,6 +1,8 @@
 import { env } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { sha256Hex } from "../../worker/crypto";
+import type { ApiError } from "../../worker/http";
+import { countEmail } from "../../worker/limits";
 import { sendMail } from "../../worker/mail";
 import {
 	api,
@@ -8,6 +10,7 @@ import {
 	PASSWORD,
 	sessionCookie,
 	signup,
+	skipEmailCooldown,
 	uniqueEmail,
 } from "./helpers";
 
@@ -153,6 +156,7 @@ describe("reset password", () => {
 
 	it("only the newest link works", async () => {
 		const { email, token } = await resetLink();
+		await skipEmailCooldown(email);
 		await forgot(email);
 		await vi.waitFor(async () =>
 			expect(await resetMails(email)).toHaveLength(2),
@@ -205,21 +209,6 @@ describe("rate limits", () => {
 		expect(statuses[5]).toBe(429);
 	});
 
-	it("limits reset requests per IP and email", async () => {
-		const headers = { "cf-connecting-ip": "203.0.113.51" };
-		const email = uniqueEmail();
-		const statuses: number[] = [];
-		for (let i = 0; i < 4; i++) {
-			const res = await api("/auth/forgot", {
-				method: "POST",
-				body: { email },
-				headers,
-			});
-			statuses.push(res.status);
-		}
-		expect(statuses).toEqual([200, 200, 200, 429]);
-	});
-
 	it("limits reset requests per IP across emails", async () => {
 		const headers = { "cf-connecting-ip": "203.0.113.52" };
 		const statuses: number[] = [];
@@ -234,23 +223,68 @@ describe("rate limits", () => {
 		expect(statuses).toEqual([200, 200, 200, 429]);
 	});
 
-	it("limits sign-up and reset emails to one address from many IPs", async () => {
+	for (const [kind, path, ok, body] of [
+		["sign-up", "/auth/signup", 202, (email: string) => ({ name: "T", email })],
+		["reset", "/auth/forgot", 200, (email: string) => ({ email })],
+	] as const) {
+		it(`asks for a minute's wait between ${kind} emails to one address`, async () => {
+			const email = uniqueEmail();
+			const ask = () => api(path, { method: "POST", body: body(email) });
+			expect((await ask()).status).toBe(ok);
+			// A different IP asking straight away is told to wait.
+			const again = await ask();
+			expect(again.status).toBe(429);
+			expect(await again.json()).toEqual({ error: "too_many_attempts" });
+			await skipEmailCooldown(email);
+			expect((await ask()).status).toBe(ok);
+		});
+
+		it(`counts parallel ${kind} requests for one address once`, async () => {
+			const email = uniqueEmail();
+			const results = await Promise.all(
+				Array.from({ length: 4 }, () =>
+					api(path, { method: "POST", body: body(email) }),
+				),
+			);
+			expect(results.map((r) => r.status).sort()).toEqual([ok, 429, 429, 429]);
+		});
+	}
+
+	it("sends at most 5 emails of a kind to an address a day", async () => {
 		const email = uniqueEmail();
-		const forgot = await Promise.all(
-			Array.from({ length: 4 }, () =>
-				api("/auth/forgot", { method: "POST", body: { email } }),
-			),
-		);
-		expect(forgot.map((r) => r.status).sort()).toEqual([200, 200, 200, 429]);
-		const signups: number[] = [];
-		for (let i = 0; i < 6; i++) {
-			const res = await api("/auth/signup", {
-				method: "POST",
-				body: { name: "Test", email },
-			});
-			signups.push(res.status);
+		const count = async () => {
+			try {
+				await countEmail(env, "reset", email);
+				return "sent";
+			} catch (err) {
+				return (err as ApiError).code;
+			}
+		};
+		for (let i = 0; i < 5; i++) {
+			expect(await count()).toBe("sent");
+			await skipEmailCooldown(email);
 		}
-		expect(signups.slice(0, 5)).toEqual([202, 202, 202, 202, 202]);
-		expect(signups[5]).toBe(429);
+		expect(await count()).toBe("too_many_emails");
+		// Sign-up emails are counted separately.
+		await countEmail(env, "signup", email);
+		// A day later the allowance starts again.
+		await env.DB.prepare(
+			"UPDATE email_sends SET window_start = window_start - 86400000, last_sent_at = last_sent_at - 86400000 WHERE email = ?",
+		)
+			.bind(email)
+			.run();
+		expect(await count()).toBe("sent");
+	});
+
+	it("answers the same for addresses with and without an account", async () => {
+		const { email } = await signup();
+		await skipEmailCooldown(email);
+		const unknown = uniqueEmail();
+		for (const address of [email, unknown]) {
+			expect((await forgot(address)).status).toBe(200);
+			const again = await forgot(address);
+			expect(again.status).toBe(429);
+			expect(await again.json()).toEqual({ error: "too_many_attempts" });
+		}
 	});
 });

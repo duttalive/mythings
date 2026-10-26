@@ -121,8 +121,8 @@ export function PrivacyPage() {
 				<li>
 					<strong>Sign-up and password reset links:</strong> while a link is
 					waiting to be used, a hash of its token, its expiry, and for a sign-up
-					the email, name and time zone you entered. Unused sign-up links expire
-					after 24 hours and reset links after one hour.
+					the email, name and time zone you entered. Links that aren't used
+					expire within a day.
 				</li>
 				<li>
 					<strong>Reminders:</strong> if you turn on notifications, the push
@@ -196,9 +196,10 @@ export function PrivacyPage() {
 			<h2>How long we keep it</h2>
 			<p>
 				We keep your account and to-dos for as long as you have an account.
-				Sessions end after 30 days without use. When you ask us to delete your
-				account, we delete it and your to-dos within 30 days; copies in backups
-				or logs held by our providers expire on their own schedule.
+				Sign-in sessions end after a while without use, and a few months after
+				sign-in at most. When you ask us to delete your account, we delete it
+				and your to-dos within 30 days; copies in backups or logs held by our
+				providers expire on their own schedule.
 			</p>
 
 			<h2>Your choices and rights</h2>
