@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
 import type { Area } from "../../shared/schema";
 import { areaView } from "../../shared/views";
+import { useConfirmDelete } from "../components/ConfirmDelete";
 import { ChipButton, EditableTitle, IconButton } from "../components/controls";
 import {
 	AreaIcon,
@@ -17,6 +18,7 @@ import { TagPicker } from "../components/pickers";
 import { ProjectRow, RowList, TodoRow } from "../components/rows";
 import { useFilteredContext, useListData, useTagFilter } from "../data";
 import { placed, SortableList } from "../dnd/sortable";
+import { areaRequest } from "../editing/deleteRequests";
 import { useTitleFocus } from "../editing/EditingProvider";
 import { useCreateList } from "../editing/useCreateList";
 import { useCreateTag } from "../editing/useCreateTag";
@@ -111,6 +113,7 @@ function AreaDetails({ area }: { area: Area }) {
 	const ops = useOps();
 	const navigate = useNavigate();
 	const { data } = useListData();
+	const confirmDelete = useConfirmDelete();
 	const createTag = useCreateTag();
 	const { createProject } = useCreateList();
 	const [popover, setPopover] = useState<"tags" | "more" | null>(null);
@@ -199,8 +202,9 @@ function AreaDetails({ area }: { area: Area }) {
 					</PopoverOption>
 					<PopoverOption
 						icon={<TrashIcon className="size-4 text-overdue" />}
-						onSelect={() => {
+						onSelect={async () => {
 							setPopover(null);
+							if (!(await confirmDelete(areaRequest(area, data)))) return;
 							void ops.remove("area", area.id).catch(console.error);
 							void navigate({ to: "/anytime" });
 						}}

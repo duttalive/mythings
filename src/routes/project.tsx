@@ -61,32 +61,51 @@ export function ProjectPage() {
 					))}
 				</RowList>
 			</SortableList>
-			{view.headings.filter(shown).map(({ heading, todos }) => (
-				<HeadingSection key={heading.id} heading={heading} readOnly={readOnly}>
-					<SortableList
-						disabled={!reorderable}
-						className="min-h-8"
-						list={{
-							id: `heading:${heading.id}`,
-							accepts: ["todo"],
-							keyField: "sortKey",
-							items: placed("todo", todos, "sortKey"),
-							moveInPatch: () => ({ headingId: heading.id }),
-						}}
+			{/* Headings reorder by dragging their title bar. */}
+			<SortableList
+				disabled={!reorderable}
+				list={{
+					id: `headings:${project.id}`,
+					accepts: ["heading"],
+					keyField: "sortKey",
+					items: placed(
+						"heading",
+						view.headings.map(({ heading }) => heading),
+						"sortKey",
+					),
+				}}
+			>
+				{view.headings.filter(shown).map(({ heading, todos }) => (
+					<HeadingSection
+						key={heading.id}
+						heading={heading}
+						readOnly={readOnly}
 					>
-						<RowList>
-							{todos.map((todo) => (
-								<TodoRow
-									key={todo.id}
-									todo={todo}
-									showStar
-									readOnly={readOnly}
-								/>
-							))}
-						</RowList>
-					</SortableList>
-				</HeadingSection>
-			))}
+						<SortableList
+							disabled={!reorderable}
+							className="min-h-8"
+							list={{
+								id: `heading:${heading.id}`,
+								accepts: ["todo"],
+								keyField: "sortKey",
+								items: placed("todo", todos, "sortKey"),
+								moveInPatch: () => ({ headingId: heading.id }),
+							}}
+						>
+							<RowList>
+								{todos.map((todo) => (
+									<TodoRow
+										key={todo.id}
+										todo={todo}
+										showStar
+										readOnly={readOnly}
+									/>
+								))}
+							</RowList>
+						</SortableList>
+					</HeadingSection>
+				))}
+			</SortableList>
 			{view.templates.length > 0 && (
 				<Section
 					title={

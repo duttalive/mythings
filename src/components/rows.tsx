@@ -13,12 +13,14 @@ import {
 import { useListData } from "../data";
 import { useDndRegistry } from "../dnd/DndProvider";
 import { DragItem } from "../dnd/sortable";
+import { todosRequest } from "../editing/deleteRequests";
 import { useEditing } from "../editing/EditingProvider";
 import { useSelection } from "../editing/SelectionProvider";
 import { deadlineLabel, shortDate } from "../lib/format";
 import { formatTime, reminderTime } from "../lib/reminders";
 import { useOps } from "../sync/hooks";
 import { useBulkBar } from "./BulkBar";
+import { useConfirmDelete } from "./ConfirmDelete";
 import {
 	BellIcon,
 	CalendarIcon,
@@ -385,6 +387,7 @@ export function TodoRow({
 	const { isSelected, select } = useSelection();
 	const { openPanel } = useBulkBar();
 	const ops = useOps();
+	const confirmDelete = useConfirmDelete();
 	const toast = useToast();
 	const container = useContainerTitle(todo);
 	const status = displayStatus(todo.id, todo.status);
@@ -424,12 +427,13 @@ export function TodoRow({
 			onSwipe={
 				readOnly || todo.deletedAt !== null
 					? undefined
-					: (direction) => {
+					: async (direction) => {
 							if (direction === "right") {
 								select(todo.id, "only");
 								openPanel("when");
 								return;
 							}
+							if (!(await confirmDelete(todosRequest([todo])))) return;
 							void ops
 								.apply([{ type: "delete", entity: "todo", id: todo.id }])
 								.then(() =>

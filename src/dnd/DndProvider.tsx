@@ -24,7 +24,9 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useConfirmDelete } from "../components/ConfirmDelete";
 import { useListData } from "../data";
+import { dragToTrashRequest } from "../editing/deleteRequests";
 import {
 	arrayMove,
 	insertAt,
@@ -88,6 +90,16 @@ export function useDndRegistry(): DndRegistry {
 // some other target, or dropping over e.g. Upcoming (not a target) would land
 // on a neighbouring sidebar list.
 const collisionDetection: CollisionDetection = (args) => {
+	// A heading only moves among its project's headings, never into a to-do list.
+	const dragged = args.active.data.current as DragData | undefined;
+	if (dragged?.kind === "heading")
+		return closestCenter({
+			...args,
+			droppableContainers: args.droppableContainers.filter((c) => {
+				const data = c.data.current as DragData | undefined;
+				return data?.list === dragged.list && !data?.isList;
+			}),
+		});
 	const within = pointerWithin(args);
 	const items = within.filter(
 		(c) =>
@@ -109,6 +121,7 @@ const collisionDetection: CollisionDetection = (args) => {
 export function DndProvider({ children }: { children: ReactNode }) {
 	const ops = useOps();
 	const { data, ctx } = useListData();
+	const confirmDelete = useConfirmDelete();
 	const lists = useRef(new Map<string, ListDescriptor>());
 	const lastDragEnd = useRef(0);
 	const [active, setActive] = useState<DragData | null>(null);
@@ -201,19 +214,22 @@ export function DndProvider({ children }: { children: ReactNode }) {
 				return;
 			}
 
-			// Onto a sidebar list.
-			if (target.target)
-				apply(
-					sidebarDropMutations(
-						dragged.kind,
-						dragged.id,
-						target.target,
-						data,
-						ctx,
-					),
+			// Onto a sidebar list (headings only reorder in their project). Trash asks first.
+			if (target.target && dragged.kind !== "heading") {
+				const mutations = sidebarDropMutations(
+					dragged.kind,
+					dragged.id,
+					target.target,
+					data,
+					ctx,
 				);
+				if (target.target.type !== "trash") return apply(mutations);
+				const request = dragToTrashRequest(dragged.kind, dragged.id, data);
+				if (!request) return;
+				void confirmDelete(request).then((ok) => ok && apply(mutations));
+			}
 		},
-		[apply, data, ctx],
+		[apply, data, ctx, confirmDelete],
 	);
 
 	const registry = useMemo<DndRegistry>(
@@ -247,7 +263,10 @@ export function DndProvider({ children }: { children: ReactNode }) {
 			? data.todos.find((t) => t.id === active.id)?.title || "New To-Do"
 			: active.kind === "project"
 				? data.projects.find((p) => p.id === active.id)?.title || "New Project"
-				: data.areas.find((a) => a.id === active.id)?.title || "New Area"
+				: active.kind === "heading"
+					? data.headings.find((h) => h.id === active.id)?.title ||
+						"New Heading"
+					: data.areas.find((a) => a.id === active.id)?.title || "New Area"
 		: "";
 
 	return (

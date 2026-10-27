@@ -166,8 +166,9 @@ function BulkBar({
 				actions.toggleComplete(ids),
 			)}
 			{button("Delete", <TrashIcon className="size-4 text-overdue" />, () => {
-				actions.remove(ids);
-				clear();
+				void actions.remove(ids).then((removed) => {
+					if (removed) clear();
+				});
 			})}
 			<span className="mx-1 h-5 w-px bg-[var(--border)]" aria-hidden />
 			{button("Clear selection", <CrossIcon className="size-3.5" />, clear)}

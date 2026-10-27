@@ -189,3 +189,84 @@ test("an area's projects can be hidden in the sidebar, stay hidden, and show aga
 		sidebar.getByRole("button", { name: "Hide projects in Home" }),
 	).toHaveAttribute("aria-expanded", "true");
 });
+
+test("headings reorder by dragging and from their menu, and stay put", async ({
+	page,
+}) => {
+	await signUp(page);
+	await newList(page, "New Project");
+	await typeTitle(page, "New Project", "Trip");
+	const main = page.locator("main");
+	for (const title of ["Before", "During", "After"]) {
+		await page.keyboard.press("Alt+Shift+N");
+		await typeTitle(page, "New Heading", title);
+		await expect(main.getByRole("region", { name: title })).toBeVisible();
+	}
+	const order = () =>
+		main
+			.getByRole("region")
+			.evaluateAll((sections) =>
+				sections
+					.map((s) => s.getAttribute("aria-labelledby"))
+					.map((id) => (id && document.getElementById(id)?.textContent) || ""),
+			);
+	await expect.poll(order).toEqual(["Before", "During", "After"]);
+
+	// Drag "After" by its title bar above "Before".
+	const bar = (title: string) =>
+		main.getByRole("region", { name: title }).locator("> div").first();
+	await dragBox(page, bar("After"), bar("Before"));
+	await expect.poll(order).toEqual(["After", "Before", "During"]);
+
+	// Move Down from the menu.
+	await main.getByRole("button", { name: "Actions for After" }).click();
+	await page.getByRole("button", { name: "Move Down" }).click();
+	await expect.poll(order).toEqual(["Before", "After", "During"]);
+	// The first heading can't move up, the last can't move down.
+	await main.getByRole("button", { name: "Actions for During" }).click();
+	await expect(page.getByRole("button", { name: "Move Up" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Move Down" })).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expectSynced(page);
+
+	await page.reload();
+	await expect(main.getByRole("region", { name: "During" })).toBeVisible();
+	expect(await order()).toEqual(["Before", "After", "During"]);
+});
+
+test("deleting asks first: Cancel keeps it, permanent deletes need a tick", async ({
+	page,
+}) => {
+	await signUp(page);
+	await newList(page, "New Project");
+	await typeTitle(page, "New Project", "Keep me");
+	await addTodo(page, "Inside");
+	const dialog = page.getByRole("alertdialog");
+
+	await page.getByRole("button", { name: "Project actions" }).click();
+	await page.getByRole("button", { name: "Delete Project" }).click();
+	await expect(dialog).toContainText("Delete project “Keep me”?");
+	await expect(dialog).toContainText("with its 1 to-do");
+	// The safe choice has focus: Enter cancels.
+	await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
+	await page.keyboard.press("Enter");
+	await expect(dialog).toBeHidden();
+	await expect(row(page, "Inside")).toBeVisible();
+
+	await page.getByRole("button", { name: "Project actions" }).click();
+	await page.getByRole("button", { name: "Delete Project" }).click();
+	await dialog.getByRole("button", { name: "Move to Trash" }).click();
+	await expect(page).not.toHaveURL(/\/project\//);
+
+	// Emptying Trash is permanent, so it needs the box ticked.
+	await page
+		.getByRole("navigation", { name: "Lists" })
+		.getByRole("link", { name: "Trash" })
+		.click();
+	await page.getByRole("button", { name: "Empty Trash" }).click();
+	const empty = dialog.getByRole("button", { name: "Empty Trash" });
+	await expect(empty).toBeDisabled();
+	await dialog.getByLabel("I understand this can't be undone").check();
+	await empty.click();
+	await expect(page.getByText("Trash is empty.")).toBeVisible();
+});

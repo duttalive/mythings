@@ -7,6 +7,7 @@ import type { Project } from "../../shared/schema";
 import { bySortKey, type Progress } from "../../shared/views";
 import { useAuth } from "../auth/AuthGate";
 import { useListData } from "../data";
+import { projectRequest } from "../editing/deleteRequests";
 import { useEditing, useTitleFocus } from "../editing/EditingProvider";
 import {
 	finishProjectMutations,
@@ -18,6 +19,7 @@ import { useCreateTag } from "../editing/useCreateTag";
 import { deadlineLabel, shortDate } from "../lib/format";
 import { useOps } from "../sync/hooks";
 import { CompleteProjectDialog } from "./CompleteProjectDialog";
+import { useConfirmDelete } from "./ConfirmDelete";
 import {
 	ChipButton,
 	EditableTitle,
@@ -135,6 +137,7 @@ export function ProjectDetails({ project }: { project: Project }) {
 	const ops = useOps();
 	const navigate = useNavigate();
 	const { data, ctx, areas } = useListData();
+	const confirmDelete = useConfirmDelete();
 	const { user } = useAuth();
 	const { requestTitleFocus } = useEditing();
 	const createTag = useCreateTag();
@@ -375,8 +378,10 @@ export function ProjectDetails({ project }: { project: Project }) {
 							)}
 							<PopoverOption
 								icon={<TrashIcon className="size-4 text-overdue" />}
-								onSelect={() => {
+								onSelect={async () => {
 									setPopover(null);
+									if (!(await confirmDelete(projectRequest(project, data))))
+										return;
 									void ops.remove("project", project.id).catch(console.error);
 									void navigate({
 										to: area ? "/area/$areaId" : "/anytime",

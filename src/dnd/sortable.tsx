@@ -168,11 +168,41 @@ function DraggableElement({
 	);
 }
 
+/**
+ * For a sortable element that's dragged by one part of it (e.g. a heading
+ * by its title bar, so its to-dos keep their own dragging). Inert outside a
+ * SortableList.
+ */
+export function useSortableHandle(kind: DragKind, id: string) {
+	const list = useContext(ListContext);
+	const {
+		setNodeRef,
+		setActivatorNodeRef,
+		listeners,
+		transform,
+		transition,
+		isDragging,
+	} = useSortable({
+		id: dndId(list ?? "none", id),
+		data: { kind, id, list: list ?? undefined } satisfies DragData,
+		disabled: !list,
+	});
+	return {
+		setNodeRef,
+		style: {
+			transform: CSS.Translate.toString(transform),
+			transition,
+		} satisfies CSSProperties,
+		isDragging,
+		handle: { ref: setActivatorNodeRef, ...(list ? listeners : {}) },
+	};
+}
+
 /** Rows as Placed items for a list descriptor. */
 export function placed<
 	T extends { id: string; sortKey: string; todaySortKey?: string | null },
 >(
-	entity: "todo" | "project" | "area",
+	entity: "todo" | "project" | "area" | "heading",
 	rows: T[],
 	keyField: "sortKey" | "todaySortKey",
 ): Placed[] {

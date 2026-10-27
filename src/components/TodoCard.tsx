@@ -12,6 +12,7 @@ import {
 import type { ChecklistItem, Todo } from "../../shared/schema";
 import { useAuth } from "../auth/AuthGate";
 import { useListData } from "../data";
+import { todosRequest } from "../editing/deleteRequests";
 import { useEditing } from "../editing/EditingProvider";
 import { describeRule } from "../editing/repeatForm";
 import { useCreateTag } from "../editing/useCreateTag";
@@ -20,6 +21,7 @@ import { deadlineLabel, shortDate } from "../lib/format";
 import { keyAfter, keyBetween } from "../lib/order";
 import { formatTime, reminderTime } from "../lib/reminders";
 import { useChecklist, useOps } from "../sync/hooks";
+import { useConfirmDelete } from "./ConfirmDelete";
 import {
 	ChipButton,
 	IconButton,
@@ -50,6 +52,7 @@ type PopoverName = "when" | "reminder" | "deadline" | "tags" | "more" | null;
 
 export function TodoCard({ todo }: { todo: Todo }) {
 	const ops = useOps();
+	const confirmDelete = useConfirmDelete();
 	const { collapse, registerCard, displayStatus, toggleComplete } =
 		useEditing();
 	const { ctx, data } = useListData();
@@ -435,7 +438,8 @@ export function TodoCard({ todo }: { todo: Todo }) {
 						)}
 						<PopoverOption
 							icon={<TrashIcon className="size-4 text-overdue" />}
-							onSelect={() => {
+							onSelect={async () => {
+								if (!(await confirmDelete(todosRequest([todo])))) return;
 								collapse();
 								void ops.remove("todo", todo.id).catch(console.error);
 							}}

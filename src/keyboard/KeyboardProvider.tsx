@@ -89,7 +89,12 @@ export function KeyboardProvider({ children }: { children: ReactNode }) {
 			if (e.defaultPrevented || e.isComposing || s.dialog) return;
 			const target = e.target as HTMLElement | null;
 			// Dialogs and popovers handle their own keys.
-			if (target?.closest("[role=dialog], [data-popover-content]")) return;
+			if (
+				target?.closest(
+					"[role=dialog], [role=alertdialog], [data-popover-content]",
+				)
+			)
+				return;
 
 			const combo = comboFromEvent(e);
 			const handled = () => e.preventDefault();
@@ -242,8 +247,9 @@ export function KeyboardProvider({ children }: { children: ReactNode }) {
 				case "delete":
 					if (!ids.length) return;
 					handled();
-					s.bulk.remove(ids);
-					s.selection.clear();
+					void s.bulk.remove(ids).then((removed) => {
+						if (removed) s.selection.clear();
+					});
 					return;
 			}
 

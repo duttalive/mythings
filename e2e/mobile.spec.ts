@@ -51,7 +51,14 @@ test("mobile: drawer, swipe left to delete with undo, swipe right for When", asy
 	await expect(sidebar.getByRole("link", { name: "Today" })).toBeInViewport();
 	await page.getByRole("button", { name: "Close sidebar" }).click();
 
+	// Deleting asks first; Cancel keeps the to-do.
+	const dialog = page.getByRole("alertdialog");
 	await swipe(page, "Swipe me", -110);
+	await dialog.getByRole("button", { name: "Cancel" }).click();
+	await expect(row(page, "Swipe me")).toBeVisible();
+	await swipe(page, "Swipe me", -110);
+	await expect(dialog).toContainText("Delete “Swipe me”?");
+	await dialog.getByRole("button", { name: "Move to Trash" }).click();
 	await expect(row(page, "Swipe me")).toBeHidden();
 	await page.getByRole("button", { name: "Undo" }).click();
 	await expect(row(page, "Swipe me")).toBeVisible();

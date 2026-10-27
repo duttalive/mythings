@@ -1,5 +1,6 @@
 import { RouterProvider } from "@tanstack/react-router";
 import { AuthGate, useAuth } from "./auth/AuthGate";
+import { ConfirmDeleteProvider } from "./components/ConfirmDelete";
 import { router } from "./router";
 import { ChangelogPage } from "./routes/changelog";
 import { PrivacyPage, TermsPage } from "./routes/legal";
@@ -21,7 +22,9 @@ function SignedIn() {
 	const { user } = useAuth();
 	return (
 		<SyncProvider key={user.id}>
-			<RouterProvider router={router} />
+			<ConfirmDeleteProvider>
+				<RouterProvider router={router} />
+			</ConfirmDeleteProvider>
 		</SyncProvider>
 	);
 }

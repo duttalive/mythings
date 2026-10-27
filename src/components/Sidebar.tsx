@@ -1,6 +1,14 @@
 import { useDroppable } from "@dnd-kit/core";
 import { Link, type LinkProps, useRouterState } from "@tanstack/react-router";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import type { Area } from "../../shared/schema";
 import {
 	bySortKey,
@@ -13,6 +21,7 @@ import { useListData } from "../data";
 import { type DragData, useDndRegistry } from "../dnd/DndProvider";
 import { canDrop, type SidebarTarget } from "../dnd/drop";
 import { DragItem, placed, SortableList } from "../dnd/sortable";
+import { useCreateTag } from "../editing/useCreateTag";
 import { useOps } from "../sync/hooks";
 import {
 	AreaIcon,
@@ -23,6 +32,7 @@ import {
 	InboxIcon,
 	LayersIcon,
 	LogbookIcon,
+	PlusIcon,
 	StarIcon,
 	TagIcon,
 	TrashIcon,
@@ -148,10 +158,83 @@ function useAreaCollapse() {
 	return setCollapsed;
 }
 
+/**
+ * Adds tags from the sidebar: Enter adds one and stays for the next, Escape
+ * or leaving the field (empty) closes it. Names that already exist aren't added twice.
+ */
+function NewTagField({ onDone }: { onDone: () => void }) {
+	const { data } = useListData();
+	const createTag = useCreateTag();
+	const [title, setTitle] = useState("");
+	const [error, setError] = useState<string | null>(null);
+	const errorId = useId();
+
+	const add = async (): Promise<boolean> => {
+		const name = title.trim();
+		if (!name) return true;
+		const taken = data.tags.some(
+			(t) =>
+				t.deletedAt === null && t.title.toLowerCase() === name.toLowerCase(),
+		);
+		if (taken) {
+			setError(`“${name}” is already a tag.`);
+			return false;
+		}
+		// Cleared first, so a name typed while this one saves isn't lost.
+		setTitle("");
+		setError(null);
+		await createTag(name);
+		return true;
+	};
+
+	return (
+		<div className="px-2 py-1">
+			<div className="flex items-center gap-2.5">
+				<TagIcon className="size-4 shrink-0 text-[var(--fg-muted)]" />
+				<input
+					// biome-ignore lint/a11y/noAutofocus: opened by the + button to type a name
+					autoFocus
+					value={title}
+					onChange={(e) => {
+						setTitle(e.target.value);
+						setError(null);
+					}}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") {
+							e.preventDefault();
+							void add();
+						} else if (e.key === "Escape") {
+							e.preventDefault();
+							onDone();
+						}
+					}}
+					onBlur={() => void add().then((ok) => ok && onDone())}
+					maxLength={1000}
+					placeholder="New tag"
+					aria-label="New tag name"
+					aria-invalid={!!error}
+					aria-describedby={error ? errorId : undefined}
+					className="min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--bg)] px-1.5 py-0.5 text-sm outline-none focus:border-accent"
+				/>
+			</div>
+			{error && (
+				<p
+					id={errorId}
+					role="alert"
+					className="mt-1 pl-6.5 text-xs text-overdue"
+				>
+					{error}
+				</p>
+			)}
+		</div>
+	);
+}
+
 export function Sidebar() {
 	const { data, ctx } = useListData();
 	const { user } = useAuth();
 	const setCollapsed = useAreaCollapse();
+	const [addingTag, setAddingTag] = useState(false);
 	const counts = useMemo(() => sidebarCounts(data, ctx), [data, ctx]);
 	const tree = useMemo(() => sidebarTree(data), [data]);
 	const tags = useMemo(
@@ -366,23 +449,33 @@ export function Sidebar() {
 					})}
 				</SortableList>
 
-				{tags.length > 0 && (
-					<div className="mt-5 flex flex-col gap-px">
-						<h2 className="px-2 pb-1 text-xs font-semibold text-[var(--fg-muted)]">
+				<div className="mt-5 flex flex-col gap-px">
+					<div className="flex items-center justify-between pr-1 pb-1 pl-2">
+						<h2 className="text-xs font-semibold text-[var(--fg-muted)]">
 							Tags
 						</h2>
-						{tags.map((tag) => (
-							<NavItem
-								key={tag.id}
-								to="/tag/$tagId"
-								params={{ tagId: tag.id }}
-								icon={<TagIcon className="size-4 text-[var(--fg-muted)]" />}
-							>
-								{tag.title}
-							</NavItem>
-						))}
+						<button
+							type="button"
+							onClick={() => setAddingTag(true)}
+							aria-label="New tag"
+							title="New tag"
+							className="rounded p-0.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:-my-2 pointer-coarse:p-3"
+						>
+							<PlusIcon className="size-3.5 pointer-coarse:size-4" />
+						</button>
 					</div>
-				)}
+					{tags.map((tag) => (
+						<NavItem
+							key={tag.id}
+							to="/tag/$tagId"
+							params={{ tagId: tag.id }}
+							icon={<TagIcon className="size-4 text-[var(--fg-muted)]" />}
+						>
+							{tag.title}
+						</NavItem>
+					))}
+					{addingTag && <NewTagField onDone={() => setAddingTag(false)} />}
+				</div>
 			</nav>
 			<div className="px-3 pb-1">
 				<NewListButton />

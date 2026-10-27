@@ -70,7 +70,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
 			const target = e.target as Element | null;
 			if (
 				target?.closest(
-					"[data-row-id], [data-bulk-bar], [data-popover-content], [role=dialog]",
+					"[data-row-id], [data-bulk-bar], [data-popover-content], [role=dialog], [role=alertdialog], [data-dialog-overlay]",
 				)
 			)
 				return;

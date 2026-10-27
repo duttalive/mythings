@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import type { Tag } from "../../shared/schema";
 import { bySortKey, tagged } from "../../shared/views";
+import { useConfirmDelete } from "../components/ConfirmDelete";
 import { EditableTitle, IconButton } from "../components/controls";
 import { MoreIcon, TagIcon, TrashIcon } from "../components/icons";
 import {
@@ -13,6 +14,7 @@ import {
 import { Popover, PopoverOption } from "../components/Popover";
 import { useToast } from "../components/Toast";
 import { useListData } from "../data";
+import { tagRequest } from "../editing/deleteRequests";
 import { tagShortcutMutations } from "../editing/tags";
 import { useOps } from "../sync/hooks";
 import { Missing } from "./not-found";
@@ -116,6 +118,7 @@ function TagActions({ tag }: { tag: Tag }) {
 	const toast = useToast();
 	const navigate = useNavigate();
 	const { data } = useListData();
+	const confirmDelete = useConfirmDelete();
 	const [open, setOpen] = useState(false);
 	const shortcutId = useId();
 	const parentId = useId();
@@ -179,8 +182,9 @@ function TagActions({ tag }: { tag: Tag }) {
 			<div className="my-1 border-t border-[var(--border)]" />
 			<PopoverOption
 				icon={<TrashIcon className="size-4 text-overdue" />}
-				onSelect={() => {
+				onSelect={async () => {
 					setOpen(false);
+					if (!(await confirmDelete(tagRequest(tag, data)))) return;
 					void ops
 						.remove("tag", tag.id)
 						.then(() =>

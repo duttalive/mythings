@@ -1,9 +1,10 @@
-import { useState } from "react";
 import { type TrashEntry, trash } from "../../shared/views";
+import { useConfirmDelete } from "../components/ConfirmDelete";
 import { AreaIcon, RestoreIcon, TrashIcon } from "../components/icons";
 import { Empty, ListPage } from "../components/ListPage";
 import { ProjectRow, RowList, TodoRow } from "../components/rows";
 import { useListData } from "../data";
+import { emptyTrashRequest } from "../editing/deleteRequests";
 import { useOps } from "../sync/hooks";
 
 const UNTITLED: Record<TrashEntry["kind"], string> = {
@@ -17,14 +18,14 @@ export function TrashPage() {
 	const { data } = useListData();
 	const ops = useOps();
 	const entries = trash(data);
-	const [confirming, setConfirming] = useState(false);
+	const confirmDelete = useConfirmDelete();
 
 	const restore = (entry: TrashEntry) => {
 		void ops.restore(entry.kind, entry.item.id).catch(console.error);
 	};
 
 	const emptyTrash = async () => {
-		setConfirming(false);
+		if (!(await confirmDelete(emptyTrashRequest(entries.length)))) return;
 		// Top-level entries only: purging a parent takes its children with it.
 		await ops
 			.apply(
@@ -56,36 +57,13 @@ export function TrashPage() {
 			header={
 				entries.length > 0 && (
 					<div className="mt-3 flex items-center gap-2 text-sm">
-						{confirming ? (
-							<>
-								<span className="text-[var(--fg-muted)]">
-									Permanently delete {entries.length}{" "}
-									{entries.length === 1 ? "item" : "items"}?
-								</span>
-								<button
-									type="button"
-									onClick={emptyTrash}
-									className="rounded-md bg-overdue px-2.5 py-1 font-medium text-on-overdue hover:opacity-90"
-								>
-									Delete
-								</button>
-								<button
-									type="button"
-									onClick={() => setConfirming(false)}
-									className="rounded-md px-2.5 py-1 hover:bg-[var(--hover)]"
-								>
-									Cancel
-								</button>
-							</>
-						) : (
-							<button
-								type="button"
-								onClick={() => setConfirming(true)}
-								className="rounded-md border border-[var(--border)] px-2.5 py-1 hover:bg-[var(--hover)]"
-							>
-								Empty Trash
-							</button>
-						)}
+						<button
+							type="button"
+							onClick={() => void emptyTrash()}
+							className="rounded-md border border-[var(--border)] px-2.5 py-1 hover:bg-[var(--hover)]"
+						>
+							Empty Trash
+						</button>
 					</div>
 				)
 			}

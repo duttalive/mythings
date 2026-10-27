@@ -6,7 +6,7 @@ import { insertAt, type Placed, placeMutations } from "../editing/reorder";
 import { keyAfter, maxKey } from "../lib/order";
 import type { Mutation } from "../sync/engine";
 
-export type DragKind = "todo" | "project" | "area";
+export type DragKind = "todo" | "project" | "area" | "heading";
 
 export type SidebarTarget =
 	| { type: "inbox" | "today" | "anytime" | "someday" | "logbook" | "trash" }
@@ -18,6 +18,7 @@ export function canDrop(
 	kind: DragKind,
 	target: SidebarTarget["type"],
 ): boolean {
+	if (kind === "heading") return false;
 	if (target === "trash") return true;
 	if (kind === "todo") return true;
 	if (kind === "project")
