@@ -2,6 +2,11 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 1.8.0 — 2026-10-27
+
+- Nested tags now show in the sidebar under their parent tag. Hide or show them with the arrow next to the parent: a hidden tag shows how many tags it holds, stays that way on all your devices, and opens again when you go to one of its tags.
+- A tag's page now shows everything with that tag: open items (including those tagged with any tag nested inside it), its repeating to-dos and projects, and "Show N logged items" for what's already done.
+
 ## Version 1.7.0 — 2026-10-27
 
 - Completed to-dos stay within reach: at the end of a project or area, "Show N logged items" lists what's been done there, newest first with the day it was done. Untick one to bring it back.
