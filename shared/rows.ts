@@ -80,6 +80,7 @@ export const DEFAULTS: {
 		parentId: null,
 		shortcut: null,
 		sortKey: "a0",
+		collapsed: false,
 	},
 };
 

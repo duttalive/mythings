@@ -127,6 +127,17 @@ describe("push and pull", () => {
 		).toBe("invalid_op");
 	});
 
+	it("stores whether a tag is collapsed, open by default", async () => {
+		const id = ulid();
+		await ok(upsert("tag", id, { title: "errands" }));
+		expect(await get("tag", id)).toMatchObject({ collapsed: false });
+		await ok(upsert("tag", id, { collapsed: true }));
+		expect(await get("tag", id)).toMatchObject({
+			title: "errands",
+			collapsed: true,
+		});
+	});
+
 	it("ignores an op it has already applied", async () => {
 		const op = upsert("todo", ulid(), { title: "Once" });
 		const first = await ok(op);

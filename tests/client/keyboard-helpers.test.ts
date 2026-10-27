@@ -108,6 +108,7 @@ const tag = (title: string): Tag => ({
 	parentId: null,
 	shortcut: null,
 	sortKey: "a0",
+	collapsed: false,
 });
 const project = (title: string): Project => ({
 	...base(),

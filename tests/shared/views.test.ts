@@ -17,6 +17,7 @@ import {
 	sidebarTree,
 	someday,
 	tagged,
+	tagView,
 	today,
 	trash,
 	upcoming,
@@ -681,6 +682,47 @@ describe("tagged", () => {
 		expect(ids(view.todos).sort()).toEqual([loose.id, someday.id].sort());
 		expect(view.projects.map((g) => g.project.id)).toEqual([p.id]);
 		expect(ids(view.projects[0]?.todos ?? [])).toEqual([inProject.id]);
+	});
+});
+
+describe("tagView", () => {
+	it("adds repeating and logged items with the tag or a nested one", () => {
+		const errands = tag({ title: "errands" });
+		const shop = tag({ title: "shop", parentId: errands.id });
+		const open = todo({ when: "anytime", tagIds: [shop.id] });
+		const later = todo({
+			tagIds: [errands.id],
+			repeat: rule({ nextDate: "2026-11-02" }),
+		});
+		const sooner = project({
+			tagIds: [shop.id],
+			repeat: rule({ nextDate: "2026-10-30" }),
+		});
+		const older = todo({ tagIds: [shop.id], ...done("2026-10-20") });
+		const newer = todo({ tagIds: [errands.id], ...done("2026-10-22") });
+		// A logged project carries its to-dos, so they aren't listed again.
+		const finished = project({ tagIds: [errands.id], ...done("2026-10-24") });
+		const inFinished = todo({ projectId: finished.id, ...done("2026-10-21") });
+		const untagged = todo({ ...done("2026-10-25") });
+		const trashed = todo({
+			tagIds: [errands.id],
+			repeat: rule(),
+			deletedAt: 5,
+		});
+		const d = data({
+			tags: [errands, shop],
+			projects: [sooner, finished],
+			todos: [open, later, older, newer, inFinished, untagged, trashed],
+		});
+		const view = tagView(d, errands.id, ctx);
+		expect(ids(view.list.todos)).toEqual([open.id]);
+		expect(entryIds(view.templates)).toEqual([sooner.id, later.id]);
+		expect(entryIds(view.logged)).toEqual([finished.id, newer.id, older.id]);
+
+		// A nested tag's page has only its own items.
+		const nested = tagView(d, shop.id, ctx);
+		expect(entryIds(nested.templates)).toEqual([sooner.id]);
+		expect(entryIds(nested.logged)).toEqual([older.id]);
 	});
 });
 

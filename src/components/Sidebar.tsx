@@ -9,7 +9,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { Area } from "../../shared/schema";
+import type { Tag } from "../../shared/schema";
 import {
 	bySortKey,
 	projectProgress,
@@ -116,46 +116,188 @@ function Badge({
 }
 
 /**
- * Collapsing an area hides its projects. It's stored on the area, so it
- * syncs to the user's other devices; it isn't an undoable edit.
+ * Collapsing an area hides its projects, and a tag its nested tags. It's
+ * stored on the area or tag, so it syncs to the user's other devices; it
+ * isn't an undoable edit.
  */
-function useAreaCollapse() {
+function useSidebarCollapse() {
 	const { data } = useListData();
 	const ops = useOps();
 	const setCollapsed = useCallback(
-		(area: Area, collapsed: boolean) =>
+		(entity: "area" | "tag", ids: string[], collapsed: boolean) =>
 			void ops
 				.apply(
-					[
-						{
-							type: "upsert",
-							entity: "area",
-							id: area.id,
-							patch: { collapsed },
-						},
-					],
+					ids.map((id) => ({
+						type: "upsert" as const,
+						entity,
+						id,
+						patch: { collapsed },
+					})),
 					{ undoable: false },
 				)
 				.catch(console.error),
 		[ops],
 	);
 
-	// Going to a project in a collapsed area (from search, a link, a new
-	// project) opens the area, once per visit, so the project can be seen.
+	// Going to a project in a collapsed area, or a tag inside a collapsed
+	// one (from search, a link, a new project), opens what hides it, once per
+	// visit, so it can be seen.
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const handled = useRef<string | null>(null);
 	useEffect(() => {
 		if (handled.current === pathname) return;
-		const id = /^\/project\/([^/]+)/.exec(pathname)?.[1];
-		const project = id ? data.projects.find((p) => p.id === id) : undefined;
-		// Wait for the project if the data isn't there yet.
-		if (id && !project) return;
+		const [, kind, id] = /^\/(project|tag)\/([^/]+)/.exec(pathname) ?? [];
+		if (kind === "project") {
+			const project = data.projects.find((p) => p.id === id);
+			// Wait for the project if the data isn't there yet.
+			if (!project) return;
+			const area = data.areas.find((a) => a.id === project.areaId);
+			if (area?.collapsed) setCollapsed("area", [area.id], false);
+		} else if (kind === "tag") {
+			const byId = new Map(data.tags.map((t) => [t.id, t]));
+			let tag = byId.get(id as string);
+			if (!tag) return;
+			const closed: string[] = [];
+			const seen = new Set<string>();
+			while (tag?.parentId && !seen.has(tag.parentId)) {
+				seen.add(tag.parentId);
+				tag = byId.get(tag.parentId);
+				if (tag?.collapsed) closed.push(tag.id);
+			}
+			if (closed.length) setCollapsed("tag", closed, false);
+		}
 		handled.current = pathname;
-		const area = project && data.areas.find((a) => a.id === project.areaId);
-		if (area?.collapsed) setCollapsed(area, false);
-	}, [pathname, data.projects, data.areas, setCollapsed]);
+	}, [pathname, data.projects, data.areas, data.tags, setCollapsed]);
 
 	return setCollapsed;
+}
+
+/** How many things a collapsed area or tag is hiding. */
+function HiddenCount({ count, what }: { count: number; what: string }) {
+	return (
+		<span className="text-xs text-[var(--fg-muted)] tabular-nums">
+			<span aria-hidden>{count}</span>
+			<span className="sr-only">
+				({count} hidden {count === 1 ? what : `${what}s`})
+			</span>
+		</span>
+	);
+}
+
+/** The arrow that shows or hides what's inside an area or tag. */
+function CollapseToggle({
+	collapsed,
+	onToggle,
+	controls,
+	label,
+	title,
+}: {
+	collapsed: boolean;
+	onToggle: () => void;
+	controls: string;
+	label: string;
+	title: string;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onToggle}
+			aria-expanded={!collapsed}
+			aria-controls={collapsed ? undefined : controls}
+			aria-label={label}
+			title={title}
+			className="absolute top-1/2 right-1 -translate-y-1/2 rounded p-0.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:right-0 pointer-coarse:p-3.5"
+		>
+			<ChevronIcon
+				className={`size-3.5 pointer-coarse:size-4 transition-transform duration-150 ${collapsed ? "" : "rotate-90"}`}
+			/>
+		</button>
+	);
+}
+
+/** Room for the arrow, which sits on top of the link. */
+const toggleSpace = <span className="w-4 shrink-0 pointer-coarse:w-8" />;
+
+type TagNode = { tag: Tag; children: TagNode[]; size: number };
+
+/** Live tags as a tree in sidebar order; `size` counts every tag below. */
+function tagTree(tags: Tag[]): TagNode[] {
+	const live = tags.filter((t) => t.deletedAt === null).sort(bySortKey);
+	const ids = new Set(live.map((t) => t.id));
+	const byParent = new Map<string | null, Tag[]>();
+	for (const tag of live) {
+		// A tag whose parent is gone shows at the top.
+		const parent = tag.parentId && ids.has(tag.parentId) ? tag.parentId : null;
+		byParent.set(parent, [...(byParent.get(parent) ?? []), tag]);
+	}
+	const seen = new Set<string>();
+	const build = (parent: string | null): TagNode[] =>
+		(byParent.get(parent) ?? [])
+			.filter((tag) => !seen.has(tag.id) && seen.add(tag.id))
+			.map((tag) => {
+				const children = build(tag.id);
+				const size = children.reduce((n, c) => n + 1 + c.size, 0);
+				return { tag, children, size };
+			});
+	return build(null);
+}
+
+function TagBranch({
+	node,
+	depth,
+	setCollapsed,
+}: {
+	node: TagNode;
+	depth: number;
+	setCollapsed: ReturnType<typeof useSidebarCollapse>;
+}) {
+	const { tag, children, size } = node;
+	// Rows synced before collapsing existed have no flag: open.
+	const collapsed = tag.collapsed === true;
+	const toggle = children.length > 0;
+	const groupId = `sidebar-tag-${tag.id}`;
+	return (
+		<>
+			<div className="relative" style={{ paddingLeft: `${depth}rem` }}>
+				<NavItem
+					to="/tag/$tagId"
+					params={{ tagId: tag.id }}
+					icon={<TagIcon className="size-4 text-[var(--fg-muted)]" />}
+					badge={
+						toggle && (
+							<>
+								{collapsed && <HiddenCount count={size} what="tag" />}
+								{toggleSpace}
+							</>
+						)
+					}
+				>
+					{tag.title}
+				</NavItem>
+				{toggle && (
+					<CollapseToggle
+						collapsed={collapsed}
+						onToggle={() => setCollapsed("tag", [tag.id], !collapsed)}
+						controls={groupId}
+						label={`${collapsed ? "Show" : "Hide"} tags in ${tag.title}`}
+						title={collapsed ? "Show nested tags" : "Hide nested tags"}
+					/>
+				)}
+			</div>
+			{toggle && !collapsed && (
+				<div id={groupId} className="flex flex-col gap-px">
+					{children.map((child) => (
+						<TagBranch
+							key={child.tag.id}
+							node={child}
+							depth={depth + 1}
+							setCollapsed={setCollapsed}
+						/>
+					))}
+				</div>
+			)}
+		</>
+	);
 }
 
 /**
@@ -233,17 +375,11 @@ function NewTagField({ onDone }: { onDone: () => void }) {
 export function Sidebar() {
 	const { data, ctx } = useListData();
 	const { user } = useAuth();
-	const setCollapsed = useAreaCollapse();
+	const setCollapsed = useSidebarCollapse();
 	const [addingTag, setAddingTag] = useState(false);
 	const counts = useMemo(() => sidebarCounts(data, ctx), [data, ctx]);
 	const tree = useMemo(() => sidebarTree(data), [data]);
-	const tags = useMemo(
-		() =>
-			data.tags
-				.filter((t) => t.deletedAt === null && t.parentId === null)
-				.sort(bySortKey),
-		[data.tags],
-	);
+	const tags = useMemo(() => tagTree(data.tags), [data.tags]);
 
 	const projectLink = (project: (typeof tree.projects)[number]) => (
 		<DragItem
@@ -405,19 +541,12 @@ export function Sidebar() {
 												toggle && (
 													<>
 														{collapsed && (
-															<span className="text-xs text-[var(--fg-muted)] tabular-nums">
-																<span aria-hidden>{projects.length}</span>
-																<span className="sr-only">
-																	({projects.length} hidden{" "}
-																	{projects.length === 1
-																		? "project"
-																		: "projects"}
-																	)
-																</span>
-															</span>
+															<HiddenCount
+																count={projects.length}
+																what="project"
+															/>
 														)}
-														{/* Room for the arrow, which sits on top of the link. */}
-														<span className="w-4 shrink-0 pointer-coarse:w-8" />
+														{toggleSpace}
 													</>
 												)
 											}
@@ -426,19 +555,15 @@ export function Sidebar() {
 										</NavItem>
 									</DragItem>
 									{toggle && (
-										<button
-											type="button"
-											onClick={() => setCollapsed(area, !collapsed)}
-											aria-expanded={!collapsed}
-											aria-controls={collapsed ? undefined : groupId}
-											aria-label={`${collapsed ? "Show" : "Hide"} projects in ${title}`}
+										<CollapseToggle
+											collapsed={collapsed}
+											onToggle={() =>
+												setCollapsed("area", [area.id], !collapsed)
+											}
+											controls={groupId}
+											label={`${collapsed ? "Show" : "Hide"} projects in ${title}`}
 											title={collapsed ? "Show projects" : "Hide projects"}
-											className="absolute top-1/2 right-1 -translate-y-1/2 rounded p-0.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:right-0 pointer-coarse:p-3.5"
-										>
-											<ChevronIcon
-												className={`size-3.5 pointer-coarse:size-4 transition-transform duration-150 ${collapsed ? "" : "rotate-90"}`}
-											/>
-										</button>
+										/>
 									)}
 								</div>
 								{!collapsed && (
@@ -464,15 +589,13 @@ export function Sidebar() {
 							<PlusIcon className="size-3.5 pointer-coarse:size-4" />
 						</button>
 					</div>
-					{tags.map((tag) => (
-						<NavItem
-							key={tag.id}
-							to="/tag/$tagId"
-							params={{ tagId: tag.id }}
-							icon={<TagIcon className="size-4 text-[var(--fg-muted)]" />}
-						>
-							{tag.title}
-						</NavItem>
+					{tags.map((node) => (
+						<TagBranch
+							key={node.tag.id}
+							node={node}
+							depth={0}
+							setCollapsed={setCollapsed}
+						/>
 					))}
 					{addingTag && <NewTagField onDone={() => setAddingTag(false)} />}
 				</div>

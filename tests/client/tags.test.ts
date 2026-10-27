@@ -13,6 +13,7 @@ const tag = (overrides: Partial<Tag> = {}): Tag => ({
 	parentId: null,
 	shortcut: null,
 	sortKey: "a0",
+	collapsed: false,
 	...overrides,
 });
 

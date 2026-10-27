@@ -180,7 +180,7 @@ deadline: string | null; // "YYYY-MM-DD"
 
 ### 5.7 Tag
 
-`title`, `parentId|null` (nested tags), `shortcut|null` (single char, e.g. `"e"`), `sortKey`.
+`title`, `parentId|null` (nested tags), `shortcut|null` (single char, e.g. `"e"`), `sortKey`, `collapsed` (its nested tags are hidden in the sidebar).
 Filtering by a parent tag includes its children.
 
 ### 5.8 Repeat rule
@@ -244,7 +244,7 @@ Details settled in implementation (`shared/views.ts`):
 - **Logbook** files a finished project's to-dos under the project, and paginates with a `{completedAt, id}` cursor.
 - **Trash** lists only top-level deleted items (a deleted project's to-dos are restored with it).
 - **Tag filter** requires every selected tag (or a descendant of it); items inherit tags from their project and area.
-- **Tag page** (`/tag/$id`, `tagged`) lists open to-dos and projects carrying the tag or a descendant, grouped like Anytime.
+- **Tag page** (`/tag/$id`, `tagView`) lists open to-dos and projects carrying the tag or a descendant, grouped like Anytime, then their repeating to-dos and projects (soonest next date first) and a "Show N logged items" toggle for their Logbook items.
 - **Sidebar** (`sidebarTree`) shows open projects outside areas first, then every live area (even empty) with its open projects; someday projects are dimmed.
 
 These functions take arrays of entities and return view models. They run on the client against Dexie data, and are unit-tested heavily.
@@ -375,7 +375,7 @@ Implementation notes (milestone 12):
 
 ### 10.1 Layout
 
-- **Sidebar** (collapsible; a drawer on mobile): Inbox, Today, Upcoming, Anytime, Someday, Logbook, Trash; then Areas with their projects nested; drag to reorder; "+ New List" button at the bottom (project or area).
+- **Sidebar** (collapsible; a drawer on mobile): Inbox, Today, Upcoming, Anytime, Someday, Logbook, Trash; then Areas with their projects nested; then Tags, nested under their parents; an arrow on an area or a tag with nested tags hides what's inside (synced; a count shows how many are hidden; visiting one inside opens it again); drag to reorder; "+ New List" button at the bottom (project or area).
 - **Main pane:** list title (editable for projects/areas), project notes, then items.
 - **Mobile:** bottom-right floating **+** button. Swipe right on a row to set When; swipe left to delete.
 

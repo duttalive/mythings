@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { expectSynced, open, quickEntry, row, signUp } from "./helpers";
+import {
+	checkbox,
+	expectSynced,
+	open,
+	quickEntry,
+	row,
+	signUp,
+} from "./helpers";
 
 test("rename a tag, give it a shortcut and a parent, use the shortcut, delete with undo", async ({
 	page,
@@ -103,4 +110,84 @@ test("the Delete key asks before moving selected to-dos to Trash", async ({
 	await dialog.getByRole("button", { name: "Move to Trash" }).click();
 	await expect(row(page, "First")).toBeHidden();
 	await expect(row(page, "Second")).toBeHidden();
+});
+
+test("nested tags show in the sidebar, can be hidden, and open again when one is visited", async ({
+	page,
+}) => {
+	await signUp(page);
+	const sidebar = page.getByRole("navigation", { name: "Lists" });
+	await sidebar.getByRole("button", { name: "New tag" }).click();
+	const field = sidebar.getByLabel("New tag name");
+	for (const name of ["errands", "shop", "hardware"]) {
+		await field.fill(name);
+		await field.press("Enter");
+	}
+	await field.press("Escape");
+	// shop goes inside errands, hardware inside shop.
+	for (const [child, parent] of [
+		["shop", "errands"],
+		["hardware", "shop"],
+	] as const) {
+		await sidebar.getByRole("link", { name: child, exact: true }).click();
+		await page.getByRole("button", { name: "Tag actions" }).click();
+		await page.getByLabel("Inside").selectOption({ label: parent });
+		await page.keyboard.press("Escape");
+	}
+	await expect(
+		sidebar.getByRole("button", { name: "Hide tags in errands" }),
+	).toHaveAttribute("aria-expanded", "true");
+	await expect(
+		sidebar.getByRole("link", { name: "hardware", exact: true }),
+	).toBeVisible();
+
+	await open(page, "/today");
+	await sidebar.getByRole("button", { name: "Hide tags in errands" }).click();
+	await expect(
+		sidebar.getByRole("link", { name: "shop", exact: true }),
+	).toBeHidden();
+	await expect(
+		sidebar.getByRole("link", { name: "errands (2 hidden tags)" }),
+	).toBeVisible();
+	await expect(page).toHaveURL(/\/today$/);
+	await expectSynced(page);
+
+	await page.reload();
+	await expect(
+		sidebar.getByRole("button", { name: "Show tags in errands" }),
+	).toHaveAttribute("aria-expanded", "false");
+
+	// Visiting a nested tag opens what hides it.
+	await sidebar.getByRole("link", { name: /^errands/ }).click();
+	await page.locator("main").getByRole("link", { name: "shop" }).click();
+	await page.locator("main").getByRole("link", { name: "hardware" }).click();
+	await expect(
+		sidebar.getByRole("link", { name: "hardware", exact: true }),
+	).toBeVisible();
+	await expect(
+		sidebar.getByRole("button", { name: "Hide tags in errands" }),
+	).toHaveAttribute("aria-expanded", "true");
+});
+
+test("a tag's page shows its nested tags' items and its logged items", async ({
+	page,
+}) => {
+	await signUp(page);
+	await open(page, "/inbox");
+	await quickEntry(page, "Buy nails #hardware");
+	await quickEntry(page, "Return book #errands");
+	const sidebar = page.getByRole("navigation", { name: "Lists" });
+	await sidebar.getByRole("link", { name: "hardware", exact: true }).click();
+	await page.getByRole("button", { name: "Tag actions" }).click();
+	await page.getByLabel("Inside").selectOption({ label: "errands" });
+	await page.keyboard.press("Escape");
+
+	await sidebar.getByRole("link", { name: "errands", exact: true }).click();
+	await expect(row(page, "Buy nails")).toBeVisible();
+	await checkbox(page, "Return book").check();
+	await expect(row(page, "Return book")).toBeHidden();
+	await page.getByRole("button", { name: "Show 1 logged item" }).click();
+	await expect(
+		page.getByRole("list", { name: "Logged items" }).getByText("Return book"),
+	).toBeVisible();
 });

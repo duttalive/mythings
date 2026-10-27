@@ -1,17 +1,20 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import type { Tag } from "../../shared/schema";
-import { bySortKey, tagged } from "../../shared/views";
+import { bySortKey, tagView } from "../../shared/views";
 import { useConfirmDelete } from "../components/ConfirmDelete";
 import { EditableTitle, IconButton } from "../components/controls";
-import { MoreIcon, TagIcon, TrashIcon } from "../components/icons";
+import { MoreIcon, RepeatIcon, TagIcon, TrashIcon } from "../components/icons";
 import {
 	Empty,
 	GroupedListView,
 	isEmptyGroupedList,
 	ListPage,
+	Section,
 } from "../components/ListPage";
+import { LoggedItems } from "../components/LoggedItems";
 import { Popover, PopoverOption } from "../components/Popover";
+import { EntryRow, RowList } from "../components/rows";
 import { useToast } from "../components/Toast";
 import { useListData } from "../data";
 import { tagRequest } from "../editing/deleteRequests";
@@ -29,7 +32,7 @@ export function TagPage() {
 	const children = data.tags
 		.filter((t) => t.parentId === tag.id && t.deletedAt === null)
 		.sort(bySortKey);
-	const list = tagged(data, tag.id, ctx);
+	const view = tagView(data, tag.id, ctx);
 	const chip =
 		"rounded-full border border-[var(--border)] px-2.5 py-0.5 text-xs text-[var(--fg-muted)] hover:bg-[var(--hover)]";
 
@@ -71,11 +74,33 @@ export function TagPage() {
 				</div>
 			}
 		>
-			{isEmptyGroupedList(list) ? (
-				<Empty>Nothing is tagged “{tag.title}”.</Empty>
-			) : (
-				<GroupedListView list={list} showStar />
+			{isEmptyGroupedList(view.list) &&
+				view.templates.length === 0 &&
+				view.logged.length === 0 && (
+					<Empty>Nothing is tagged “{tag.title}”.</Empty>
+				)}
+			<GroupedListView list={view.list} showStar />
+			{view.templates.length > 0 && (
+				<Section
+					title={
+						<>
+							<RepeatIcon className="size-4 text-[var(--fg-muted)]" />
+							Repeating
+						</>
+					}
+				>
+					<RowList>
+						{view.templates.map((entry) => (
+							<EntryRow
+								key={entry.item.id}
+								entry={entry}
+								date={entry.item.repeat?.nextDate}
+							/>
+						))}
+					</RowList>
+				</Section>
 			)}
+			<LoggedItems key={tag.id} entries={view.logged} />
 		</ListPage>
 	);
 }

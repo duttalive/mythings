@@ -312,6 +312,8 @@ const tagFields = z.object({
 	parentId: ulidSchema.nullable(),
 	shortcut: z.string().length(1).nullable(),
 	sortKey: sortKeySchema,
+	/** Its nested tags are hidden in the sidebar. */
+	collapsed: z.boolean(),
 });
 
 type Schedulable = z.infer<typeof projectFields> | z.infer<typeof todoFields>;

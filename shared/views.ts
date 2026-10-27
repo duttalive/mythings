@@ -509,6 +509,52 @@ export function tagged(
 	);
 }
 
+export type TagView = {
+	/** Open items with the tag or one nested in it, as in Anytime. */
+	list: GroupedList;
+	/** Repeating to-dos and projects, soonest next date first. */
+	templates: Entry[];
+	/** Its items in the Logbook, newest first; a logged project carries its to-dos. */
+	logged: Entry[];
+};
+
+export function tagView(
+	data: ViewData,
+	tagId: string,
+	ctx: ViewContext,
+): TagView {
+	const { todos, projects } = prepare(data, { ...ctx, tagIds: [tagId] });
+	const live = <T extends Item>(items: T[]) =>
+		items.filter((i) => i.deletedAt === null);
+	const loggedProjects = projects.filter((p) => isLogged(p, ctx));
+	const loggedProjectIds = new Set(loggedProjects.map((p) => p.id));
+	const nextDate = (e: Entry) => e.item.repeat?.nextDate ?? "";
+	return {
+		list: tagged(data, tagId, ctx),
+		templates: [
+			...live(todos)
+				.filter((t) => t.repeat !== null)
+				.map((item) => ({ kind: "todo" as const, item })),
+			...live(projects)
+				.filter((p) => p.repeat !== null)
+				.map((item) => ({ kind: "project" as const, item })),
+		].sort(
+			(a, b) =>
+				compareStrings(nextDate(a), nextDate(b)) || bySortKey(a.item, b.item),
+		),
+		logged: [
+			...loggedProjects.map((item) => ({ kind: "project" as const, item })),
+			...todos
+				.filter(
+					(t) =>
+						isLogged(t, ctx) &&
+						!(t.projectId && loggedProjectIds.has(t.projectId)),
+				)
+				.map((item) => ({ kind: "todo" as const, item })),
+		].sort((a, b) => byCompletedDesc(a.item, b.item)),
+	};
+}
+
 export type LogbookEntry = Entry & { completedAt: number };
 export type LogbookGroup = { date: LocalDate; entries: LogbookEntry[] };
 export type LogbookCursor = { completedAt: number; id: string };

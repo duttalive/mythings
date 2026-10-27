@@ -137,4 +137,8 @@ export const DO_MIGRATIONS: string[] = [
 	-- Areas can be collapsed in the sidebar (synced, so it follows the user).
 	ALTER TABLE areas ADD COLUMN collapsed INTEGER NOT NULL DEFAULT 0;
 	`,
+	`
+	-- Tags with nested tags can be collapsed in the sidebar too.
+	ALTER TABLE tags ADD COLUMN collapsed INTEGER NOT NULL DEFAULT 0;
+	`,
 ];
