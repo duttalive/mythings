@@ -2,6 +2,15 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 1.6.0 — 2026-10-27
+
+Safer deleting, and more control over projects and tags.
+
+- Deleting anything now asks first, and says what goes with it (for example a project's to-dos). Cancel is the default, so a stray tap or Enter keeps everything. Things you delete still go to Trash, and Undo still works.
+- Emptying Trash asks you to tick "I understand this can't be undone" first.
+- Reorder headings in a project by dragging them by their title, or with Move Up / Move Down in a heading's menu. Their to-dos move with them.
+- Add tags straight from the sidebar with the + next to Tags. Press Enter to add one and keep typing the next.
+
 ## Version 1.5.1 — 2026-10-26
 
 - In dark mode, it's now easy to see which option is selected in Settings (theme, text size, when completed to-dos move to the Logbook) and in a repeat's "On a schedule / After completion" choice.
