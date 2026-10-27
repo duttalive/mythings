@@ -118,6 +118,23 @@ const collisionDetection: CollisionDetection = (args) => {
 	});
 };
 
+/**
+ * Mouse and pen drags. Touches are left to the TouchSensor (long press), so a
+ * swipe on a row is only a swipe: otherwise it would also start a drag, and
+ * dnd-kit swallows the click that follows a drag (e.g. on the delete dialog).
+ */
+class MouseSensor extends PointerSensor {
+	static activators = PointerSensor.activators.map((activator) => ({
+		...activator,
+		handler: (
+			event: React.PointerEvent,
+			options: Parameters<typeof activator.handler>[1],
+		) =>
+			event.nativeEvent.pointerType !== "touch" &&
+			activator.handler(event, options),
+	}));
+}
+
 export function DndProvider({ children }: { children: ReactNode }) {
 	const ops = useOps();
 	const { data, ctx } = useListData();
@@ -128,7 +145,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
 
 	const sensors = useSensors(
 		// A few pixels of movement before dragging, so clicks still open rows.
-		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+		useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
 		// Long-press on touch, so scrolling still works.
 		useSensor(TouchSensor, {
 			activationConstraint: { delay: 250, tolerance: 6 },
