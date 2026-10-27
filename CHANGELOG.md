@@ -2,6 +2,11 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 1.7.0 — 2026-10-27
+
+- Completed to-dos stay within reach: at the end of a project or area, "Show N logged items" lists what's been done there, newest first with the day it was done. Untick one to bring it back.
+- On phones, swiping a to-do no longer also starts dragging it, so the delete confirmation responds to your first tap.
+
 ## Version 1.6.0 — 2026-10-27
 
 Safer deleting, and more control over projects and tags.
