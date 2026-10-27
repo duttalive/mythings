@@ -13,6 +13,7 @@ import {
 	TrashIcon,
 } from "../components/icons";
 import { Empty, ListPage } from "../components/ListPage";
+import { LoggedItems } from "../components/LoggedItems";
 import { Popover, PopoverOption, useFocusHandoff } from "../components/Popover";
 import { TagPicker } from "../components/pickers";
 import { ProjectRow, RowList, TodoRow } from "../components/rows";
@@ -41,9 +42,9 @@ export function AreaPage() {
 			header={<AreaDetails area={view.area} />}
 			filterable
 		>
-			{view.projects.length === 0 && view.todos.length === 0 && (
-				<Empty>Nothing in this area yet.</Empty>
-			)}
+			{view.projects.length === 0 &&
+				view.todos.length === 0 &&
+				view.logged.length === 0 && <Empty>Nothing in this area yet.</Empty>}
 			{view.projects.length > 0 && (
 				<SortableList
 					disabled={!reorderable}
@@ -89,6 +90,7 @@ export function AreaPage() {
 					</RowList>
 				</SortableList>
 			)}
+			<LoggedItems key={view.area.id} entries={view.logged} />
 		</ListPage>
 	);
 }

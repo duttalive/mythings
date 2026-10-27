@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { expectSynced, row, rowTitles, signUp } from "./helpers";
+import { checkbox, expectSynced, row, rowTitles, signUp } from "./helpers";
 
 async function newList(page: Page, kind: "New Project" | "New Area") {
 	await page.getByRole("button", { name: "New List" }).click();
@@ -269,4 +269,34 @@ test("deleting asks first: Cancel keeps it, permanent deletes need a tick", asyn
 	await dialog.getByLabel("I understand this can't be undone").check();
 	await empty.click();
 	await expect(page.getByText("Trash is empty.")).toBeVisible();
+});
+
+test("a project shows its logged to-dos on request, and they can be reopened there", async ({
+	page,
+}) => {
+	await signUp(page);
+	await newList(page, "New Project");
+	await typeTitle(page, "New Project", "Decorate");
+	await addTodo(page, "Set the budget");
+	await addTodo(page, "Pick paint");
+	await checkbox(page, "Pick paint").check();
+	await expect(row(page, "Pick paint")).toBeHidden();
+
+	const toggle = page.getByRole("button", { name: "Show 1 logged item" });
+	await expect(toggle).toBeVisible();
+	await toggle.click();
+	const logged = page.getByRole("list", { name: "Logged items" });
+	await expect(logged.getByText("Pick paint")).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Hide logged item" }),
+	).toHaveAttribute("aria-expanded", "true");
+
+	// Unticking it brings it back into the project.
+	// (The row moves out of the logged list, so click rather than uncheck.)
+	await checkbox(page, "Pick paint").click();
+	await expect(toggle).toBeHidden();
+	await expect(checkbox(page, "Pick paint")).not.toBeChecked();
+	await expect
+		.poll(() => rowTitles(page))
+		.toEqual(["Set the budget", "Pick paint"]);
 });

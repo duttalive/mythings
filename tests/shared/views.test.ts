@@ -515,6 +515,71 @@ describe("projectView", () => {
 	it("returns null for an unknown project", () => {
 		expect(projectView(data(), "01JZZZZZZZZZZZZZZZZZZZZZZZ", ctx)).toBeNull();
 	});
+
+	it("lists its logged to-dos newest first, as the Logbook would", () => {
+		const p = project();
+		const h = heading({ projectId: p.id });
+		const archived = heading({ projectId: p.id, archived: true });
+		const older = todo({ projectId: p.id, ...done("2026-10-01") });
+		const newer = todo({
+			projectId: p.id,
+			headingId: h.id,
+			status: "canceled",
+			completedAt: noon("2026-10-20"),
+		});
+		const today = todo({ projectId: p.id, ...done(TODAY) });
+		const d = data({
+			projects: [p],
+			headings: [h, archived],
+			todos: [
+				older,
+				newer,
+				today,
+				todo({ projectId: p.id }),
+				todo({ projectId: p.id, ...done("2026-10-02"), deletedAt: 1 }),
+				// Shown under its archived heading instead.
+				todo({
+					projectId: p.id,
+					headingId: archived.id,
+					...done("2026-10-03"),
+				}),
+			],
+		});
+		expect(ids(projectView(d, p.id, ctx)?.logged ?? [])).toEqual([
+			today.id,
+			newer.id,
+			older.id,
+		]);
+		// With the Logbook moving daily, today's stay in the list until tomorrow.
+		expect(ids(projectView(d, p.id, daily)?.logged ?? [])).toEqual([
+			newer.id,
+			older.id,
+		]);
+	});
+});
+
+describe("areaView logged items", () => {
+	it("lists the area's logged projects and loose to-dos, not those inside projects", () => {
+		const a = area();
+		const loggedProject = project({ areaId: a.id, ...done("2026-10-10") });
+		const openProject = project({ areaId: a.id });
+		const loose = todo({ areaId: a.id, ...done("2026-10-12") });
+		const d = data({
+			areas: [a],
+			projects: [loggedProject, openProject],
+			todos: [
+				loose,
+				todo({ projectId: openProject.id, ...done("2026-10-11") }),
+				todo({ areaId: a.id }),
+			],
+		});
+		expect(
+			areaView(d, a.id, ctx)?.logged.map((e) => [e.kind, e.item.id]),
+		).toEqual([
+			["todo", loose.id],
+			["project", loggedProject.id],
+		]);
+	});
 });
 
 describe("projectProgress", () => {

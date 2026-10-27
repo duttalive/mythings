@@ -3,6 +3,7 @@ import { projectView } from "../../shared/views";
 import { HeadingSection } from "../components/HeadingSection";
 import { RepeatIcon } from "../components/icons";
 import { Empty, ListPage, Section } from "../components/ListPage";
+import { LoggedItems } from "../components/LoggedItems";
 import {
 	ProjectDetails,
 	ProjectStatusButton,
@@ -32,7 +33,8 @@ export function ProjectPage() {
 		view.todos.length === 0 &&
 		!view.headings.some(shown) &&
 		!view.archivedHeadings.some(shown) &&
-		view.templates.length === 0;
+		view.templates.length === 0 &&
+		view.logged.length === 0;
 
 	return (
 		<ListPage
@@ -136,6 +138,10 @@ export function ProjectPage() {
 					</RowList>
 				</HeadingSection>
 			))}
+			<LoggedItems
+				key={project.id}
+				entries={view.logged.map((item) => ({ kind: "todo", item }))}
+			/>
 		</ListPage>
 	);
 }

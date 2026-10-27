@@ -76,6 +76,21 @@ function completedToday(item: Item, ctx: ViewContext): boolean {
 	);
 }
 
+/** In the Logbook: done or canceled, and past the "daily" grace period if that's on. */
+export function isLogged(item: Item, ctx: ViewContext): boolean {
+	return (
+		item.deletedAt === null &&
+		item.repeat === null &&
+		item.status !== "open" &&
+		item.completedAt !== null &&
+		!(ctx.logbookTiming === "daily" && completedToday(item, ctx))
+	);
+}
+
+/** Newest completed first. */
+const byCompletedDesc = (a: Item, b: Item) =>
+	(b.completedAt ?? 0) - (a.completedAt ?? 0) || compareStrings(b.id, a.id);
+
 /** Shown in the regular lists: open, or completed today when the Logbook moves daily. */
 function isListed(item: Item, ctx: ViewContext): boolean {
 	if (item.deletedAt !== null || item.repeat !== null) return false;
@@ -508,12 +523,7 @@ export function logbook(
 	{ limit = 100, before }: { limit?: number; before?: LogbookCursor } = {},
 ): { groups: LogbookGroup[]; nextCursor: LogbookCursor | null } {
 	const { idx, todos, projects } = prepare(data, ctx);
-	const logged = (item: Item) =>
-		item.deletedAt === null &&
-		item.repeat === null &&
-		item.status !== "open" &&
-		item.completedAt !== null &&
-		!(ctx.logbookTiming === "daily" && completedToday(item, ctx));
+	const logged = (item: Item) => isLogged(item, ctx);
 
 	const entries: LogbookEntry[] = [
 		...projects.filter(logged).map((item) => ({
@@ -631,6 +641,8 @@ export type ProjectView = {
 	archivedHeadings: HeadingGroup[];
 	/** Repeat templates in this project. */
 	templates: Todo[];
+	/** Its to-dos in the Logbook, newest first (not those under archived headings, which show there). */
+	logged: Todo[];
 };
 
 export function projectView(
@@ -671,6 +683,13 @@ export function projectView(
 				),
 			})),
 		templates: inProject.filter((t) => t.repeat !== null).sort(bySortKey),
+		logged: inProject
+			.filter(
+				(t) =>
+					isLogged(t, ctx) &&
+					!(t.headingId && idx.headings.get(t.headingId)?.archived),
+			)
+			.sort(byCompletedDesc),
 	};
 }
 
@@ -678,6 +697,8 @@ export type AreaView = {
 	area: Area;
 	projects: { project: Project; progress: Progress }[];
 	todos: Todo[];
+	/** Its projects and loose to-dos in the Logbook, newest first. */
+	logged: Entry[];
 };
 
 export function areaView(
@@ -700,6 +721,14 @@ export function areaView(
 		todos: todos
 			.filter((t) => t.areaId === areaId && !t.projectId && isListed(t, ctx))
 			.sort(bySortKey),
+		logged: [
+			...projects
+				.filter((p) => p.areaId === areaId && isLogged(p, ctx))
+				.map((item) => ({ kind: "project" as const, item })),
+			...todos
+				.filter((t) => t.areaId === areaId && !t.projectId && isLogged(t, ctx))
+				.map((item) => ({ kind: "todo" as const, item })),
+		].sort((a, b) => byCompletedDesc(a.item, b.item)),
 	};
 }
 
