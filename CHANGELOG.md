@@ -2,6 +2,20 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.0.0 — 2026-11-19
+
+Your to-dos can now be end-to-end encrypted, so only you can read them.
+
+- End-to-end encryption: turn it on in Settings → Security. Your to-dos, notes, checklists and the names of your projects, areas, headings and tags are encrypted on your own devices before they're saved or synced, so nobody else can read them, including us. Everything already in your account is encrypted when you turn it on, and you can turn it off again.
+- Recovery key: when you turn encryption on, you save a recovery key. If you ever reset your password, it unlocks your to-dos again. Make a new one any time in Settings → Security.
+- Your other devices ask for your password once to read your encrypted to-dos. Signing in on a new device unlocks them straight away.
+- Passcode: once encryption is on, lock mythings on any device with its own passcode. It locks itself when you're away (right away, or after 1, 5 or 15 minutes) and whenever the app is reopened, and you can lock it yourself with Lock now. Forgot it? Use your password instead.
+- Your password no longer leaves your device when you sign in. You may notice signing in takes a moment longer.
+- With encryption on, reminders still show what's due on devices that can read it, export gives you a readable file, and import, search, repeats and offline use work as before.
+- A password reset link now tells you straight away if it has expired.
+- New user guide covering every feature and flow, kept up to date with each release.
+- The Privacy Policy and Terms describe encryption and what it means for your data.
+
 ## Version 1.9.0 — 2026-11-19
 
 - Deadlines: see every open to-do and project with a deadline in one list, overdue first, then by day. Type "Deadlines" in Quick Find to open it, and use its search box to narrow it by title, notes, project, area or tag.
