@@ -8,6 +8,7 @@ mythings follows the Things 3 way of working (Inbox → Today → Upcoming → A
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 
 - **Hosted instance:** https://mythings.dynocoder.com (free; anyone can create an account)
+- **User guide:** [Core_User_Guide.md](Core_User_Guide.md), every feature and flow end to end, updated with each release
 - **What's new:** [CHANGELOG.md](CHANGELOG.md), also shown in the app at `/changelog`
 - **Full design:** [SPEC.md](SPEC.md)
 

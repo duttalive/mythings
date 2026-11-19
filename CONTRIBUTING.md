@@ -29,6 +29,7 @@ corepack pnpm dev
    - D1 schema changes are a **new** numbered file in `worker/db/migrations/`; Durable Object schema changes are appended to `worker/do-migrations.ts`. Never edit a migration that has shipped.
    - Account flows must not reveal whether an email has an account.
 3. Add or update tests: worker behaviour in `tests/worker/`, client logic in `tests/client/`, shared code in `tests/shared/`, and user flows in `e2e/`.
+   If users will notice the change, update the matching section of [Core_User_Guide.md](Core_User_Guide.md) (leave its version line alone; releases update it).
 4. Run the checks:
 
    ```bash
