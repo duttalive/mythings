@@ -50,6 +50,8 @@ export type ListDescriptor = {
 	items: Placed[];
 	/** Fields to set on an item moved in from another list. */
 	moveInPatch?: (item: Placed) => Record<string, unknown>;
+	/** Within the list, whether item `a` may move to item `b`'s place (default: always). */
+	together?: (a: string, b: string) => boolean;
 };
 
 /** `data` attached to draggables and droppables. */
@@ -191,6 +193,8 @@ export function DndProvider({ children }: { children: ReactNode }) {
 						? dest.items.length - 1
 						: dest.items.findIndex((item) => item.id === target.id);
 					if (from < 0 || to < 0 || from === to) return;
+					const other = dest.items[to]?.id;
+					if (other && dest.together?.(dragged.id, other) === false) return;
 					apply(
 						placeMutations(
 							arrayMove(dest.items, from, to),
@@ -267,6 +271,8 @@ export function DndProvider({ children }: { children: ReactNode }) {
 				const from = list.items.findIndex((item) => item.id === id);
 				const to = from + delta;
 				if (to < 0 || to >= list.items.length) return;
+				const other = list.items[to]?.id;
+				if (other && list.together?.(id, other) === false) return;
 				apply(
 					placeMutations(arrayMove(list.items, from, to), id, list.keyField),
 				);

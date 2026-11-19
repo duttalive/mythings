@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
+import { useMemo } from "react";
 import {
 	type Entry,
 	groupByProject,
 	projectProgress,
+	tagsInUse,
 	today,
 } from "../../shared/views";
 import { useAuth } from "../auth/AuthGate";
@@ -24,6 +26,11 @@ const placedEntries = (entries: Entry[]): Placed[] =>
 export function TodayPage() {
 	const { data, ctx, projects } = useListData();
 	const view = today(data, useFilteredContext());
+	// The tag bar offers the tags of what's in Today, filtered or not.
+	const filterTags = useMemo(() => {
+		const all = today(data, ctx);
+		return tagsInUse(data, [...all.main, ...all.evening]);
+	}, [data, ctx]);
 	const grouped = useAuth().user.settings.groupTodayByProject ?? false;
 	const groups = grouped ? groupByProject(view.main, projects) : null;
 	// Grouped, the rows (and the order dragging works in) follow the groups.
@@ -31,14 +38,32 @@ export function TodayPage() {
 	const filtering = useTagFilter().length > 0;
 	const dragging = useDndRegistry().activeKind !== null;
 	const empty = view.main.length === 0 && view.evening.length === 0;
+	// Grouped, a to-do moves only among its own group's rows: it can't leave
+	// its project's group, and moving it past the group would change the
+	// ungrouped order without anything changing on screen.
+	const groupOf = new Map(
+		groups?.flatMap(({ project, entries }) =>
+			entries.map((e) => [e.item.id, project?.id ?? null] as const),
+		),
+	);
+	const together = groups
+		? (a: string, b: string) => groupOf.get(a) === groupOf.get(b)
+		: undefined;
 
 	return (
 		<ListPage
 			title="Today"
 			icon={<StarIcon className="size-7 text-today" />}
 			filterable
+			filterTags={filterTags}
 		>
-			{empty && <Empty>Nothing planned for today.</Empty>}
+			{empty && (
+				<Empty>
+					{filtering
+						? "Nothing in Today has these tags."
+						: "Nothing planned for today."}
+				</Empty>
+			)}
 			{!empty && (
 				<SortableList
 					disabled={filtering}
@@ -49,6 +74,7 @@ export function TodayPage() {
 						keyField: "todaySortKey",
 						items: placedEntries(main),
 						moveInPatch: () => ({ evening: false }),
+						together,
 					}}
 				>
 					{groups ? (

@@ -4,6 +4,7 @@ import {
 	anytime,
 	areaView,
 	daysUntilDeadline,
+	deadlines,
 	type Entry,
 	groupByProject,
 	inbox,
@@ -17,6 +18,7 @@ import {
 	sidebarTree,
 	someday,
 	tagged,
+	tagsInUse,
 	tagView,
 	today,
 	trash,
@@ -723,6 +725,107 @@ describe("tagView", () => {
 		const nested = tagView(d, shop.id, ctx);
 		expect(entryIds(nested.templates)).toEqual([sooner.id]);
 		expect(entryIds(nested.logged)).toEqual([older.id]);
+	});
+});
+
+describe("deadlines", () => {
+	it("lists open items with a deadline, overdue first, then by day", () => {
+		const work = area({ title: "Work" });
+		const launch = project({
+			title: "Launch",
+			areaId: work.id,
+			deadline: "2026-10-20",
+		});
+		const report = todo({ title: "Report", deadline: "2026-10-28" });
+		const late = todo({ title: "Late fee", deadline: "2026-10-24" });
+		const sameDay = todo({
+			title: "Slides",
+			projectId: launch.id,
+			deadline: "2026-10-28",
+		});
+		const dueToday = todo({ title: "Call", deadline: TODAY });
+		const finished = todo({ deadline: "2026-10-26", ...done() });
+		const noDeadline = todo({ title: "Whenever" });
+		const template = todo({ deadline: "2026-10-26", repeat: rule() });
+		const gone = project({ deadline: "2026-10-26", deletedAt: 1 });
+		const inGone = todo({ projectId: gone.id, deadline: "2026-10-26" });
+		const d = data({
+			areas: [work],
+			projects: [launch, gone],
+			todos: [
+				report,
+				late,
+				sameDay,
+				dueToday,
+				finished,
+				noDeadline,
+				template,
+				inGone,
+			],
+		});
+		const groups = deadlines(d, ctx);
+		expect(
+			groups.map((g) => [
+				g.kind === "day" ? g.date : g.kind,
+				entryIds(g.entries),
+			]),
+		).toEqual([
+			["overdue", [launch.id, late.id]],
+			[TODAY, [dueToday.id]],
+			["2026-10-28", [report.id, sameDay.id]],
+		]);
+	});
+
+	it("searches titles, notes, projects, areas and tags", () => {
+		const errands = tag({ title: "errands" });
+		const home = area({ title: "Home" });
+		const move = project({ title: "Move", areaId: home.id });
+		const box = todo({
+			title: "Pack boxes",
+			projectId: move.id,
+			deadline: TODAY,
+		});
+		const bank = todo({
+			title: "Bank",
+			notes: "bring passport",
+			tagIds: [errands.id],
+			deadline: TODAY,
+		});
+		const d = data({
+			tags: [errands],
+			areas: [home],
+			projects: [move],
+			todos: [box, bank],
+		});
+		const found = (q: string) =>
+			deadlines(d, ctx, q).flatMap((g) => entryIds(g.entries));
+		expect(found("pass")).toEqual([bank.id]);
+		expect(found("ERRANDS")).toEqual([bank.id]);
+		expect(found("home pack")).toEqual([box.id]);
+		expect(found("move bank")).toEqual([]);
+		expect(found("  ")).toEqual([box.id, bank.id]);
+	});
+});
+
+describe("tagsInUse", () => {
+	it("collects items' own and inherited tags, with their parents", () => {
+		const errands = tag({ title: "errands" });
+		const shop = tag({ title: "shop", parentId: errands.id });
+		const work = tag({ title: "work" });
+		const unused = tag({ title: "unused" });
+		const office = area({ title: "Office", tagIds: [work.id] });
+		const inArea = todo({ areaId: office.id });
+		const shopping = todo({ tagIds: [shop.id] });
+		const d = data({
+			tags: [errands, shop, work, unused],
+			areas: [office],
+			todos: [inArea, shopping],
+		});
+		const used = tagsInUse(d, [
+			{ kind: "todo", item: inArea },
+			{ kind: "todo", item: shopping },
+		]);
+		expect([...used].sort()).toEqual([errands.id, shop.id, work.id].sort());
 	});
 });
 

@@ -231,13 +231,15 @@ An item whose project is `someday` (or whose project is not open) is excluded fr
 | **Trash**      | `deletedAt !== null`                                                                                  | "Empty Trash" button (confirm).                                                                                                                                                 |
 | **Project**    | to-dos with `projectId`                                                                               | Loose to-dos, then each heading; archived headings and repeat templates listed separately.                                                                                      |
 | **Area**       | projects + loose to-dos in that area                                                                  | Projects first (with progress ring), then to-dos.                                                                                                                               |
-| **Tag filter** | Any list can be filtered by one or more tags via a tag bar at the top                                 | —                                                                                                                                                                               |
+| **Deadlines**  | open to-dos and projects with a `deadline` (not inside a finished, deleted or repeating project)      | Not in the sidebar; opened from Quick Find (`/deadlines`). "Overdue" first, then one group per deadline day. A search field narrows it by title, notes, project, area and tags.  |
+| **Tag filter** | Any list can be filtered by one or more tags via a tag bar at the top                                 | Today's bar offers only the tags its items carry (directly, from their project or area, or as a parent tag), plus any selected.                                                 |
 
 Sidebar badge counts: Inbox = count; Today = count, plus a red count of Today items whose deadline is today or past.
 
 Details settled in implementation (`shared/views.ts`):
 - **Logbook timing** (setting `logbookTiming`): `"immediately"` (default) moves completed items straight to the Logbook. `"daily"` keeps items completed today in their lists, struck through, and moves them to the Logbook tomorrow.
-- **Today order:** items without a `todaySortKey` (never placed in Today) come first, oldest first, then by `todaySortKey`.
+- **Today order:** items without a `todaySortKey` (never placed in Today) come first, oldest first, then by `todaySortKey`. Grouped by project, a to-do moves (drag or ⌘↑/↓) only within its own group.
+- **New day:** the client's `today` moves at local midnight, and is rechecked whenever the app regains focus or becomes visible (timers pause while a computer sleeps).
 - **Upcoming:** the "rest of the month" group covers the month containing the 7th day; repeat templates whose `nextDate` is today or earlier are awaiting materialization and are not shown.
 - **Anytime** includes active projects even when they have no visible to-dos.
 - **Someday** shows someday projects as entries without their to-dos, plus someday to-dos outside someday projects.
@@ -410,7 +412,7 @@ Saving with no list goes to the Inbox, or to the current list if one is open. Al
 
 ### 10.5 Quick Find
 
-Typing any printable key while no input is focused opens a command palette that searches lists, projects, areas, tags and to-dos (title + notes). Search runs client-side with a simple fuzzy scorer over Dexie data. Enter opens the result.
+Typing any printable key while no input is focused opens a command palette that searches lists (including Deadlines, which isn't in the sidebar), projects, areas, tags and to-dos (title + notes). Search runs client-side with a simple fuzzy scorer over Dexie data. Enter opens the result.
 
 ### 10.6 Keyboard shortcuts
 

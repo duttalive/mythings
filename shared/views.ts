@@ -327,6 +327,25 @@ export function today(data: ViewData, ctx: ViewContext): TodayView {
 	};
 }
 
+/**
+ * Tags worth offering in a list's tag bar: those its items carry (including
+ * from their project or area), plus the tags they're nested in.
+ */
+export function tagsInUse(data: ViewData, entries: Entry[]): Set<string> {
+	const idx = buildIndex(data);
+	const tags = new Map(data.tags.map((t) => [t.id, t]));
+	const used = new Set<string>();
+	for (const { item } of entries)
+		for (const id of effectiveTags(item, idx)) {
+			let tag = tags.get(id);
+			while (tag && tag.deletedAt === null && !used.has(tag.id)) {
+				used.add(tag.id);
+				tag = tag.parentId ? tags.get(tag.parentId) : undefined;
+			}
+		}
+	return used;
+}
+
 export type TodayGroup = { project: Project | null; entries: Entry[] };
 
 /**
@@ -553,6 +572,71 @@ export function tagView(
 				.map((item) => ({ kind: "todo" as const, item })),
 		].sort((a, b) => byCompletedDesc(a.item, b.item)),
 	};
+}
+
+export type DeadlineGroup =
+	| { kind: "overdue"; entries: Entry[] }
+	| { kind: "day"; date: LocalDate; entries: Entry[] };
+
+/**
+ * Open to-dos and projects with a deadline, soonest first: everything overdue
+ * together, then one group per deadline day. `query` narrows it to items whose
+ * title, notes, project, area or tags contain every word.
+ */
+export function deadlines(
+	data: ViewData,
+	ctx: ViewContext,
+	query = "",
+): DeadlineGroup[] {
+	const { idx, todos, projects } = prepare(data, ctx);
+	const tagTitles = new Map(data.tags.map((t) => [t.id, t.title]));
+	const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+	const matches = (item: Item) => {
+		if (words.length === 0) return true;
+		const project = "projectId" in item ? projectOf(item, idx) : undefined;
+		const areaId = project ? project.areaId : item.areaId;
+		const text = [
+			item.title,
+			item.notes,
+			project?.title,
+			areaId ? idx.areas.get(areaId)?.title : undefined,
+			...effectiveTags(item, idx).map((id) => tagTitles.get(id)),
+		]
+			.join(" ")
+			.toLowerCase();
+		return words.every((w) => text.includes(w));
+	};
+	const due = (item: Item) =>
+		isOpen(item) && item.deadline !== null && matches(item);
+
+	const entries: Entry[] = [
+		...projects.filter(due).map((item) => ({ kind: "project" as const, item })),
+		...todos
+			.filter((t) => {
+				if (!due(t)) return false;
+				// Not inside a finished, deleted or repeating project.
+				const project = projectOf(t, idx);
+				return !project || isOpen(project);
+			})
+			.map((item) => ({ kind: "todo" as const, item })),
+	].sort(
+		(a, b) =>
+			compareStrings(a.item.deadline ?? "", b.item.deadline ?? "") ||
+			a.item.createdAt - b.item.createdAt ||
+			compareStrings(a.item.id, b.item.id),
+	);
+
+	const groups: DeadlineGroup[] = [];
+	const overdue = entries.filter((e) => (e.item.deadline ?? "") < ctx.today);
+	if (overdue.length) groups.push({ kind: "overdue", entries: overdue });
+	for (const entry of entries) {
+		const date = entry.item.deadline as LocalDate;
+		if (date < ctx.today) continue;
+		const last = groups.at(-1);
+		if (last?.kind === "day" && last.date === date) last.entries.push(entry);
+		else groups.push({ kind: "day", date, entries: [entry] });
+	}
+	return groups;
 }
 
 export type LogbookEntry = Entry & { completedAt: number };

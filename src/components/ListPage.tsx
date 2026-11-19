@@ -16,6 +16,7 @@ export function ListPage({
 	icon,
 	header,
 	filterable = false,
+	filterTags,
 	children,
 }: {
 	title: string;
@@ -24,6 +25,8 @@ export function ListPage({
 	icon?: ReactNode;
 	header?: ReactNode;
 	filterable?: boolean;
+	/** Only these tags (and any selected) show in the tag bar; all if omitted. */
+	filterTags?: Set<string>;
 	children: ReactNode;
 }) {
 	useEffect(() => {
@@ -49,7 +52,7 @@ export function ListPage({
 				</h1>
 				{header}
 			</header>
-			{filterable && <TagBar />}
+			{filterable && <TagBar only={filterTags} />}
 			{children}
 		</article>
 	);
@@ -87,11 +90,17 @@ export function Section({
 }
 
 /** Toggle chips for every tag; the selection lives in the `tags` search param. */
-function TagBar() {
+function TagBar({ only }: { only?: Set<string> }) {
 	const { data } = useListData();
 	const selected = useTagFilter();
 	const navigate = useNavigate();
-	const tags = data.tags.filter((t) => t.deletedAt === null).sort(bySortKey);
+	const tags = data.tags
+		.filter(
+			(t) =>
+				t.deletedAt === null &&
+				(!only || only.has(t.id) || selected.includes(t.id)),
+		)
+		.sort(bySortKey);
 	if (tags.length === 0) return null;
 
 	const toggle = (id: string) => {

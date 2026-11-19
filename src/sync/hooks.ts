@@ -55,23 +55,32 @@ export function useViewData(): ViewData | undefined {
 	}, [db]);
 }
 
-/** The user's local date, updated at midnight. */
+/**
+ * The user's local date, updated at midnight. Timers pause while a computer
+ * sleeps, so it's also checked when the app comes back into view.
+ */
 export function useToday(tz: string): string {
 	const [today, setToday] = useState(() => todayIn(tz));
 	useEffect(() => {
-		setToday(todayIn(tz));
 		let timer: ReturnType<typeof setTimeout>;
-		const schedule = () => {
-			timer = setTimeout(
-				() => {
-					setToday(todayIn(tz));
-					schedule();
-				},
-				nextLocalMidnight(tz) - Date.now() + 50,
-			);
+		const update = () => {
+			clearTimeout(timer);
+			setToday(todayIn(tz));
+			timer = setTimeout(update, nextLocalMidnight(tz) - Date.now() + 50);
 		};
-		schedule();
-		return () => clearTimeout(timer);
+		const onVisible = () => {
+			if (document.visibilityState === "visible") update();
+		};
+		update();
+		document.addEventListener("visibilitychange", onVisible);
+		window.addEventListener("focus", update);
+		window.addEventListener("pageshow", update);
+		return () => {
+			clearTimeout(timer);
+			document.removeEventListener("visibilitychange", onVisible);
+			window.removeEventListener("focus", update);
+			window.removeEventListener("pageshow", update);
+		};
 	}, [tz]);
 	return today;
 }

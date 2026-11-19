@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import { Shell } from "./components/Shell";
 import { AnytimePage } from "./routes/anytime";
 import { AreaPage } from "./routes/area";
+import { DeadlinesPage } from "./routes/deadlines";
 import { InboxPage } from "./routes/inbox";
 import { LogbookPage } from "./routes/logbook";
 import { NotFound } from "./routes/not-found";
@@ -49,6 +50,8 @@ const routeTree = rootRoute.addChildren([
 	page("/anytime", AnytimePage),
 	page("/someday", SomedayPage),
 	page("/logbook", LogbookPage),
+	// Not in the sidebar: reached from Quick Find.
+	page("/deadlines", DeadlinesPage),
 	page("/trash", TrashPage),
 	page("/project/$projectId", ProjectPage),
 	page("/area/$areaId", AreaPage),

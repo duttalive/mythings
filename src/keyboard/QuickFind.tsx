@@ -17,6 +17,7 @@ import {
 	AreaIcon,
 	BoxIcon,
 	CalendarIcon,
+	FlagIcon,
 	InboxIcon,
 	LayersIcon,
 	LogbookIcon,
@@ -65,6 +66,11 @@ const LISTS: { title: string; to: string; icon: ReactNode }[] = [
 		title: "Someday",
 		to: "/someday",
 		icon: <BoxIcon className="size-4 text-amber-700" />,
+	},
+	{
+		title: "Deadlines",
+		to: "/deadlines",
+		icon: <FlagIcon className="size-4 text-overdue" />,
 	},
 	{
 		title: "Logbook",
