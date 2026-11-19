@@ -78,6 +78,7 @@ describe("export and import", () => {
 	async function seed(cookie: string) {
 		const ids = {
 			tag: ulid(),
+			bucket: ulid(),
 			area: ulid(),
 			project: ulid(),
 			heading: ulid(),
@@ -91,10 +92,11 @@ describe("export and import", () => {
 			body: {
 				ops: [
 					upsert("tag", ids.tag, { title: "Errands" }),
-					upsert("area", ids.area, { title: "Home" }),
+					upsert("area", ids.bucket, { title: "Home", kind: "bucket" }),
+					upsert("area", ids.area, { title: "Chores", bucketId: ids.bucket }),
 					upsert("project", ids.project, {
 						title: "Move",
-						areaId: ids.area,
+						areaId: ids.bucket,
 					}),
 					upsert("heading", ids.heading, {
 						title: "Packing",
@@ -132,7 +134,7 @@ describe("export and import", () => {
 			/attachment; filename="mythings-\d{4}-\d{2}-\d{2}\.json"/,
 		);
 		const file = await res.json<ExportFile>();
-		expect(file).toMatchObject({ format: "mythings-export", version: 1 });
+		expect(file).toMatchObject({ format: "mythings-export", version: 2 });
 		expect(file.data.todo.map((t) => t.id).sort()).toEqual(
 			[ids.todo, ids.trashed].sort(),
 		);
@@ -151,7 +153,7 @@ describe("export and import", () => {
 			body: file,
 		});
 		expect(res.status).toBe(200);
-		expect(await res.json()).toEqual({ imported: 6, skipped: 1, errors: [] });
+		expect(await res.json()).toEqual({ imported: 7, skipped: 1, errors: [] });
 
 		const copy = await (
 			await api("/export", { cookie: target.cookie })
@@ -165,7 +167,11 @@ describe("export and import", () => {
 			headingId: copy.data.heading[0]?.id,
 			tagIds: [copy.data.tag[0]?.id],
 		});
-		expect(project?.areaId).toBe(copy.data.area[0]?.id);
+		const bucket = copy.data.area.find((a) => a.kind === "bucket");
+		const area = copy.data.area.find((a) => a.kind === "area");
+		expect(bucket?.title).toBe("Home");
+		expect(project?.areaId).toBe(bucket?.id);
+		expect(area).toMatchObject({ title: "Chores", bucketId: bucket?.id });
 		expect(copy.data.checklist[0]?.todoId).toBe(todo?.id);
 	});
 
@@ -179,6 +185,107 @@ describe("export and import", () => {
 			2,
 		);
 		expect(after.data.tag).toHaveLength(1);
+	});
+
+	it("converts an export from before Life Buckets", async () => {
+		const { cookie } = await signup();
+		const now = Date.now();
+		const row = (id: string, fields: object) => ({
+			id,
+			createdAt: now,
+			updatedAt: now,
+			deletedAt: null,
+			rev: 1,
+			...fields,
+		});
+		const [work, home, launch, loose, inWork, atHome] = [
+			ulid(),
+			ulid(),
+			ulid(),
+			ulid(),
+			ulid(),
+			ulid(),
+		];
+		const file = {
+			format: "mythings-export",
+			version: 1,
+			data: {
+				tag: [],
+				area: [
+					row(work, {
+						title: "Work",
+						sortKey: "a0",
+						tagIds: [],
+						collapsed: false,
+					}),
+					row(home, {
+						title: "Home",
+						sortKey: "a1",
+						tagIds: [],
+						collapsed: false,
+					}),
+				],
+				project: [
+					row(launch, {
+						title: "Launch",
+						areaId: work,
+						when: "anytime",
+						status: "open",
+						notes: "",
+						sortKey: "a0",
+						tagIds: [],
+					}),
+				],
+				heading: [],
+				todo: [
+					row(loose, {
+						title: "Loose",
+						when: "anytime",
+						status: "open",
+						notes: "",
+						sortKey: "a0",
+						tagIds: [],
+					}),
+					row(inWork, {
+						title: "Inbox zero",
+						areaId: work,
+						when: "anytime",
+						status: "open",
+						notes: "",
+						sortKey: "a0",
+						tagIds: [],
+					}),
+					row(atHome, {
+						title: "Water plants",
+						areaId: home,
+						when: "anytime",
+						status: "open",
+						notes: "",
+						sortKey: "a0",
+						tagIds: [],
+					}),
+				],
+				checklist: [],
+			},
+		};
+		const res = await api("/import", { method: "POST", cookie, body: file });
+		expect(await res.json()).toMatchObject({ skipped: 0, errors: [] });
+		const copy = await (await api("/export", { cookie })).json<ExportFile>();
+		const byTitle = (rows: { title: string }[], title: string) =>
+			rows.find((r) => r.title === title) as never as Record<string, unknown>;
+		const buckets = copy.data.area.filter((a) => a.kind === "bucket");
+		const workBucket = byTitle(buckets, "Work");
+		// "Work" held a project, so it's a Life Bucket; its own to-do moved into a "Work" area.
+		expect(byTitle(copy.data.project, "Launch").areaId).toBe(workBucket.id);
+		const workArea = copy.data.area.find(
+			(a) => a.kind === "area" && a.title === "Work",
+		);
+		expect(workArea?.bucketId).toBe(workBucket.id);
+		expect(byTitle(copy.data.todo, "Inbox zero").areaId).toBe(workArea?.id);
+		// "Home" had no projects: it stays an area, in the first bucket.
+		const homeArea = byTitle(copy.data.area, "Home");
+		expect(homeArea).toMatchObject({ kind: "area", bucketId: workBucket.id });
+		expect(byTitle(copy.data.todo, "Water plants").areaId).toBe(homeArea.id);
 	});
 
 	it("rejects files that aren't mythings exports", async () => {

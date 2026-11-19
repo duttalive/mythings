@@ -21,6 +21,8 @@ export const DEFAULTS: {
 		sortKey: "a0",
 		tagIds: [],
 		collapsed: false,
+		kind: "area",
+		bucketId: null,
 	},
 	project: {
 		deletedAt: null,

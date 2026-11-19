@@ -12,7 +12,10 @@ import {
 import type { Area, Heading, Project, Tag, Todo } from "./schema";
 
 export type ViewData = {
+	/** Areas: ongoing lists of to-dos, each inside a Life Bucket. */
 	areas: Area[];
+	/** Life Buckets: they group areas and projects (area rows of kind "bucket"). */
+	buckets: Area[];
 	projects: Project[];
 	headings: Heading[];
 	todos: Todo[];
@@ -148,6 +151,7 @@ export function daysUntilDeadline(item: Item, today: LocalDate): number | null {
 
 type Index = {
 	projects: Map<string, Project>;
+	/** Areas and Life Buckets by id. */
 	areas: Map<string, Area>;
 	headings: Map<string, Heading>;
 };
@@ -155,7 +159,7 @@ type Index = {
 function buildIndex(data: ViewData): Index {
 	return {
 		projects: new Map(data.projects.map((p) => [p.id, p])),
-		areas: new Map(data.areas.map((a) => [a.id, a])),
+		areas: new Map([...data.areas, ...data.buckets].map((a) => [a.id, a])),
 		headings: new Map(data.headings.map((h) => [h.id, h])),
 	};
 }
@@ -164,12 +168,25 @@ function projectOf(todo: Todo, idx: Index): Project | undefined {
 	return todo.projectId ? idx.projects.get(todo.projectId) : undefined;
 }
 
-/** Item tags plus those inherited from its project and area. */
+/**
+ * Item tags plus those inherited from its project or area, and from the Life
+ * Bucket that holds that project or area.
+ */
 function effectiveTags(item: Item, idx: Index): string[] {
 	const project = "projectId" in item ? projectOf(item, idx) : undefined;
-	const areaId = project ? project.areaId : item.areaId;
-	const area = areaId ? idx.areas.get(areaId) : undefined;
-	return [...item.tagIds, ...(project?.tagIds ?? []), ...(area?.tagIds ?? [])];
+	const holder = project ?? item;
+	const area =
+		"projectId" in holder && holder.areaId
+			? idx.areas.get(holder.areaId)
+			: undefined;
+	const bucketId = project ? project.areaId : (area?.bucketId ?? null);
+	const bucket = bucketId ? idx.areas.get(bucketId) : undefined;
+	return [
+		...item.tagIds,
+		...(project?.tagIds ?? []),
+		...(area?.tagIds ?? []),
+		...(bucket?.tagIds ?? []),
+	];
 }
 
 function tagMatcher(
@@ -214,15 +231,20 @@ function prepare(data: ViewData, ctx: ViewContext) {
 }
 
 // ---------------------------------------------------------------------------
-// Grouping by area → project (Anytime, Someday)
+// Grouping by Life Bucket → area / project (Anytime, Someday, tag pages)
 
 export type ProjectGroup = { project: Project; todos: Todo[] };
-export type AreaGroup = { area: Area; todos: Todo[]; projects: ProjectGroup[] };
-/** Loose to-dos first, then projects without an area, then each area. */
+export type AreaGroup = { area: Area; todos: Todo[] };
+/** A Life Bucket's areas, then its projects. `bucket` is null for anything not in a live bucket. */
+export type BucketGroup = {
+	bucket: Area | null;
+	areas: AreaGroup[];
+	projects: ProjectGroup[];
+};
+/** Loose to-dos first, then each Life Bucket. */
 export type GroupedList = {
 	todos: Todo[];
-	projects: ProjectGroup[];
-	areas: AreaGroup[];
+	buckets: BucketGroup[];
 };
 
 /** Project order: to-dos without a heading first, then by heading order. */
@@ -244,7 +266,19 @@ function liveArea(id: string | null, idx: Index): Area | undefined {
 	return area && area.deletedAt === null ? area : undefined;
 }
 
-function groupByArea(
+/** The live Life Bucket an area or project sits in. */
+export function bucketOf(
+	item: Area | Project,
+	idx: { areas: Map<string, Area> },
+): Area | undefined {
+	const id = "kind" in item ? item.bucketId : item.areaId;
+	const bucket = id ? idx.areas.get(id) : undefined;
+	return bucket && bucket.deletedAt === null && bucket.kind === "bucket"
+		? bucket
+		: undefined;
+}
+
+function groupByBucket(
 	todos: Todo[],
 	projects: Project[],
 	idx: Index,
@@ -254,7 +288,7 @@ function groupByArea(
 		projectGroups.set(project.id, { project, todos: [] });
 
 	const loose: Todo[] = [];
-	const areaLoose = new Map<string, Todo[]>();
+	const areaTodos = new Map<string, Todo[]>();
 	for (const todo of todos) {
 		const project = projectOf(todo, idx);
 		if (project) {
@@ -264,42 +298,48 @@ function groupByArea(
 				projectGroups.set(project.id, group);
 			}
 			group.todos.push(todo);
-		} else if (liveArea(todo.areaId, idx)) {
+		} else if (liveArea(todo.areaId, idx)?.kind === "area") {
 			const areaId = todo.areaId as string;
-			areaLoose.set(areaId, [...(areaLoose.get(areaId) ?? []), todo]);
+			areaTodos.set(areaId, [...(areaTodos.get(areaId) ?? []), todo]);
 		} else {
 			loose.push(todo);
 		}
 	}
 
+	const groups = new Map<string, BucketGroup>();
+	const groupFor = (bucket: Area | undefined) => {
+		const key = bucket?.id ?? "";
+		let group = groups.get(key);
+		if (!group) {
+			group = { bucket: bucket ?? null, areas: [], projects: [] };
+			groups.set(key, group);
+		}
+		return group;
+	};
 	const order = byProjectOrder(idx);
-	const rootProjects: ProjectGroup[] = [];
-	const areaProjects = new Map<string, ProjectGroup[]>();
+	for (const [areaId, list] of areaTodos) {
+		const area = idx.areas.get(areaId) as Area;
+		groupFor(bucketOf(area, idx)).areas.push({
+			area,
+			todos: list.sort(bySortKey),
+		});
+	}
 	for (const group of projectGroups.values()) {
 		group.todos.sort(order);
-		const area = liveArea(group.project.areaId, idx);
-		if (area)
-			areaProjects.set(area.id, [...(areaProjects.get(area.id) ?? []), group]);
-		else rootProjects.push(group);
+		groupFor(bucketOf(group.project, idx)).projects.push(group);
 	}
-
-	const byProject = (a: ProjectGroup, b: ProjectGroup) =>
-		bySortKey(a.project, b.project);
-	const areaIds = new Set([...areaLoose.keys(), ...areaProjects.keys()]);
-	const areas = [...areaIds]
-		.map((id) => idx.areas.get(id) as Area)
-		.sort(bySortKey)
-		.map((area) => ({
-			area,
-			todos: (areaLoose.get(area.id) ?? []).sort(bySortKey),
-			projects: (areaProjects.get(area.id) ?? []).sort(byProject),
-		}));
-
-	return {
-		todos: loose.sort(bySortKey),
-		projects: rootProjects.sort(byProject),
-		areas,
-	};
+	const buckets = [...groups.values()].sort((a, b) =>
+		!a.bucket || !b.bucket
+			? a.bucket
+				? 1
+				: -1
+			: bySortKey(a.bucket, b.bucket),
+	);
+	for (const group of buckets) {
+		group.areas.sort((a, b) => bySortKey(a.area, b.area));
+		group.projects.sort((a, b) => bySortKey(a.project, b.project));
+	}
+	return { todos: loose.sort(bySortKey), buckets };
 }
 
 // ---------------------------------------------------------------------------
@@ -505,7 +545,7 @@ export function anytime(data: ViewData, ctx: ViewContext): GroupedList {
 		const project = projectOf(t, idx);
 		return !project || isActiveProject(project, ctx.today);
 	});
-	return groupByArea(visible, activeProjects, idx);
+	return groupByBucket(visible, activeProjects, idx);
 }
 
 /**
@@ -522,17 +562,17 @@ export function someday(data: ViewData, ctx: ViewContext): GroupedList {
 		const project = projectOf(t, idx);
 		return !project || (isOpen(project) && project.when !== "someday");
 	});
-	return groupByArea(visible, somedayProjects, idx);
+	return groupByBucket(visible, somedayProjects, idx);
 }
 
-/** Open to-dos and projects carrying a tag (or a descendant), grouped by area → project. */
+/** Open to-dos and projects carrying a tag (or a descendant), grouped by Life Bucket. */
 export function tagged(
 	data: ViewData,
 	tagId: string,
 	ctx: ViewContext,
 ): GroupedList {
 	const { idx, todos, projects } = prepare(data, { ...ctx, tagIds: [tagId] });
-	return groupByArea(
+	return groupByBucket(
 		todos.filter((t) => isListed(t, ctx)),
 		projects.filter((p) => isListed(p, ctx)),
 		idx,
@@ -767,8 +807,8 @@ export function trash(data: ViewData): TrashEntry[] {
 	const area = (id: string | null) => (id ? idx.areas.get(id) : undefined);
 
 	const entries: TrashEntry[] = [
-		...data.areas
-			.filter(deleted)
+		...[...data.buckets, ...data.areas]
+			.filter((a) => deleted(a) && !deleted(area(a.bucketId)))
 			.map((item) => ({ kind: "area" as const, item })),
 		...data.projects
 			.filter((p) => deleted(p) && !deleted(area(p.areaId)))
@@ -876,9 +916,10 @@ export function projectView(
 
 export type AreaView = {
 	area: Area;
-	projects: { project: Project; progress: Progress }[];
+	/** The Life Bucket it's in. */
+	bucket: Area | undefined;
 	todos: Todo[];
-	/** Its projects and loose to-dos in the Logbook, newest first. */
+	/** Its to-dos in the Logbook, newest first. */
 	logged: Entry[];
 };
 
@@ -887,29 +928,71 @@ export function areaView(
 	areaId: string,
 	ctx: ViewContext,
 ): AreaView | null {
-	const { idx, todos, projects } = prepare(data, ctx);
+	const { idx, todos } = prepare(data, ctx);
 	const area = idx.areas.get(areaId);
-	if (!area) return null;
+	if (!area || area.kind === "bucket") return null;
 	return {
 		area,
+		bucket: bucketOf(area, idx),
+		todos: todos
+			.filter((t) => t.areaId === areaId && !t.projectId && isListed(t, ctx))
+			.sort(bySortKey),
+		logged: todos
+			.filter((t) => t.areaId === areaId && !t.projectId && isLogged(t, ctx))
+			.sort(byCompletedDesc)
+			.map((item) => ({ kind: "todo" as const, item })),
+	};
+}
+
+export type BucketView = {
+	bucket: Area;
+	/** Its areas, each with how many open to-dos it has. */
+	areas: { area: Area; open: number }[];
+	projects: { project: Project; progress: Progress }[];
+	/** Its finished projects, newest first. */
+	logged: Entry[];
+};
+
+/** A Life Bucket's page: its areas, then its projects. */
+export function bucketView(
+	data: ViewData,
+	bucketId: string,
+	ctx: ViewContext,
+): BucketView | null {
+	const { idx, todos, projects } = prepare(data, ctx);
+	const bucket = idx.areas.get(bucketId);
+	if (bucket?.kind !== "bucket") return null;
+	const live = bucket.deletedAt === null;
+	return {
+		bucket,
+		areas: data.areas
+			.filter(
+				(a) =>
+					a.bucketId === bucketId &&
+					(live ? a.deletedAt === null : a.deletedAt === bucket.deletedAt),
+			)
+			.sort(bySortKey)
+			.map((area) => ({
+				area,
+				open: todos.filter(
+					(t) =>
+						t.areaId === area.id &&
+						!t.projectId &&
+						isOpen(t) &&
+						t.deletedAt === area.deletedAt,
+				).length,
+			})),
 		projects: projects
-			.filter((p) => p.areaId === areaId && isListed(p, ctx))
+			.filter((p) => p.areaId === bucketId && isListed(p, ctx))
 			.sort(bySortKey)
 			.map((project) => ({
 				project,
 				progress: projectProgress(project.id, data.todos),
 			})),
-		todos: todos
-			.filter((t) => t.areaId === areaId && !t.projectId && isListed(t, ctx))
-			.sort(bySortKey),
-		logged: [
-			...projects
-				.filter((p) => p.areaId === areaId && isLogged(p, ctx))
-				.map((item) => ({ kind: "project" as const, item })),
-			...todos
-				.filter((t) => t.areaId === areaId && !t.projectId && isLogged(t, ctx))
-				.map((item) => ({ kind: "todo" as const, item })),
-		].sort((a, b) => byCompletedDesc(a.item, b.item)),
+		logged: projects
+			.filter((p) => p.areaId === bucketId && isLogged(p, ctx))
+			.sort(byCompletedDesc)
+			.map((item) => ({ kind: "project" as const, item })),
 	};
 }
 
@@ -939,26 +1022,34 @@ export function sidebarCounts(data: ViewData, ctx: ViewContext): SidebarCounts {
 }
 
 export type SidebarTree = {
-	/** Open projects outside any area. */
-	projects: Project[];
-	areas: { area: Area; projects: Project[] }[];
+	/** Each Life Bucket (even empty ones) with its areas and open projects. */
+	buckets: { bucket: Area; areas: Area[]; projects: Project[] }[];
+	/** Areas and open projects not in a live bucket (only until the server places them). */
+	loose: { areas: Area[]; projects: Project[] };
 };
 
-/** Areas (even empty ones) with their open projects nested, for the sidebar. */
+/** Life Buckets with their areas and open projects nested, for the sidebar. */
 export function sidebarTree(data: ViewData): SidebarTree {
 	const idx = buildIndex(data);
-	const areas = data.areas
-		.filter((a) => a.deletedAt === null)
+	const buckets = data.buckets
+		.filter((b) => b.deletedAt === null)
 		.sort(bySortKey)
-		.map((area) => ({ area, projects: [] as Project[] }));
-	const byArea = new Map(areas.map((group) => [group.area.id, group]));
-	const root: Project[] = [];
+		.map((bucket) => ({
+			bucket,
+			areas: [] as Area[],
+			projects: [] as Project[],
+		}));
+	const byBucket = new Map(buckets.map((group) => [group.bucket.id, group]));
+	const loose: SidebarTree["loose"] = { areas: [], projects: [] };
+	for (const area of [...data.areas].sort(bySortKey)) {
+		if (area.deletedAt !== null) continue;
+		const group = byBucket.get(bucketOf(area, idx)?.id ?? "");
+		(group ?? loose).areas.push(area);
+	}
 	for (const project of [...data.projects].sort(bySortKey)) {
 		if (!isOpen(project)) continue;
-		const group =
-			liveArea(project.areaId, idx) && byArea.get(project.areaId as string);
-		if (group) group.projects.push(project);
-		else root.push(project);
+		const group = byBucket.get(bucketOf(project, idx)?.id ?? "");
+		(group ?? loose).projects.push(project);
 	}
-	return { projects: root, areas };
+	return { buckets, loose };
 }

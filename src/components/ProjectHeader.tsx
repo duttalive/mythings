@@ -29,7 +29,7 @@ import {
 	whenText,
 } from "./controls";
 import {
-	AreaIcon,
+	BucketIcon,
 	CalendarIcon,
 	CheckIcon,
 	CrossIcon,
@@ -132,11 +132,11 @@ export function ProjectTitle({ project }: { project: Project }) {
 
 type PopoverName = "when" | "deadline" | "tags" | "more" | "move" | null;
 
-/** Area link, status, schedule/deadline/tag chips and the actions menu; then notes. */
+/** Life Bucket link, status, schedule/deadline/tag chips and the actions menu; then notes. */
 export function ProjectDetails({ project }: { project: Project }) {
 	const ops = useOps();
 	const navigate = useNavigate();
-	const { data, ctx, areas } = useListData();
+	const { data, ctx, buckets } = useListData();
 	const confirmDelete = useConfirmDelete();
 	const { user } = useAuth();
 	const { requestTitleFocus } = useEditing();
@@ -150,7 +150,8 @@ export function ProjectDetails({ project }: { project: Project }) {
 	const update = (patch: Partial<Project>) =>
 		void ops.update("project", project.id, patch).catch(console.error);
 
-	const area = project.areaId ? areas.get(project.areaId) : undefined;
+	// A project's areaId names its Life Bucket.
+	const bucket = project.areaId ? buckets.get(project.areaId) : undefined;
 	const tags = project.tagIds
 		.map((id) => data.tags.find((t) => t.id === id))
 		.filter((t) => t && t.deletedAt === null);
@@ -231,21 +232,21 @@ export function ProjectDetails({ project }: { project: Project }) {
 		requestTitleFocus(id);
 	};
 
-	const liveAreas = data.areas
-		.filter((a) => a.deletedAt === null)
+	const liveBuckets = data.buckets
+		.filter((b) => b.deletedAt === null)
 		.sort(bySortKey);
 
 	return (
 		<>
 			<div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-[var(--fg-muted)]">
-				{area && (
+				{bucket && (
 					<Link
-						to="/area/$areaId"
-						params={{ areaId: area.id }}
+						to="/bucket/$bucketId"
+						params={{ bucketId: bucket.id }}
 						className="mr-1.5 flex items-center gap-1 hover:underline"
 					>
-						<AreaIcon className="size-3.5" />
-						{area.title || "New Area"}
+						<BucketIcon className="size-3.5" />
+						{bucket.title || "New Life Bucket"}
 					</Link>
 				)}
 				{inTrash && <span className="mr-1.5">In Trash</span>}
@@ -341,16 +342,18 @@ export function ProjectDetails({ project }: { project: Project }) {
 							>
 								Add Heading
 							</PopoverOption>
-							<PopoverOption
-								icon={<AreaIcon className="size-4" />}
-								onSelect={() => {
-									// The area list takes focus; don't send it back to the menu button.
-									focus.handOff();
-									setPopover("move");
-								}}
-							>
-								Move to Area…
-							</PopoverOption>
+							{liveBuckets.length > 1 && (
+								<PopoverOption
+									icon={<BucketIcon className="size-4" />}
+									onSelect={() => {
+										// The bucket list takes focus; don't send it back to the menu button.
+										focus.handOff();
+										setPopover("move");
+									}}
+								>
+									Move to Life Bucket…
+								</PopoverOption>
+							)}
 							{project.status === "open" ? (
 								<PopoverOption
 									icon={<CrossIcon className="size-3.5" />}
@@ -384,17 +387,17 @@ export function ProjectDetails({ project }: { project: Project }) {
 										return;
 									void ops.remove("project", project.id).catch(console.error);
 									void navigate({
-										to: area ? "/area/$areaId" : "/anytime",
-										params: { areaId: area?.id ?? "" },
+										to: bucket ? "/bucket/$bucketId" : "/anytime",
+										params: { bucketId: bucket?.id ?? "" },
 									});
 								}}
 							>
 								<span className="text-overdue">Delete Project</span>
 							</PopoverOption>
 						</Popover>
-						{/* "Move to Area" opens its own list, anchored to the same spot. */}
+						{/* "Move to Life Bucket" opens its own list, anchored to the same spot. */}
 						<Popover
-							label="Move to area"
+							label="Move to Life Bucket"
 							open={popover === "move"}
 							onOpenChange={open("move")}
 							trigger={<span />}
@@ -403,27 +406,14 @@ export function ProjectDetails({ project }: { project: Project }) {
 							<p className="px-2 pb-1 text-xs font-semibold text-[var(--fg-muted)]">
 								Move to
 							</p>
-							<PopoverOption
-								icon={
-									project.areaId === null ? (
-										<CheckIcon className="size-3.5" />
-									) : null
-								}
-								onSelect={() => {
-									update({ areaId: null });
-									setPopover(null);
-								}}
-							>
-								No Area
-							</PopoverOption>
-							{liveAreas.map((a) => (
+							{liveBuckets.map((a) => (
 								<PopoverOption
 									key={a.id}
 									icon={
 										project.areaId === a.id ? (
 											<CheckIcon className="size-3.5" />
 										) : (
-											<AreaIcon className="size-4" />
+											<BucketIcon className="size-4" />
 										)
 									}
 									onSelect={() => {
@@ -431,7 +421,7 @@ export function ProjectDetails({ project }: { project: Project }) {
 										setPopover(null);
 									}}
 								>
-									{a.title || "New Area"}
+									{a.title || "New Life Bucket"}
 								</PopoverOption>
 							))}
 						</Popover>

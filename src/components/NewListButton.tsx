@@ -1,19 +1,22 @@
-import { useLocation } from "@tanstack/react-router";
 import { useState } from "react";
-import { locationFromPath } from "../editing/defaults";
 import { useCreateList } from "../editing/useCreateList";
-import { AreaIcon, PlusIcon } from "./icons";
+import { AreaIcon, BucketIcon, PlusIcon } from "./icons";
 import { Popover, PopoverOption, useFocusHandoff } from "./Popover";
 import { ProgressRing } from "./rows";
 
-/** Sidebar "+ New List": a project (inside the open area, if any) or an area. */
+/**
+ * Sidebar "+ New List": a project or area (in the Life Bucket that's open,
+ * else the first one), or a new Life Bucket.
+ */
 export function NewListButton() {
 	const [open, setOpen] = useState(false);
 	const focus = useFocusHandoff();
-	const { pathname } = useLocation();
-	const { createProject, createArea } = useCreateList();
-	const location = locationFromPath(pathname);
-	const areaId = location.list === "area" ? location.areaId : null;
+	const { createProject, createArea, createBucket } = useCreateList();
+	const pick = (create: () => Promise<void>) => () => {
+		focus.handOff();
+		setOpen(false);
+		void create().catch(console.error);
+	};
 
 	return (
 		<Popover
@@ -39,31 +42,35 @@ export function NewListButton() {
 						className="size-4"
 					/>
 				}
-				onSelect={() => {
-					focus.handOff();
-					setOpen(false);
-					void createProject(areaId).catch(console.error);
-				}}
+				onSelect={pick(() => createProject())}
 			>
 				<span>
 					New Project
 					<span className="block text-xs text-[var(--fg-muted)]">
-						A goal with an end, made of to-dos
+						Work toward an outcome, from start to finish. Can have a deadline.
 					</span>
 				</span>
 			</PopoverOption>
 			<PopoverOption
 				icon={<AreaIcon className="size-4" />}
-				onSelect={() => {
-					focus.handOff();
-					setOpen(false);
-					void createArea().catch(console.error);
-				}}
+				onSelect={pick(() => createArea())}
 			>
 				<span>
 					New Area
 					<span className="block text-xs text-[var(--fg-muted)]">
-						An ongoing part of life, like Work or Home
+						To-dos for work that keeps going, like Health or Home. No deadline.
+					</span>
+				</span>
+			</PopoverOption>
+			<PopoverOption
+				icon={<BucketIcon className="size-4" />}
+				onSelect={pick(createBucket)}
+			>
+				<span>
+					New Life Bucket
+					<span className="block text-xs text-[var(--fg-muted)]">
+						A big part of life, like Work or Family, holding its areas and
+						projects
 					</span>
 				</span>
 			</PopoverOption>

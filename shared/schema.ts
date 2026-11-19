@@ -310,13 +310,24 @@ const scheduleFields = {
 	deadline: localDateSchema.nullable(),
 };
 
+/**
+ * Area rows hold two kinds of list (SPEC §5.2): a Life Bucket ("bucket"),
+ * which groups areas and projects, and an Area ("area"), an ongoing list of
+ * to-dos inside a bucket. A project's `areaId` names its Life Bucket; a
+ * to-do's `areaId` names its Area.
+ */
+export const areaKindSchema = z.enum(["area", "bucket"]);
+
 const areaFields = z.object({
 	...baseFields,
 	title: titleSchema,
 	sortKey: sortKeySchema,
 	tagIds: tagIdsSchema,
-	/** Its projects are hidden in the sidebar. */
+	/** What's inside it is hidden in the sidebar. */
 	collapsed: z.boolean(),
+	kind: areaKindSchema,
+	/** An area's Life Bucket (null for a bucket). */
+	bucketId: ulidSchema.nullable(),
 });
 
 const projectFields = z.object({
@@ -420,7 +431,22 @@ function checkSchedulable(row: Schedulable, ctx: z.RefinementCtx) {
 	}
 }
 
-export const areaSchema = areaFields;
+export const areaSchema = areaFields.superRefine((row, ctx) => {
+	if (row.kind === "bucket" && row.bucketId !== null) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["bucketId"],
+			message: "A Life Bucket can't be inside another",
+		});
+	}
+	if (row.bucketId === row.id) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["bucketId"],
+			message: "An area can't be its own Life Bucket",
+		});
+	}
+});
 
 export const projectSchema = projectFields.superRefine((row, ctx) => {
 	checkSchedulable(row, ctx);
@@ -473,6 +499,7 @@ export const tagSchema = tagFields.superRefine((row, ctx) => {
 });
 
 export type Area = z.infer<typeof areaSchema>;
+export type AreaKind = z.infer<typeof areaKindSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export type Heading = z.infer<typeof headingSchema>;
 export type Todo = z.infer<typeof todoSchema>;

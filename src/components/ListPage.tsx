@@ -6,7 +6,7 @@ import {
 	projectProgress,
 } from "../../shared/views";
 import { useListData, useTagFilter } from "../data";
-import { AreaIcon } from "./icons";
+import { AreaIcon, BucketIcon } from "./icons";
 import { ProgressRing, RowList, TodoRow } from "./rows";
 
 /** A list's page: title, optional header content and tag bar, then the items. */
@@ -154,67 +154,75 @@ export function GroupedListView({
 	showStar?: boolean;
 }) {
 	const { data } = useListData();
-	const projectGroup = ({
-		project,
-		todos,
-	}: GroupedList["projects"][number]) => (
-		<Section
-			key={project.id}
-			className="mt-6"
-			title={
-				<>
-					<ProgressRing
-						progress={projectProgress(project.id, data.todos)}
-						status={project.status}
-					/>
-					<Link
-						to="/project/$projectId"
-						params={{ projectId: project.id }}
-						className="hover:underline"
-					>
-						{project.title || "New Project"}
-					</Link>
-				</>
-			}
-		>
-			{todos.length > 0 && (
-				<RowList>
-					{todos.map((todo) => (
-						<TodoRow key={todo.id} todo={todo} showStar={showStar} />
-					))}
-				</RowList>
-			)}
-		</Section>
+	const todoRows = (todos: GroupedList["todos"]) =>
+		todos.length > 0 && (
+			<RowList>
+				{todos.map((todo) => (
+					<TodoRow key={todo.id} todo={todo} showStar={showStar} />
+				))}
+			</RowList>
+		);
+	const heading = (icon: ReactNode, link: ReactNode) => (
+		<>
+			{icon}
+			{link}
+		</>
 	);
 
 	return (
 		<>
-			{list.todos.length > 0 && (
-				<RowList>
-					{list.todos.map((todo) => (
-						<TodoRow key={todo.id} todo={todo} showStar={showStar} />
-					))}
-				</RowList>
-			)}
-			{list.projects.map(projectGroup)}
-			{list.areas.map(({ area, todos, projects }) => (
-				<div key={area.id} className="mt-10">
-					<Link
-						to="/area/$areaId"
-						params={{ areaId: area.id }}
-						className="flex items-center gap-2 px-2 text-lg font-bold hover:underline"
-					>
-						<AreaIcon className="size-5 text-[var(--fg-muted)]" />
-						{area.title || "New Area"}
-					</Link>
-					{todos.length > 0 && (
-						<RowList>
-							{todos.map((todo) => (
-								<TodoRow key={todo.id} todo={todo} showStar={showStar} />
-							))}
-						</RowList>
+			{todoRows(list.todos)}
+			{list.buckets.map(({ bucket, areas, projects }) => (
+				<div key={bucket?.id ?? "none"} className="mt-10 first:mt-0">
+					{bucket && (
+						<Link
+							to="/bucket/$bucketId"
+							params={{ bucketId: bucket.id }}
+							className="flex items-center gap-2 px-2 text-lg font-bold break-words hover:underline"
+						>
+							<BucketIcon className="size-5 shrink-0 text-[var(--fg-muted)]" />
+							{bucket.title || "New Life Bucket"}
+						</Link>
 					)}
-					{projects.map(projectGroup)}
+					{areas.map(({ area, todos }) => (
+						<Section
+							key={area.id}
+							className="mt-6"
+							title={heading(
+								<AreaIcon className="size-4 shrink-0 text-[var(--fg-muted)]" />,
+								<Link
+									to="/area/$areaId"
+									params={{ areaId: area.id }}
+									className="hover:underline"
+								>
+									{area.title || "New Area"}
+								</Link>,
+							)}
+						>
+							{todoRows(todos)}
+						</Section>
+					))}
+					{projects.map(({ project, todos }) => (
+						<Section
+							key={project.id}
+							className="mt-6"
+							title={heading(
+								<ProgressRing
+									progress={projectProgress(project.id, data.todos)}
+									status={project.status}
+								/>,
+								<Link
+									to="/project/$projectId"
+									params={{ projectId: project.id }}
+									className="hover:underline"
+								>
+									{project.title || "New Project"}
+								</Link>,
+							)}
+						>
+							{todoRows(todos)}
+						</Section>
+					))}
 				</div>
 			))}
 		</>
@@ -222,9 +230,5 @@ export function GroupedListView({
 }
 
 export function isEmptyGroupedList(list: GroupedList): boolean {
-	return (
-		list.todos.length === 0 &&
-		list.projects.length === 0 &&
-		list.areas.length === 0
-	);
+	return list.todos.length === 0 && list.buckets.length === 0;
 }

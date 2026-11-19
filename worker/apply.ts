@@ -18,6 +18,7 @@ import {
 	type RepeatRule,
 	type Todo,
 } from "../shared/schema";
+import { defaultBucket } from "../shared/structure";
 import type { Store } from "./store";
 
 export type UserContext = {
@@ -100,6 +101,8 @@ export class Applier {
 			this.now,
 			(headingId) => this.store.get("heading", headingId)?.projectId,
 		);
+		if (entity === "area" || entity === "project")
+			this.placeInBucket(entity, merged, existing, patch);
 		const row = this.validate(entity, merged);
 		this.checkReferences(entity, row as unknown as Fields, existing);
 		this.write(entity, row);
@@ -132,6 +135,56 @@ export class Applier {
 		}
 	}
 
+	/**
+	 * Every live area and project sits in a Life Bucket (SPEC §5.2). One sent
+	 * without a usable bucket — from an app version before buckets, an import,
+	 * or a restore whose bucket is gone — goes into the first bucket. A project
+	 * put into an area goes into that area's bucket.
+	 */
+	private placeInBucket(
+		entity: "area" | "project",
+		row: Fields,
+		existing: Fields | null,
+		patch: Record<string, unknown>,
+	) {
+		if (entity === "area") {
+			if (existing && "kind" in patch && patch.kind !== existing.kind)
+				throw new OpRejected(
+					"invalid_row",
+					"An area can't become a Life Bucket, or the other way round",
+					[{ path: ["kind"], message: "Can't change" }],
+				);
+			if (row.kind === "bucket") {
+				row.bucketId = null;
+				return;
+			}
+		}
+		const field = entity === "area" ? "bucketId" : "areaId";
+		if (row.deletedAt !== null) return;
+		const id = row[field] as string | null;
+		let target = id ? (this.store.get("area", id) as Fields | null) : null;
+		if (target && target.kind !== "bucket" && entity === "project")
+			target = target.bucketId
+				? (this.store.get("area", target.bucketId as string) as Fields | null)
+				: null;
+		row[field] =
+			target && target.kind === "bucket" && target.deletedAt === null
+				? target.id
+				: this.defaultBucket();
+	}
+
+	/** The first live Life Bucket, made ("Personal") if there are none. */
+	private defaultBucket(): string {
+		const first = this.store.where(
+			"area",
+			"kind = 'bucket' AND deleted_at IS NULL ORDER BY sort_key, id LIMIT 1",
+		)[0];
+		if (first) return first.id;
+		const bucket = defaultBucket(ulid(), this.now);
+		this.write("area", bucket);
+		return bucket.id;
+	}
+
 	private reference<E extends EntityName>(
 		entity: E,
 		id: string,
@@ -159,8 +212,24 @@ export class Applier {
 
 		if (changed("projectId") && entity !== "project")
 			this.reference("project", row.projectId as string, "projectId");
-		if (changed("areaId"))
-			this.reference("area", row.areaId as string, "areaId");
+		if (changed("areaId")) {
+			const container = this.reference("area", row.areaId as string, "areaId");
+			// A to-do goes in an area; a project's areaId names its Life Bucket.
+			const wanted = entity === "todo" ? "area" : "bucket";
+			if (container.kind !== wanted)
+				throw new OpRejected(
+					"invalid_reference",
+					entity === "todo"
+						? "To-dos go in an area or a project, not a Life Bucket"
+						: "Projects go in a Life Bucket",
+					[
+						{
+							path: ["areaId"],
+							message: `Not ${wanted === "area" ? "an area" : "a Life Bucket"}`,
+						},
+					],
+				);
+		}
 		if (changed("todoId"))
 			this.reference("todo", row.todoId as string, "todoId");
 		if (
@@ -249,6 +318,7 @@ export class Applier {
 		switch (entity) {
 			case "area":
 				return [
+					...tagged("area", this.store.where("area", "bucket_id = ?", id)),
 					...tagged("project", this.store.where("project", "area_id = ?", id)),
 					...tagged("todo", this.store.where("todo", "area_id = ?", id)),
 				];

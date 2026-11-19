@@ -208,7 +208,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
 					const moved = source?.items.find(
 						(item) => item.id === dragged.id,
 					) ?? {
-						entity: dragged.kind,
+						entity: dragged.kind === "bucket" ? "area" : dragged.kind,
 						id: dragged.id,
 						key: null,
 					};
@@ -247,7 +247,11 @@ export function DndProvider({ children }: { children: ReactNode }) {
 					ctx,
 				);
 				if (target.target.type !== "trash") return apply(mutations);
-				const request = dragToTrashRequest(dragged.kind, dragged.id, data);
+				const request = dragToTrashRequest(
+					dragged.kind === "bucket" ? "area" : dragged.kind,
+					dragged.id,
+					data,
+				);
 				if (!request) return;
 				void confirmDelete(request).then((ok) => ok && apply(mutations));
 			}
@@ -293,7 +297,10 @@ export function DndProvider({ children }: { children: ReactNode }) {
 						"New Heading"
 					: active.kind === "tag"
 						? data.tags.find((t) => t.id === active.id)?.title || "Tag"
-						: data.areas.find((a) => a.id === active.id)?.title || "New Area"
+						: active.kind === "bucket"
+							? data.buckets.find((b) => b.id === active.id)?.title ||
+								"New Life Bucket"
+							: data.areas.find((a) => a.id === active.id)?.title || "New Area"
 		: "";
 
 	return (

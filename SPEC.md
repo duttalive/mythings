@@ -73,7 +73,7 @@ mythings/
 │  ├─ main.tsx
 │  ├─ db/local.ts          # Dexie schema
 │  ├─ sync/                # outbox, socket client, pull/push
-│  ├─ routes/              # inbox, today, upcoming, anytime, someday, logbook, trash, project/$id, area/$id, tag/$id
+│  ├─ routes/              # inbox, today, upcoming, anytime, someday, overdue, logbook, trash, project/$id, area/$id, bucket/$id, tag/$id
 │  ├─ components/
 │  ├─ keyboard/            # shortcut registry
 │  └─ styles.css
@@ -132,15 +132,21 @@ deletedAt: number | null; // soft delete → Trash; hard-purged after 30 days
 rev: number; // server sequence number of last change (for sync)
 ```
 
-### 5.1 Area
+### 5.1 Life Bucket and Area (2.2.0)
 
-`title`, `sortKey`, `tagIds[]`.
-Ongoing responsibility (Work, Home). Contains projects and loose to-dos. Never "completes".
+Both are `area` rows: `title`, `sortKey`, `tagIds[]`, `collapsed`, `kind: "bucket"|"area"`, `bucketId|null`.
+
+- **Life Bucket** (`kind: "bucket"`, `bucketId: null`): a big part of life (Work, Family, Personal). Groups areas and projects; holds no to-dos itself. Route `/bucket/$id`.
+- **Area** (`kind: "area"`, `bucketId` = its bucket): an ongoing responsibility (Health, Home) holding to-dos. No deadline; never "completes". No projects.
+- Every live area and project sits in a live bucket. The server enforces it (`Applier.placeInBucket`): an area or project sent without a usable bucket (an older app version, an import, a restore whose bucket is gone) goes into the first live bucket, made as "Personal" if there's none; a project put into an area goes into that area's bucket. `kind` can't change after creation. A to-do's `areaId` must name an area, a project's a bucket (`invalid_reference` otherwise).
+- Kept in the old `areas` table and field names so ids, sync, Trash, undo and encrypted titles carry over: a project's `areaId` names its **bucket**.
+- **Conversion** (`shared/structure.ts`, run once per account by `worker/life-buckets.ts` when its UserStore starts, and on version-1 export files): an area that held projects becomes a bucket (same id, title, tags); if it also had loose to-dos they move into a new area of the same title inside it (same `deletedAt`, so they restore together). Other areas and projects outside areas go into a new "Personal" bucket (only if needed). Changed rows get new revs. Clients open a Dexie v2 that drops `lastRev`, so they fetch everything once.
+- Tags: items inherit from their project or area and from that one's bucket.
 
 ### 5.2 Project
 
 `title`, `notes` (markdown), `areaId|null`, `status: "open"|"completed"|"canceled"`, `completedAt`,
-`when` (see 5.5), `startDate`, `evening`, `deadline`, `sortKey` (within area or top-level), `todaySortKey`, `tagIds[]`, `repeat|null`, `repeatTemplateId|null`.
+`when` (see 5.5), `startDate`, `evening`, `deadline`, `sortKey` (within its bucket), `todaySortKey`, `tagIds[]`, `repeat|null`, `repeatTemplateId|null`.
 Shows a progress ring = completed / (open + completed) to-dos.
 Completing a project with open to-dos prompts: "Mark remaining as completed / canceled".
 
@@ -152,7 +158,7 @@ Groups to-dos inside a project. "Archive heading" moves it and its done items to
 Implementation notes (milestone 9):
 - Completing a project from its progress ring asks what to do with any remaining open to-dos ("Mark remaining as Completed / Canceled"); one batch updates them and the project. "Cancel Project" cancels remaining to-dos without asking. Reopening a project leaves its to-dos as they are.
 - A heading can be archived only once nothing under it is open; archived headings sit collapsed at the bottom of the project and can be unarchived. Deleting a heading moves its to-dos to Trash with it.
-- New projects and areas come from the sidebar's "+ New List" (a project created while an area is open goes into that area) or an area's menu, and open with the title focused. Projects can be moved between areas from their menu.
+- New projects, areas and Life Buckets come from the sidebar's "+ New List" (a project or area goes into the bucket on screen — its page, or the one holding the open area or project — else the first bucket) or a bucket's menu, and open with the title focused. Projects move between buckets from their menu (with more than one bucket); areas from theirs.
 
 ### 5.4 To-do
 
@@ -231,7 +237,8 @@ An item whose project is `someday` (or whose project is not open) is excluded fr
 | **Logbook**    | `status !== "open"`, not deleted                                                                      | Grouped by `completedAt` day, newest first. Paginate.                                                                                                                           |
 | **Trash**      | `deletedAt !== null`                                                                                  | "Empty Trash" button (confirm).                                                                                                                                                 |
 | **Project**    | to-dos with `projectId`                                                                               | Loose to-dos, then each heading; archived headings and repeat templates listed separately.                                                                                      |
-| **Area**       | projects + loose to-dos in that area                                                                  | Projects first (with progress ring), then to-dos.                                                                                                                               |
+| **Area**       | loose to-dos in that area                                                                             | Its to-dos, then logged ones. A link to its Life Bucket.                                                                                                                        |
+| **Life Bucket**| its areas and projects                                                                                | Areas (with open to-do counts), then projects (with progress ring), then logged projects. No **+**.                                                                             |
 | **Deadlines**  | open to-dos and projects with a `deadline` (not inside a finished, deleted or repeating project)      | Not in the sidebar; opened from Quick Find (`/deadlines`). "Overdue" first, then one group per deadline day. A search field narrows it by title, notes, project, area and tags.  |
 | **Tag filter** | Any list can be filtered by one or more tags via a tag bar at the top                                 | Today's bar offers only the tags its items carry (directly, from their project or area, or as a parent tag), plus any selected.                                                 |
 
@@ -246,9 +253,10 @@ Details settled in implementation (`shared/views.ts`):
 - **Someday** shows someday projects as entries without their to-dos, plus someday to-dos outside someday projects.
 - **Logbook** files a finished project's to-dos under the project, and paginates with a `{completedAt, id}` cursor.
 - **Trash** lists only top-level deleted items (a deleted project's to-dos are restored with it).
-- **Tag filter** requires every selected tag (or a descendant of it); items inherit tags from their project and area.
+- **Tag filter** requires every selected tag (or a descendant of it); items inherit tags from their project or area and its Life Bucket.
 - **Tag page** (`/tag/$id`, `tagView`) lists open to-dos and projects carrying the tag or a descendant, grouped like Anytime, then their repeating to-dos and projects (soonest next date first) and a "Show N logged items" toggle for their Logbook items.
-- **Sidebar** (`sidebarTree`) shows open projects outside areas first, then every live area (even empty) with its open projects; someday projects are dimmed.
+- **Sidebar** (`sidebarTree`) shows every live Life Bucket (even empty) with its areas and then its open projects; someday projects are dimmed. Anything not in a live bucket shows above them until the server places it.
+- **Anytime, Someday and tag pages** (`GroupedList`) show loose to-dos, then each bucket with its areas' and projects' to-dos.
 
 These functions take arrays of entities and return view models. They run on the client against Dexie data, and are unit-tested heavily.
 
@@ -290,7 +298,7 @@ type Op = {
 - Broadcast the changed rows to **all** of the user's sockets — including the sender, which gets the canonical (normalized) rows that way — whether the push came over a socket or HTTP. Send that push's errors and then its ack to the sender only.
 - Each op succeeds or is rejected on its own, with an error code: `invalid_op` (malformed), `invalid_row` (the merged row breaks a §5 invariant), `missing_reference` (points at a missing or deleted row), `invalid_reference` (a heading from another project), `cycle` (nested tags), `not_found` (delete/purge of an unknown row).
 - Normalization before validation, based on what the patch sets: setting `startDate` makes the item `scheduled`; any other `when` clears `startDate` and `evening`; `status` stamps or clears `completedAt` (using `clientTs`); moving a to-do to an area, project or heading clears the containers it left and takes it out of the Inbox; moving it to the Inbox clears its containers; moving a heading moves its to-dos.
-- Delete is a soft delete that cascades (area → projects and loose to-dos; project → headings and to-dos; heading → to-dos; tag → child tags). Children share the parent's `deletedAt`, so restoring the parent (`deletedAt: null`) restores exactly the children deleted with it.
+- Delete is a soft delete that cascades (bucket → areas and projects; area → loose to-dos; project → headings and to-dos; heading → to-dos; tag → child tags). Children share the parent's `deletedAt`, so restoring the parent (`deletedAt: null`) restores exactly the children deleted with it.
 - Purge removes rows permanently (to-dos take their checklist items; purged tags are removed from items' `tagIds`) and records a tombstone, so pulls report `purged: {entity, id}[]` alongside `rows`.
 - After every batch, due repeat instances are materialized (§5.8) in the same transaction.
 
@@ -412,7 +420,7 @@ Implementation notes (milestone 12):
 
 ### 10.1 Layout
 
-- **Sidebar** (collapsible; a drawer on mobile): Inbox, Today, Upcoming, Anytime, Someday, Overdue, Logbook, Trash; then Areas with their projects nested; then Tags, nested under their parents; an arrow on an area or a tag with nested tags hides what's inside (synced; a count shows how many are hidden; visiting one inside opens it again); drag to reorder; "+ New List" button at the bottom (project or area).
+- **Sidebar** (collapsible; a drawer on mobile): Inbox, Today, Upcoming, Anytime, Someday, Overdue, Logbook, Trash; then Life Buckets with their areas and projects nested; then Tags, nested under their parents; an arrow on a Life Bucket or a tag with nested tags hides what's inside (synced; a count shows how many are hidden; visiting one inside opens it again); drag to reorder; "+ New List" button at the bottom (project, area or Life Bucket).
 - **Main pane:** list title (editable for projects/areas), project notes, then items.
 - **Mobile:** bottom-right floating **+** button. Swipe right on a row to set When; swipe left to delete.
 
@@ -489,9 +497,9 @@ Implementation notes (milestone 11):
 - Dropping into Today places the items at the top of the main section.
 
 Implementation notes (milestone 10):
-- Reorderable lists: Inbox, Today and This Evening (by `todaySortKey`), a project's loose to-dos and each heading, an area's projects and to-dos, and the sidebar's areas and projects. Dragging between lists on the same page moves the item (heading ↔ loose, Today ↔ This Evening, which schedules for today when needed). Rows in Anytime, Someday, Upcoming and tag pages can be dragged onto the sidebar but not reordered there.
+- Reorderable lists: Inbox, Today and This Evening (by `todaySortKey`), a project's loose to-dos and each heading, an area's to-dos, a bucket's areas and projects, and the sidebar's buckets, areas and projects. Dragging between lists on the same page moves the item (heading ↔ loose, Today ↔ This Evening, which schedules for today when needed). Rows in Anytime, Someday, Upcoming and tag pages can be dragged onto the sidebar but not reordered there.
 - Sidebar tags (`src/dnd/tagMoves.ts`): drag a tag onto the middle of another to nest it (end of its children; a collapsed parent opens), onto its top/bottom quarter to place it before/after it under the same parent, or onto Trash to delete it (asks, naming nested tags). Moves into itself or a descendant do nothing. Right-click a tag for **Move out of “parent”** and **Delete Tag…**.
-- Sidebar targets: Inbox, Today (top of the main section), Anytime, Someday, Logbook (completes a to-do), Trash, any project or area (to-dos go to the end; projects can be dropped onto an area). Upcoming is not a target. Projects can't be dropped onto the Logbook, which would skip the remaining-to-dos prompt.
+- Sidebar targets: Inbox, Today (top of the main section), Anytime, Someday, Logbook (completes a to-do), Trash, any project or area (to-dos go to the end), any Life Bucket (projects and areas go to the end). Upcoming is not a target. Projects can't be dropped onto the Logbook, which would skip the remaining-to-dos prompt.
 - Only the moved item gets a new key, unless the list's keys are missing, duplicated or not valid fractional keys; then the list is renumbered in one batch (`src/editing/reorder.ts`).
 - Reordering is off while a tag filter is active (items can still be dragged to the sidebar), since renumbering a filtered subset could scramble the hidden items.
 - Mouse drags start after 6px of movement, touch drags after a 250ms press. Keyboard reordering is ⌘↑/⌘↓ (milestone 11).
@@ -513,7 +521,7 @@ Time zone (auto-detected), week start day, theme, "Group to-dos in Today by proj
 _Implementation notes (milestone 14):_
 - `/settings` (sidebar gear, ⌘,), loaded on demand. Changes apply at once and are saved with `PATCH /me`, which also hands the new time zone and week start to the UserStore (alarms, repeats); the client re-sends `hello` with the new zone. Offline, a change is put back with a message.
 - Theme: `data-theme` on `<html>` overrides `prefers-color-scheme`; mirrored to `localStorage` (`mythings:theme`) and applied by an inline script in `index.html` before first paint. Colors that depend on the theme (accent, overdue) are CSS variables, with `--on-accent` / `--on-overdue` for text on them, picked for 4.5:1 contrast in both themes.
-- Export (`GET /api/export`) is every row, Trash included, as `{format: "mythings-export", version: 1, exportedAt, data: {tag, area, project, heading, todo, checklist}}`. Import (`POST /api/import`) adds copies with fresh ids (`shared/transfer.ts`): references are remapped, top-level tags are matched by title, and trashed rows (and rows that need them) are left out. It's applied in batches of 200 ops so each broadcast stays small.
+- Export (`GET /api/export`) is every row, Trash included, as `{format: "mythings-export", version: 2, exportedAt, data: {tag, area, project, heading, todo, checklist}}`. Import (`POST /api/import`) adds copies with fresh ids (`shared/transfer.ts`): references are remapped, top-level tags are matched by title, and trashed rows (and rows that need them) are left out. It's applied in batches of 200 ops so each broadcast stays small. Version 1 files (before Life Buckets) are converted first (§5.1).
 - Swipes (touch only): right opens When for the row, left moves it to the Trash with an Undo toast. Decided after 10px; mostly vertical moves scroll, long presses still drag.
 - Animations: cards, popovers, dialogs, toasts and page changes fade or slide in over 150–180ms; `prefers-reduced-motion` turns all motion off.
 - Accessibility: checked with axe-core on every list, the settings page, dialogs, popovers, the mobile drawer and the login page in both themes (no violations). Selected rows use `aria-current` (buttons can't be `aria-selected`).

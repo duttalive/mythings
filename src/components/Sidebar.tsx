@@ -15,7 +15,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { Tag } from "../../shared/schema";
+import type { Area, Project, Tag } from "../../shared/schema";
 import {
 	bySortKey,
 	projectProgress,
@@ -39,6 +39,7 @@ import { useOps } from "../sync/hooks";
 import {
 	AreaIcon,
 	BoxIcon,
+	BucketIcon,
 	CalendarIcon,
 	ChevronIcon,
 	FlagIcon,
@@ -92,7 +93,7 @@ function DropTarget({
 	type,
 	children,
 }: {
-	type: Exclude<SidebarTarget["type"], "project" | "area">;
+	type: Exclude<SidebarTarget["type"], "project" | "area" | "bucket">;
 	children: ReactNode;
 }) {
 	const { activeKind } = useDndRegistry();
@@ -131,7 +132,7 @@ function Badge({
 }
 
 /**
- * Collapsing an area hides its projects, and a tag its nested tags. It's
+ * Collapsing a Life Bucket hides its areas and projects, and a tag its nested tags. It's
  * stored on the area or tag, so it syncs to the user's other devices; it
  * isn't an undoable edit.
  */
@@ -154,20 +155,24 @@ function useSidebarCollapse() {
 		[ops],
 	);
 
-	// Going to a project in a collapsed area, or a tag inside a collapsed
+	// Going to an area or project in a collapsed Life Bucket, or a tag inside a collapsed
 	// one (from search, a link, a new project), opens what hides it, once per
 	// visit, so it can be seen.
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const handled = useRef<string | null>(null);
 	useEffect(() => {
 		if (handled.current === pathname) return;
-		const [, kind, id] = /^\/(project|tag)\/([^/]+)/.exec(pathname) ?? [];
-		if (kind === "project") {
-			const project = data.projects.find((p) => p.id === id);
-			// Wait for the project if the data isn't there yet.
-			if (!project) return;
-			const area = data.areas.find((a) => a.id === project.areaId);
-			if (area?.collapsed) setCollapsed("area", [area.id], false);
+		const [, kind, id] = /^\/(project|area|tag)\/([^/]+)/.exec(pathname) ?? [];
+		if (kind === "project" || kind === "area") {
+			const item =
+				kind === "project"
+					? data.projects.find((p) => p.id === id)
+					: data.areas.find((a) => a.id === id);
+			// Wait for it if the data isn't there yet.
+			if (!item) return;
+			const bucketId = "kind" in item ? item.bucketId : item.areaId;
+			const bucket = data.buckets.find((b) => b.id === bucketId);
+			if (bucket?.collapsed) setCollapsed("area", [bucket.id], false);
 		} else if (kind === "tag") {
 			const byId = new Map(data.tags.map((t) => [t.id, t]));
 			let tag = byId.get(id as string);
@@ -182,7 +187,14 @@ function useSidebarCollapse() {
 			if (closed.length) setCollapsed("tag", closed, false);
 		}
 		handled.current = pathname;
-	}, [pathname, data.projects, data.areas, data.tags, setCollapsed]);
+	}, [
+		pathname,
+		data.projects,
+		data.areas,
+		data.buckets,
+		data.tags,
+		setCollapsed,
+	]);
 
 	return setCollapsed;
 }
@@ -547,7 +559,7 @@ export function Sidebar() {
 	const tags = useMemo(() => tagTree(data.tags), [data.tags]);
 	const tagDrop = useTagDrop(data.tags);
 
-	const projectLink = (project: (typeof tree.projects)[number]) => (
+	const projectLink = (project: Project) => (
 		<DragItem
 			key={project.id}
 			as="div"
@@ -576,23 +588,58 @@ export function Sidebar() {
 		</DragItem>
 	);
 
-	// Projects reorder within their group; dropping one into another group moves it to that area.
-	const projectGroup = (
-		areaId: string | null,
-		projects: typeof tree.projects,
-	) => (
-		<SortableList
-			className="flex min-h-1 flex-col gap-px"
-			list={{
-				id: `sidebar-projects:${areaId ?? "none"}`,
-				accepts: ["project"],
-				keyField: "sortKey",
-				items: placed("project", projects, "sortKey"),
-				moveInPatch: () => ({ areaId }),
-			}}
+	const areaLink = (area: Area) => (
+		<DragItem
+			key={area.id}
+			as="div"
+			kind="area"
+			id={area.id}
+			target={{ type: "area", id: area.id }}
+			className={dropHighlight}
 		>
-			{projects.map(projectLink)}
-		</SortableList>
+			<NavItem
+				to="/area/$areaId"
+				params={{ areaId: area.id }}
+				icon={<AreaIcon className="size-4 text-[var(--fg-muted)]" />}
+			>
+				{area.title || "New Area"}
+			</NavItem>
+		</DragItem>
+	);
+
+	// Areas and projects reorder within their Life Bucket; dropping one into
+	// another bucket's list moves it there.
+	const bucketContents = (
+		bucketId: string | null,
+		areas: Area[],
+		projects: Project[],
+	) => (
+		<>
+			<SortableList
+				className="flex min-h-1 flex-col gap-px"
+				list={{
+					id: `sidebar-areas:${bucketId ?? "none"}`,
+					accepts: ["area"],
+					keyField: "sortKey",
+					items: placed("area", areas, "sortKey"),
+					moveInPatch: () => ({ bucketId }),
+				}}
+			>
+				{areas.map(areaLink)}
+			</SortableList>
+			<SortableList
+				className="flex min-h-1 flex-col gap-px"
+				list={{
+					id: `sidebar-projects:${bucketId ?? "none"}`,
+					accepts: ["project"],
+					keyField: "sortKey",
+					items: placed("project", projects, "sortKey"),
+					moveInPatch: () => ({ areaId: bucketId }),
+				}}
+			>
+				{projects.map(projectLink)}
+			</SortableList>
+		</>
 	);
 
 	return (
@@ -675,49 +722,51 @@ export function Sidebar() {
 					</DropTarget>
 				</div>
 
-				<div className="mt-5">{projectGroup(null, tree.projects)}</div>
+				{(tree.loose.areas.length > 0 || tree.loose.projects.length > 0) && (
+					<div className="mt-5">
+						{bucketContents(null, tree.loose.areas, tree.loose.projects)}
+					</div>
+				)}
 				<SortableList
 					list={{
-						id: "sidebar-areas",
-						accepts: ["area"],
+						id: "sidebar-buckets",
+						accepts: ["bucket"],
 						keyField: "sortKey",
 						items: placed(
 							"area",
-							tree.areas.map(({ area }) => area),
+							tree.buckets.map(({ bucket }) => bucket),
 							"sortKey",
 						),
 					}}
 				>
-					{tree.areas.map(({ area, projects }) => {
-						const title = area.title || "New Area";
+					{tree.buckets.map(({ bucket, areas, projects }) => {
+						const title = bucket.title || "New Life Bucket";
 						// Rows synced before collapsing existed have no flag: open.
-						const collapsed = area.collapsed === true;
-						const toggle = projects.length > 0;
-						const groupId = `sidebar-area-${area.id}`;
+						const collapsed = bucket.collapsed === true;
+						const inside = areas.length + projects.length;
+						const toggle = inside > 0;
+						const groupId = `sidebar-bucket-${bucket.id}`;
 						return (
-							<div key={area.id} className="mt-5 flex flex-col gap-px">
+							<div key={bucket.id} className="mt-5 flex flex-col gap-px">
 								<div className="relative">
 									<DragItem
 										as="div"
-										kind="area"
-										id={area.id}
-										target={{ type: "area", id: area.id }}
+										kind="bucket"
+										id={bucket.id}
+										target={{ type: "bucket", id: bucket.id }}
 										className={dropHighlight}
 									>
 										<NavItem
-											to="/area/$areaId"
-											params={{ areaId: area.id }}
+											to="/bucket/$bucketId"
+											params={{ bucketId: bucket.id }}
 											icon={
-												<AreaIcon className="size-[18px] text-[var(--fg-muted)]" />
+												<BucketIcon className="size-[18px] text-[var(--fg-muted)]" />
 											}
 											badge={
 												toggle && (
 													<>
 														{collapsed && (
-															<HiddenCount
-																count={projects.length}
-																what="project"
-															/>
+															<HiddenCount count={inside} what="list" />
 														)}
 														{toggleSpace}
 													</>
@@ -731,16 +780,22 @@ export function Sidebar() {
 										<CollapseToggle
 											collapsed={collapsed}
 											onToggle={() =>
-												setCollapsed("area", [area.id], !collapsed)
+												setCollapsed("area", [bucket.id], !collapsed)
 											}
 											controls={groupId}
-											label={`${collapsed ? "Show" : "Hide"} projects in ${title}`}
-											title={collapsed ? "Show projects" : "Hide projects"}
+											label={`${collapsed ? "Show" : "Hide"} areas and projects in ${title}`}
+											title={
+												collapsed
+													? "Show areas and projects"
+													: "Hide areas and projects"
+											}
 										/>
 									)}
 								</div>
 								{!collapsed && (
-									<div id={groupId}>{projectGroup(area.id, projects)}</div>
+									<div id={groupId} className="pl-3">
+										{bucketContents(bucket.id, areas, projects)}
+									</div>
 								)}
 							</div>
 						);
