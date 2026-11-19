@@ -9,7 +9,14 @@ import {
 	precacheAndRoute,
 } from "workbox-precaching";
 import { NavigationRoute, registerRoute } from "workbox-routing";
-import type { Me } from "../shared/schema";
+import { decryptText, isEnvelope } from "../shared/crypto/envelope";
+import { encryptPatch } from "../shared/crypto/fields";
+import type { EntityName, Me } from "../shared/schema";
+import {
+	listDeviceRecords,
+	openDeviceKey,
+	usableKey,
+} from "./crypto/deviceKeys";
 import { openLocalDb } from "./db/local";
 import { flushOutbox, OUTBOX_SYNC_TAG, syncLockName } from "./sync/outbox";
 import { HttpTransport } from "./sync/transport";
@@ -36,7 +43,43 @@ self.addEventListener("activate", (event) =>
 	event.waitUntil(self.clients.claim()),
 );
 
-type Notice = { title?: string; body?: string; url?: string; tag?: string };
+type Notice = {
+	title?: string;
+	body?: string;
+	bodyEntity?: "project" | "area";
+	url?: string;
+	tag?: string;
+};
+
+/**
+ * An encrypted account's reminder arrives with its text still encrypted
+ * (SPEC §8.5). It's decrypted with this device's key when the device can
+ * open it without a passcode; otherwise the notification stays generic.
+ */
+async function readable(notice: Notice): Promise<Notice> {
+	if (!isEnvelope(notice.title) && !isEnvelope(notice.body)) return notice;
+	const open = async (text: string | undefined, aad: string) => {
+		if (!text || !isEnvelope(text)) return text;
+		for (const record of await listDeviceRecords()) {
+			const raw = await openDeviceKey(record.userId);
+			if (!raw) continue;
+			try {
+				return await decryptText(await usableKey(raw), text, aad);
+			} catch {}
+		}
+		return undefined;
+	};
+	const title = await open(notice.title, "todo.title");
+	const body = await open(
+		notice.body,
+		`${notice.bodyEntity ?? "project"}.title`,
+	);
+	return {
+		...notice,
+		title: title ?? "To-do reminder",
+		body: body ?? (title ? "" : "Open mythings to see it."),
+	};
+}
 
 self.addEventListener("push", (event) => {
 	let data: Notice = {};
@@ -46,13 +89,17 @@ self.addEventListener("push", (event) => {
 		data = { body: event.data?.text() };
 	}
 	event.waitUntil(
-		self.registration.showNotification(data.title || "Reminder", {
-			body: data.body || "",
-			tag: data.tag,
-			icon: "/pwa-192x192.png",
-			badge: "/pwa-64x64.png",
-			data: { url: data.url || "/today" },
-		}),
+		readable(data)
+			.catch(() => ({ ...data, title: "To-do reminder", body: "" }))
+			.then((notice) =>
+				self.registration.showNotification(notice.title || "Reminder", {
+					body: notice.body || "",
+					tag: notice.tag,
+					icon: "/pwa-192x192.png",
+					badge: "/pwa-64x64.png",
+					data: { url: notice.url || "/today" },
+				}),
+			),
 	);
 });
 
@@ -108,9 +155,26 @@ async function flushInBackground(): Promise<void> {
 	if (!(await indexedDB.databases()).some((d) => d.name === name)) return;
 	const db = openLocalDb(user.id);
 	const transport = new HttpTransport();
+	// An encrypted account's queued text is encrypted here if this device can
+	// (no passcode); otherwise the changes wait for the app.
+	const raw = user.encrypted ? await openDeviceKey(user.id) : null;
+	const key = raw ? await usableKey(raw) : null;
+	const encrypt = async (
+		entity: EntityName,
+		patch: Record<string, unknown>,
+	) => {
+		if (!user.encrypted) return patch;
+		if (!key)
+			throw Object.assign(new Error("Locked"), { name: "EncryptionLocked" });
+		return encryptPatch(entity, patch, key);
+	};
 	try {
 		await navigator.locks.request(syncLockName(db), async () => {
-			const rejected = await flushOutbox(db, (ops) => transport.push(ops));
+			const rejected = await flushOutbox(
+				db,
+				(ops) => transport.push(ops),
+				encrypt,
+			);
 			if (rejected.length > 0)
 				console.warn("Changes rejected by the server", rejected);
 		});

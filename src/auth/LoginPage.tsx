@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useId, useState } from "react";
 import type { Me } from "../../shared/schema";
 import { ApiError, api } from "../api";
 import { PasswordInput } from "../components/PasswordInput";
+import { PasswordTooShort, signIn } from "../crypto/account";
 
 type Mode = "login" | "signup" | "forgot" | "sent";
 
@@ -28,6 +29,7 @@ const FIELD_MESSAGES: Record<string, string> = {
 };
 
 function messageFor(err: unknown): string {
+	if (err instanceof PasswordTooShort) return FIELD_MESSAGES.password as string;
 	if (err instanceof ApiError) {
 		const field = err.body.issues?.[0]?.path[0];
 		const message =
@@ -206,12 +208,7 @@ export function LoginPage({
 			return;
 		}
 		try {
-			onSignedIn(
-				await api<Me>("/auth/login", {
-					method: "POST",
-					body: { email, password },
-				}),
-			);
+			onSignedIn(await signIn(email, password));
 		} catch (err) {
 			setError(messageFor(err));
 			setBusy(false);

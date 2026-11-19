@@ -10,6 +10,7 @@
 	"include": [
 		"src/sw.ts",
 		"src/db/local.ts",
+		"src/crypto/deviceKeys.ts",
 		"src/sync/outbox.ts",
 		"src/sync/transport.ts",
 		"shared"

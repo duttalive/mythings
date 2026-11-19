@@ -4,6 +4,7 @@ import { ConfirmDeleteProvider } from "./components/ConfirmDelete";
 import { router } from "./router";
 import { ChangelogPage } from "./routes/changelog";
 import { PrivacyPage, TermsPage } from "./routes/legal";
+import { SecurityGate } from "./security/SecurityGate";
 import { SyncProvider } from "./sync/SyncProvider";
 
 export function App() {
@@ -21,10 +22,12 @@ export function App() {
 function SignedIn() {
 	const { user } = useAuth();
 	return (
-		<SyncProvider key={user.id}>
-			<ConfirmDeleteProvider>
-				<RouterProvider router={router} />
-			</ConfirmDeleteProvider>
-		</SyncProvider>
+		<SecurityGate>
+			<SyncProvider key={user.id}>
+				<ConfirmDeleteProvider>
+					<RouterProvider router={router} />
+				</ConfirmDeleteProvider>
+			</SyncProvider>
+		</SecurityGate>
 	);
 }

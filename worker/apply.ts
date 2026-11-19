@@ -3,6 +3,7 @@
 // deletes/restores, and repeat-instance creation.
 
 import { ulid } from "ulid";
+import { plainFields } from "../shared/crypto/fields";
 import { addDays, localDateOf, todayIn } from "../shared/dates";
 import { instanceSchedule, materialize, nextAfter } from "../shared/repeat";
 import { buildRow, type Fields } from "../shared/rows";
@@ -19,7 +20,13 @@ import {
 } from "../shared/schema";
 import type { Store } from "./store";
 
-export type UserContext = { userId: string; tz: string; weekStart: number };
+export type UserContext = {
+	userId: string;
+	tz: string;
+	weekStart: number;
+	/** Text must arrive encrypted (SPEC §8.5); plain text is rejected. */
+	encrypted?: boolean;
+};
 
 /** Thrown to reject one op without affecting the rest of the batch. */
 export class OpRejected extends Error {
@@ -77,6 +84,12 @@ export class Applier {
 		patch: Record<string, unknown>,
 		clientTs: number,
 	) {
+		// An old tab or a device that missed the switch mustn't put plain text back.
+		if (this.user.encrypted && plainFields(entity, patch).length > 0)
+			throw new OpRejected(
+				"encryption_required",
+				"This account is encrypted; encrypt the change and send it again",
+			);
 		const existing = this.store.get(entity, id) as Fields | null;
 		const merged = buildRow(
 			entity,

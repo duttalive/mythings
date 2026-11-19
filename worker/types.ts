@@ -13,6 +13,8 @@ export type UserRow = {
 	tz: string;
 	settings: string;
 	created_at: number;
+	/** 1 once end-to-end encryption is on. */
+	encrypted?: number;
 };
 
 export function toMe(row: UserRow): Me {
@@ -22,5 +24,6 @@ export function toMe(row: UserRow): Me {
 		name: row.name ?? null,
 		tz: row.tz,
 		settings: JSON.parse(row.settings),
+		encrypted: row.encrypted === 1,
 	};
 }

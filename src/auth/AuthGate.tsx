@@ -8,6 +8,8 @@ import {
 } from "react";
 import type { Me } from "../../shared/schema";
 import { ApiError, api } from "../api";
+import { forgetKeys } from "../crypto/account";
+import { resetCrypto } from "../crypto/session";
 import { HomePage } from "../home/HomePage";
 import { applyTheme } from "../lib/theme";
 import { forgetPushSubscription } from "../push/notifications";
@@ -71,6 +73,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
 	}, []);
 
 	const signedOut = useCallback(() => {
+		const cached = loadCachedUser();
+		if (cached) void forgetKeys(cached.id).catch(() => {});
+		resetCrypto();
 		clearCachedUser();
 		setPath(window.location.pathname);
 		setState({ status: "signedOut" });
@@ -105,6 +110,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
 		const res = await api<{ ok: true; redirect?: string }>("/auth/logout", {
 			method: "POST",
 		});
+		// This device forgets the encryption key; signing in again opens it.
+		const cached = loadCachedUser();
+		if (cached) await forgetKeys(cached.id).catch(() => {});
+		resetCrypto();
 		clearCachedUser();
 		if (res.redirect) {
 			window.location.href = res.redirect;

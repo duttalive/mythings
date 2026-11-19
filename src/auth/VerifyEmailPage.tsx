@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useId, useState } from "react";
 import type { Me } from "../../shared/schema";
 import { api } from "../api";
 import { PasswordInput } from "../components/PasswordInput";
+import { markUpgraded, newPasswordKeys } from "../crypto/account";
 import { AgreementLine, messageFor } from "./LoginPage";
 
 const inputClass =
@@ -46,10 +47,13 @@ export function VerifyEmailPage({
 		setBusy(true);
 		setError(null);
 		try {
+			if (!email) return;
+			const keys = await newPasswordKeys(email, password);
 			const user = await api<Me>("/auth/signup/verify", {
 				method: "POST",
-				body: { token, name, password },
+				body: { token, name, password: keys.authKey },
 			});
+			await markUpgraded(email);
 			// Into the app, without the token in the address bar or history.
 			window.history.replaceState(null, "", "/today");
 			onSignedIn(user);

@@ -18,6 +18,13 @@ import { ListPage } from "../components/ListPage";
 import { PasswordInput } from "../components/PasswordInput";
 import { SignOutButton } from "../components/SignOutButton";
 import {
+	confirmBody,
+	markUpgraded,
+	newPasswordKeys,
+	PasswordTooShort,
+	wrapForPassword,
+} from "../crypto/account";
+import {
 	applyTextSize,
 	loadTextSize,
 	TEXT_SIZES,
@@ -25,6 +32,8 @@ import {
 } from "../lib/textSize";
 import { downloadExport, importFile } from "../lib/transfer";
 import { useNotificationState } from "../push/notifications";
+import { SecuritySettings } from "../security/SecuritySettings";
+import { useSyncContext } from "../sync/SyncProvider";
 
 const deviceTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -198,6 +207,8 @@ export function SettingsPage() {
 				<DataSettings />
 			</Section>
 
+			<SecuritySection />
+
 			<Section title="Account">
 				<AccountSettings />
 			</Section>
@@ -227,6 +238,22 @@ export function SettingsPage() {
 
 // ---------------------------------------------------------------------------
 // Sections
+
+/** Encryption and passcode (SPEC §8.5); only with password sign-in. */
+function SecuritySection() {
+	const [passwordMode, setPasswordMode] = useState(false);
+	useEffect(() => {
+		api<{ mode: string }>("/auth/config")
+			.then((config) => setPasswordMode(config.mode === "password"))
+			.catch(() => {});
+	}, []);
+	if (!passwordMode) return null;
+	return (
+		<Section title="Security">
+			<SecuritySettings />
+		</Section>
+	);
+}
 
 /** Per device (so a phone and a laptop can differ); applies instantly. */
 function TextSizeField() {
@@ -273,6 +300,8 @@ function NotificationsSetting() {
 }
 
 function DataSettings() {
+	const { user } = useAuth();
+	const { db, engine } = useSyncContext();
 	const fileInput = useRef<HTMLInputElement>(null);
 	const [status, setStatus] = useState<{
 		text: string;
@@ -305,7 +334,9 @@ function DataSettings() {
 				<button
 					type="button"
 					disabled={busy}
-					onClick={() => run(async () => `Saved ${await downloadExport()}.`)}
+					onClick={() =>
+						run(async () => `Saved ${await downloadExport(user.encrypted)}.`)
+					}
 					className={buttonClass}
 				>
 					Export…
@@ -328,7 +359,10 @@ function DataSettings() {
 					onChange={(e) => {
 						const file = e.target.files?.[0];
 						e.target.value = "";
-						if (file) void run(() => importFile(file));
+						if (file)
+							void run(() =>
+								importFile(file, user.encrypted ? { db, engine } : undefined),
+							);
 					}}
 				/>
 			</div>
@@ -461,6 +495,7 @@ function AccountSettings() {
 }
 
 function ChangePassword() {
+	const { user } = useAuth();
 	const [open, setOpen] = useState(false);
 	const [current, setCurrent] = useState("");
 	const [next, setNext] = useState("");
@@ -475,16 +510,29 @@ function ChangePassword() {
 		e.preventDefault();
 		setStatus(null);
 		try {
+			const { body } = await confirmBody(user.email, current);
+			const keys = await newPasswordKeys(user.email, next);
 			await api("/auth/password", {
 				method: "POST",
-				body: { currentPassword: current, newPassword: next },
+				body: {
+					currentPassword: body.password,
+					currentLegacyPassword: body.legacyPassword,
+					newPassword: keys.authKey,
+					wrappedByPassword: await wrapForPassword(keys.encKey),
+				},
 			});
+			await markUpgraded(user.email);
 			setCurrent("");
 			setNext("");
 			setOpen(false);
 			setStatus({ text: "Password changed. Other devices were signed out." });
 		} catch (err) {
-			const code = err instanceof ApiError ? err.code : null;
+			const code =
+				err instanceof ApiError
+					? err.code
+					: err instanceof PasswordTooShort
+						? "invalid_input"
+						: null;
 			setStatus({
 				error: true,
 				text:

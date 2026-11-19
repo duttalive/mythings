@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { ulid } from "ulid";
 import { z } from "zod";
+import { isEnvelope } from "../shared/crypto/envelope";
 import { nextLocalMidnight } from "../shared/dates";
 import {
 	type EntityRow,
@@ -29,6 +30,9 @@ const APPLIED_OPS_TO_KEEP = 10_000;
 
 /** Trash items are purged after this long (SPEC §9). */
 const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Longest encrypted title or list name sent in a reminder (pushes are limited to about 4 KB). */
+const MAX_ENCRYPTED_IN_PUSH = 1400;
 
 /** Reminders missed by more than this aren't sent at all. */
 const STALE_REMINDER_MS = 60 * 60 * 1000;
@@ -278,18 +282,28 @@ export class UserStore extends DurableObject<Env> {
 			const project = t.project_id
 				? this.store.get("project", t.project_id)
 				: null;
+			if (project?.title)
+				return { body: project.title, bodyEntity: "project" as const };
 			const area = t.area_id ? this.store.get("area", t.area_id) : null;
-			return project?.title || area?.title || "";
+			return { body: area?.title || "", bodyEntity: "area" as const };
 		};
+		// Encrypted text (SPEC §8.5) goes as it is; the service worker decrypts it
+		// if the device can. Too long to fit in a push, it's left out.
+		const fitPush = (text: string) =>
+			isEnvelope(text) && text.length > MAX_ENCRYPTED_IN_PUSH ? "" : text;
 		await sendPush(
 			this.env,
 			user.userId,
-			fresh.map((t) => ({
-				title: t.title || "New To-Do",
-				body: container(t) || "Reminder",
-				url: t.project_id ? `/project/${t.project_id}` : "/today",
-				tag: t.id,
-			})),
+			fresh.map((t) => {
+				const { body, bodyEntity } = container(t);
+				return {
+					title: fitPush(t.title) || "New To-Do",
+					body: fitPush(body) || "Reminder",
+					bodyEntity,
+					url: t.project_id ? `/project/${t.project_id}` : "/today",
+					tag: t.id,
+				};
+			}),
 		);
 		for (const t of due) {
 			this.ctx.storage.sql.exec(
