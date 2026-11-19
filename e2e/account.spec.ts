@@ -24,12 +24,14 @@ test("forgot password asks for an email and confirms without revealing accounts"
 test("a broken reset link explains itself", async ({ page }) => {
 	await page.goto("/reset-password");
 	await expect(page.getByRole("alert")).toContainText("incomplete");
+	// An unknown link says so as soon as it opens, before a password is chosen.
 	await page.goto("/reset-password?token=not-a-real-token-at-all-12345");
-	await page.getByLabel("New password").fill("another password");
-	await page.getByRole("button", { name: "Save and sign in" }).click();
 	await expect(page.getByRole("alert")).toContainText(
 		"expired or was already used",
 	);
+	await expect(
+		page.getByRole("button", { name: "Save and sign in" }),
+	).toBeDisabled();
 });
 
 test("the changelog is public and the app shows its version", async ({

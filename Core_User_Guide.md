@@ -25,9 +25,10 @@ This guide walks through every feature and flow, end to end. If you only read on
 14. [Phones and tablets](#14-phones-and-tablets)
 15. [Sync, offline and devices](#15-sync-offline-and-devices)
 16. [Settings](#16-settings)
-17. [Your data](#17-your-data)
-18. [Public pages](#18-public-pages)
-19. [Troubleshooting and FAQ](#19-troubleshooting-and-faq)
+17. [Encryption and passcode](#17-encryption-and-passcode)
+18. [Your data](#18-your-data)
+19. [Public pages](#19-public-pages)
+20. [Troubleshooting and FAQ](#20-troubleshooting-and-faq)
 
 ---
 
@@ -65,6 +66,8 @@ Good to know:
 3. Open the link, choose a new password, and you're signed in.
 
 Reset links also expire and work only once; ask for a new one if needed.
+
+If you've turned on [end-to-end encryption](#17-encryption-and-passcode), a new password doesn't unlock your to-dos by itself: a device that's already unlocked keeps working (and updates your password for the others), and on any other device you'll be asked for your **recovery key** once.
 
 ### 1.5 Installing the app
 
@@ -540,13 +543,18 @@ Open with the gear at the bottom of the sidebar, or **⌘,**. Changes apply at o
 
 **Data**
 
-- **Export** and **Import** (see [Your data](#17-your-data)).
+- **Export** and **Import** (see [Your data](#18-your-data)).
+
+**Security**
+
+- **End-to-end encryption:** turn it on or off, or make a new recovery key (see [Encryption and passcode](#17-encryption-and-passcode)).
+- **Passcode on this device**, **Lock after** and **Lock now**, once encryption is on.
 
 **Account**
 
 - **Signed in as** your email, with **Sign out**.
 - **Name:** change it any time.
-- **Change password:** asks for the current one; other devices are signed out.
+- **Change password:** asks for the current one; other devices are signed out. With encryption on, your to-dos stay readable with the new password.
 - **Sign out of all devices**, including this one.
 
 **About**
@@ -556,16 +564,77 @@ Open with the gear at the bottom of the sidebar, or **⌘,**. Changes apply at o
 
 ---
 
-## 17. Your data
+## 17. Encryption and passcode
 
-- **Export** (Settings → Data) downloads everything in your account, Trash included, as a JSON file.
+### 17.1 End-to-end encryption
+
+With end-to-end encryption on, the words in your account are encrypted on your own devices before they're saved or synced: to-do titles and notes, checklist items, and the names of projects, areas, headings and tags. Only your devices can read them; the server stores them in a form nobody else can read, including us.
+
+So that repeats, reminders and the Trash keep working, some details stay readable to the server: dates and deadlines, repeat settings, reminder times, whether something is completed or in the Trash, and how items are arranged.
+
+It's off until you turn it on.
+
+**Turning it on**
+
+1. Open **Settings → Security** and choose **Turn on encryption…**.
+2. Your **recovery key** appears: eight groups of four letters and digits. **Copy** or **Download** it and keep it somewhere safe, such as a password manager.
+3. Tick **I've saved my recovery key somewhere safe**, enter your password, and choose **Turn on encryption**.
+4. Everything already in your account is encrypted in the background. Keep the app open and online for a moment; it finishes on its own the next time any of your devices is online, too.
+
+Your other devices notice the change and ask for your password once (see below).
+
+**Using encrypted to-dos**
+
+Everything works as before: Quick Find, tags, repeats, reminders, drag and drop and offline use. Your devices decrypt as you go.
+
+- **Signing in on a device:** your password unlocks your to-dos straight away.
+- **A device that was already signed in** shows **Unlock your data** once: enter your password.
+- **Reminders** show the to-do's title on devices that can read it. On a device locked with a passcode, or one that can't read it yet, the reminder says only that a to-do is due.
+- **Export** gives you a readable file, decrypted on your device. **Import** works as usual; imported items are encrypted on your device before they're saved.
+- **Signing out** removes this device's ability to read your to-dos until you sign in again.
+
+**Your recovery key**
+
+The recovery key is the only way to read your to-dos if you forget your password: we can't reset encryption for you.
+
+- After a **password reset**, a device that's already unlocked keeps working. Any other device shows **Unlock your data**: choose **Use my recovery key**, type the key (capitals and dashes don't matter) and your new password. From then on, the new password works everywhere.
+- **New recovery key…** in Settings → Security makes a new one; the old one stops working.
+- If you've lost both your password and your recovery key, choose **I don't have it** on the unlock screen to **start over**: you get a new recovery key and can keep using mythings, but anything encrypted before can't be read again and shows a lock (🔒). You can delete those items.
+- **Changing your password** in Settings keeps everything readable; you don't need the recovery key for that.
+
+**Turning it off**
+
+Choose **Turn off…** in Settings → Security and enter your password. Your to-dos are decrypted on your devices and stored without end-to-end encryption again, and any passcode on this device is removed.
+
+### 17.2 Passcode on this device
+
+Once encryption is on, you can lock mythings on a device with a passcode. While it's locked, nothing on that device can be read without the passcode.
+
+1. In **Settings → Security**, choose **Set passcode…**.
+2. Enter a passcode of at least 6 characters twice, then **Save passcode**. Longer passcodes are harder to guess.
+
+Then:
+
+- **Lock after** sets how soon it locks when you're away: **Right away** (as soon as you leave the app), **1 min**, **5 min** (the default) or **15 min** without a tap, click or key press. Reloading the page or reopening the app also asks for the passcode.
+- **Lock now** locks it straight away.
+- On the lock screen, enter the passcode and choose **Unlock**. After too many wrong tries in a row, the device forgets its key and you unlock with your password instead.
+- **Forgot it?** Choose **Use your password instead** on the lock screen.
+- **Change passcode…** and **Remove** are in Settings → Security.
+
+The passcode belongs to that device only; your other devices have their own (or none). Changes you make while signed in still sync, and changes waiting to sync are sent once you unlock.
+
+---
+
+## 18. Your data
+
+- **Export** (Settings → Data) downloads everything in your account, Trash included, as a JSON file. With encryption on, it's decrypted on your device first, so the file is readable: keep it somewhere safe.
 - **Import** adds the contents of an export file as copies: to-dos, projects, areas, headings, checklists and tags. Top-level tags with the same name are matched rather than duplicated. Items that were in the Trash aren't imported. Importing never overwrites what you already have.
 - **Deleting your account:** export your data if you want it, then email us from your account's address (see the Privacy Policy) and we'll delete the account and everything in it.
 - The [Privacy Policy](https://mythings.dynocoder.com/privacy) explains what's stored, why, and who processes it.
 
 ---
 
-## 18. Public pages
+## 19. Public pages
 
 These work without signing in:
 
@@ -576,7 +645,7 @@ These work without signing in:
 
 ---
 
-## 19. Troubleshooting and FAQ
+## 20. Troubleshooting and FAQ
 
 **Something I completed is still showing.** If Settings → Lists → Move completed to-dos to the Logbook is set to **Daily**, completed items stay (struck through) until tomorrow.
 
@@ -591,6 +660,14 @@ These work without signing in:
 **My changes didn't reach my other device.** Check the sync status in the sidebar. Offline changes are kept on the device and sent automatically when it's back online.
 
 **The sign-up or reset link doesn't work.** It may have expired or already been used; ask for a new one. Only the newest link works.
+
+**My to-dos ask me to "Unlock your data".** Your account uses end-to-end encryption and this device can't read it yet. Enter your password; if you've reset your password since, use your recovery key.
+
+**I forgot my passcode.** Choose **Use your password instead** on the lock screen.
+
+**Some items show a lock (🔒) instead of a title.** They were encrypted with a key this device doesn't have, for example from before you started over without your recovery key. They can't be read; you can delete them.
+
+**Can you recover my encrypted to-dos?** No. Only your password or your recovery key can unlock them. That's what keeps them private.
 
 **Where's the Deadlines list?** It's hidden, as in Things: type "Deadlines" in Quick Find.
 

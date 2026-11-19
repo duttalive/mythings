@@ -6,7 +6,7 @@ import { type ReactNode, useEffect } from "react";
 
 export const LEGAL_CONTACT = "dutta@dynocoder.com";
 /** When the policies last changed. Update it with any change to their text. */
-export const LEGAL_UPDATED = "2026-10-27";
+export const LEGAL_UPDATED = "2026-11-20";
 
 const updated = new Date(`${LEGAL_UPDATED}T12:00:00Z`).toLocaleDateString(
 	undefined,
@@ -95,6 +95,10 @@ export function PrivacyPage() {
 					your data for marketing.
 				</li>
 				<li>
+					You can turn on end-to-end encryption, so only your devices can read
+					what you write.
+				</li>
+				<li>
 					You can export everything at any time, and ask us to delete your
 					account.
 				</li>
@@ -104,14 +108,27 @@ export function PrivacyPage() {
 			<ul>
 				<li>
 					<strong>Your account:</strong> your email address, your name (if you
-					give one), your password (only as a salted, one-way hash; we can't
-					read it), your time zone, your app settings, and when you signed up.
+					give one), a one-way hash of a key your device derives from your
+					password (we never receive the password itself), your time zone, your
+					app settings, and when you signed up.
 				</li>
 				<li>
 					<strong>Your to-dos:</strong> everything you put into mythings
 					(to-dos, notes, checklists, projects, areas, headings, tags, dates,
 					reminders and repeat rules), and items in Trash until they're deleted
 					permanently (after 30 days, or sooner if you empty Trash).
+				</li>
+				<li>
+					<strong>If you turn on end-to-end encryption:</strong> your to-do
+					titles and notes, checklist items, and the names of your projects,
+					areas, headings and tags are encrypted on your devices, and we store
+					only the encrypted form, which we can't read. We also store your
+					encryption key, locked with your password and with your recovery key,
+					neither of which we have. Dates, reminder times, repeat rules, whether
+					items are completed or in the Trash, and how they're arranged stay
+					readable to us so that repeats, reminders and the Trash keep working.
+					Because we can't read encrypted content, we can't recover it if you
+					lose both your password and your recovery key.
 				</li>
 				<li>
 					<strong>Sign-in sessions:</strong> for each device you're signed in
@@ -136,9 +153,13 @@ export function PrivacyPage() {
 				mythings works offline, so each browser you use keeps a full copy of
 				your to-dos in its local database (IndexedDB), plus changes waiting to
 				sync. It also keeps a few preferences for that device in local storage
-				(your profile for starting offline, theme, text size, sidebar width) and
-				a cached copy of the app. This data stays in your browser; signing out
-				or clearing the site's data in your browser removes it.
+				(your profile for starting offline, theme, text size, sidebar width,
+				passcode lock timing) and a cached copy of the app. With end-to-end
+				encryption on, the copy of your to-dos on the device is encrypted too,
+				and the key to read it is kept in the browser (locked behind your
+				passcode, if you set one). This data stays in your browser; signing out
+				removes the key, and clearing the site's data in your browser removes
+				everything.
 			</p>
 			<p>
 				We set a single cookie, <code>mt_session</code>, which keeps you signed
@@ -181,7 +202,8 @@ export function PrivacyPage() {
 					<strong>Your browser's push service</strong> (for example Apple,
 					Google or Mozilla, depending on your browser) delivers reminders. The
 					reminder text is encrypted so that only your browser can read it; the
-					push service sees when a message is sent to your device.
+					push service sees when a message is sent to your device. With
+					end-to-end encryption on, we can't read a reminder's text either.
 				</li>
 				<li>
 					<strong>Our email provider (Zoho Mail)</strong> holds any email you
@@ -199,7 +221,9 @@ export function PrivacyPage() {
 				Sign-in sessions end after a while without use, and a few months after
 				sign-in at most. When you ask us to delete your account, we delete it
 				and your to-dos within 30 days; copies in backups or logs held by our
-				providers expire on their own schedule.
+				providers expire on their own schedule. That also applies when you turn
+				on end-to-end encryption: copies of your to-dos from before it was on
+				may remain in our providers' backups until those expire.
 			</p>
 
 			<h2>Your choices and rights</h2>
@@ -229,9 +253,11 @@ export function PrivacyPage() {
 
 			<h2>Security</h2>
 			<p>
-				Connections are encrypted (HTTPS). Passwords, session tokens and email
-				links are stored only as hashes. No system is perfectly secure; if
-				something goes wrong that affects your data, we'll tell you.
+				Connections are encrypted (HTTPS). Your password never leaves your
+				device; what we keep from it, session tokens and email links are stored
+				only as hashes. You can also turn on end-to-end encryption and a
+				passcode for each device. No system is perfectly secure; if something
+				goes wrong that affects your data, we'll tell you.
 			</p>
 
 			<h2>Children</h2>
@@ -286,6 +312,11 @@ export function TermsPage() {
 					Keep your password safe; you're responsible for what happens under
 					your account. Tell us if you think someone else has access to it.
 				</li>
+				<li>
+					If you turn on end-to-end encryption, keep your recovery key safe. We
+					can't read or recover encrypted content, so if you lose both your
+					password and your recovery key, that content is lost.
+				</li>
 				<li>One person per account.</li>
 			</ul>
 
@@ -294,7 +325,8 @@ export function TermsPage() {
 				What you put into mythings stays yours. You give us only the permission
 				we need to store, sync and show it to you, and to send the reminders you
 				set. We don't look at your to-dos except when you ask us to for support,
-				or when the law requires it.
+				or when the law requires it (and with end-to-end encryption on, we can't
+				read them at all).
 			</p>
 
 			<h2>Acceptable use</h2>

@@ -312,12 +312,17 @@ The Worker authenticates `GET /api/sync/ws` (session + same-origin `Origin`), th
 | ------ | -------------------------- | --------------------------------------------------------------------------------------------------- |
 | POST   | `/auth/signup`             | `{name, email}` → emails a 24-hour link to `/verify-email?token=` (no account yet). Can be disabled with `SIGNUPS_OPEN=false`. |
 | POST   | `/auth/signup/link`        | `{token}` → `{email, name}` for the page the link opens                                             |
-| POST   | `/auth/signup/verify`      | `{token, name, password}` → creates user, sets session cookie                                       |
-| POST   | `/auth/login`              | `{email, password}` → session cookie                                                                |
+| POST   | `/auth/signup/verify`      | `{token, name, password}` → creates user, sets session cookie (`password` is the device-derived `authKey`, §8.5) |
+| POST   | `/auth/login`              | `{email, password, legacyPassword?}` → session cookie (§8.5)                                        |
 | POST   | `/auth/logout`             | clears session                                                                                      |
-| POST   | `/auth/password`           | `{currentPassword, newPassword}` → changes it and signs out other devices                           |
+| POST   | `/auth/password`           | `{currentPassword, currentLegacyPassword?, newPassword, wrappedByPassword?}` → changes it and signs out other devices |
+| POST   | `/auth/reset/link`         | `{token}` → `{email}` for the reset page (the new `authKey` is derived from the email)              |
+| GET    | `/keys`                    | the account's sealed data key `{version, wrappedByPassword, wrappedByRecovery}` (404 if none)       |
+| PUT    | `/keys`                    | `{password, legacyPassword?, version, wrappedByPassword, wrappedByRecovery}` → turns encryption on / replaces keys |
+| POST   | `/keys/rewrap`             | `{password, wrappedByPassword}` → re-seal under the current password (after a reset)               |
+| POST   | `/keys/disable`            | `{password, legacyPassword?}` → turns encryption off (keys kept so devices can decrypt)            |
 | POST   | `/auth/logout-all`         | ends every session of the user, this one included                                                   |
-| GET    | `/me`                      | `{id, email, name, tz, settings}`                                                                       |
+| GET    | `/me`                      | `{id, email, name, tz, settings, encrypted}`                                                        |
 | PATCH  | `/me`                      | update `name`, `tz`, settings                                                                       |
 | GET    | `/sync/ws`                 | WebSocket upgrade → forwarded to `USER_STORE.idFromName(userId)`                                    |
 | POST   | `/sync/push`               | fallback push: `{ops}` → `{acked, errors, rows, purged, rev}`                                       |
@@ -328,6 +333,7 @@ The Worker authenticates `GET /api/sync/ws` (session + same-origin `Origin`), th
 | DELETE | `/push/subscribe`          | remove it                                                                                           |
 
 **Auth:**
+- The client never sends the password: it sends `authKey` (§8.5), which the server treats as the password.
 - Passwords: PBKDF2-SHA256 via WebCrypto, 100k iterations (the Workers runtime has historically capped PBKDF2 at 100k), 16-byte salt. The hash stores its iteration count (`pbkdf2_sha256$<iter>$<salt>$<hash>`) so it can be raised later; weaker hashes are upgraded on successful login.
 - Sessions: a random 32-byte token in an `HttpOnly; Secure; SameSite=Lax` cookie; store only its SHA-256 in D1; 30-day sliding expiry, and at most 180 days after sign-in.
 - Rate limits (Workers Rate Limiting binding, `wrangler.jsonc`): login 5/min per IP, IP+email and email; sign-up 5/min per IP and per address; reset 3/min per IP, IP+email and address.
@@ -335,6 +341,34 @@ The Worker authenticates `GET /api/sync/ws` (session + same-origin `Origin`), th
 - Links: sign-up 24 hours, password reset 1 hour; both single-use, only the newest works.
 - Check `Origin` against `APP_ORIGIN` on state-changing requests and on the WS upgrade.
 - _Single-user alternative:_ put the whole app behind **Cloudflare Access** and derive the user from the email claim of the `Cf-Access-Jwt-Assertion` JWT, verified against the team's certs (`ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`). Make this switchable with `AUTH_MODE=password|access`.
+
+### 8.5 End-to-end encryption and passcode (2.0.0)
+
+Opt-in per account (Settings → Security). Goal: the server, its backups and logs never hold the user's words in plain text, and a device can be locked so its local copy is unreadable.
+
+**What's encrypted.** Text fields only, per `shared/crypto/fields.ts`: `title` of every entity, `notes` of to-dos and projects. Everything the server needs to run repeats, reminders, cascades and the Trash (dates, `repeat`, `reminderAt`, status, ids, sort keys, `tagIds`, tag `shortcut`) stays readable.
+
+**Envelope.** AES-256-GCM with a random 12-byte IV: `e1:<base64(iv ‖ ciphertext ‖ tag)>` (`shared/crypto/envelope.ts`). AAD is `"<entity>.<field>"`, not the row id, so the server can copy ciphertext into repeat instances and the client can import copies. Empty strings stay empty. The row schemas accept either plain text (old limits) or an envelope (cap sized for the plain limit × 3 UTF-8 bytes, base64); plain-text limits are checked on the device before encrypting.
+
+**Keys.**
+- *Password keys* (`shared/crypto/password.ts`): `master = PBKDF2-SHA256(password, SHA-256("mythings/v1/" + email), 600k)`; HKDF → `authKey` (sent to the server in place of the password, which hashes it exactly like a password) and `encKey` (never leaves the device). Applies to every account, encrypted or not. Accounts last used before 2.0.0 still hold a hash of the real password: until 2027-06-01 a device that hasn't seen the account upgraded also sends `legacyPassword`; on a match the server stores the hash of `authKey` instead. A local marker (`mythings:upgraded`, hashed emails) stops a device sending it again.
+- *Data key (DK)*: random AES-256 key per account. D1 `user_keys` holds it sealed twice: under `encKey` (AAD `dk.password`) and under the recovery key's HKDF key (AAD `dk.recovery`). `users.encrypted` is the switch.
+- *Recovery key*: 20 random bytes as 32 base32 characters (no 0/1/I/O), grouped by 4. Shown once, before the keys are uploaded.
+- *Device copy* (`src/crypto/deviceKeys.ts`, IndexedDB `mythings-keys`): DK sealed under a non-extractable device AES key (so the service worker can open it for reminders), or, with a passcode, under `PBKDF2(passcode, random salt, 600k)`. 10 wrong passcodes in a row delete the record; the password unlocks again. Signing out deletes it.
+
+**Where encryption happens (client).** `SyncEngine.apply` encrypts upsert patches before its IndexedDB transaction (`options.encrypt` = `encryptForSync`), so Dexie, the outbox and every request only ever hold ciphertext; `useViewData`/`useChecklist` decrypt after reading, with an envelope→text cache (`src/crypto/session.ts`). Locked (encrypted account, no key): text writes throw `EncryptionLocked` and the outbox waits.
+
+**Server enforcement.** `UserContext.encrypted` (from `users.encrypted`, pushed to open sockets via `updateUser`) makes `Applier.upsert` reject a patch with plain text in an encrypted field: `encryption_required`. `flushOutbox` keeps such ops queued (not rolled back), stops, and the engine re-reads `/me`; the device then shows Unlock, and queued plain text is encrypted in place before the next flush.
+
+**Turning on / off.** On: `PUT /keys` (password re-checked), then `reconcileEncryption` (`src/crypto/reconcile.ts`) runs on every device after a full sync with an empty outbox and rewrites any plain-text field as an encrypted upsert (Trash included). Off: `POST /keys/disable`, then the same pass writes decrypted text back. Keys stay so devices can still read leftovers.
+
+**Unlocking.** Signing in derives `encKey` and opens DK straight away. A device without the key shows Unlock (password → `GET /keys` → unwrap). After a reset the password seal no longer opens: an already-unlocked device re-seals it under the new password on its next sign-in (`refreshPasswordWrap`); others use the recovery key and `POST /keys/rewrap`. "Start over" puts a new DK (and recovery key) in place; old envelopes show 🔒.
+
+**Elsewhere.** Reminders carry the envelopes (`bodyEntity` says whose title the body is); the service worker decrypts with the device key or shows a generic notice; envelopes too long for a push are left out. Export is decrypted on the device; import is planned on the device (`planImport` with decrypted tag names) and applied through the engine. Background Sync encrypts queued text with the device key when there's no passcode.
+
+**Passcode / app lock.** Only with encryption on. Auto-lock after 0/1/5/15 minutes without input or in the background (`mythings:autoLock`); locking drops the in-memory key and decrypt cache and unmounts the app; reloading always asks.
+
+**Limits.** The web app's code is served by the same server, so this protects stored data, backups and logs, not against a malicious server changing the code. Metadata listed above is visible. Backups from before encryption was on expire on Cloudflare's schedule.
 
 **D1 schema:**
 ```sql

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ENVELOPE_PATTERN } from "./crypto/envelope";
 import { daysInMonth, isValidLocalDate } from "./dates";
 
 // ---------------------------------------------------------------------------
@@ -27,14 +28,28 @@ export const timeZoneSchema = z.string().refine(
 	{ message: "Unknown time zone" },
 );
 
+/**
+ * Since 2.0.0 the app sends a key derived from the password on the device
+ * (shared/crypto/password.ts) in `password`, never the password itself. An
+ * account last signed in to before that still has a hash of the real
+ * password, so for a while a device that hasn't seen the account upgraded
+ * also sends it as `legacyPassword`; the server checks it once, stores the
+ * hash of the new key instead, and keeps nothing else.
+ */
+const legacyPasswordSchema = z.string().min(1).max(1024).optional();
+
 export const credentialsSchema = z.object({
 	email: emailSchema,
 	password: passwordSchema,
+	legacyPassword: legacyPasswordSchema,
 });
 
 export const changePasswordSchema = z.object({
 	currentPassword: z.string().min(1).max(1024),
+	currentLegacyPassword: legacyPasswordSchema,
 	newPassword: passwordSchema,
+	/** The data key re-wrapped under the new password, for encrypted accounts. */
+	wrappedByPassword: z.string().max(200).optional(),
 });
 
 /** A person's name as they'd like to be addressed. Empty means not set. */
@@ -70,6 +85,36 @@ export const resetPasswordSchema = z.object({
 	password: passwordSchema,
 });
 
+const wrappedKeySchema = z.string().min(40).max(200);
+
+/** The data key, sealed under the password and under the recovery key (SPEC §8.5). */
+export const keyBundleSchema = z.object({
+	version: z.literal(1),
+	wrappedByPassword: wrappedKeySchema,
+	wrappedByRecovery: wrappedKeySchema,
+});
+export type KeyBundle = z.infer<typeof keyBundleSchema>;
+
+/** Turning encryption on, or replacing the keys (a new recovery key, or starting over). */
+export const setKeysSchema = keyBundleSchema.extend({
+	password: z.string().min(1).max(1024),
+	legacyPassword: legacyPasswordSchema,
+});
+
+/** Re-sealing the data key under the current password after a reset (with the recovery key). */
+export const rewrapKeysSchema = z.object({
+	password: z.string().min(1).max(1024),
+	wrappedByPassword: wrappedKeySchema,
+});
+
+export const confirmPasswordSchema = z.object({
+	password: z.string().min(1).max(1024),
+	legacyPassword: legacyPasswordSchema,
+});
+
+/** Opening a reset link: whose account it is (the key is derived from the email). */
+export const resetLinkSchema = z.object({ token: tokenSchema });
+
 /** User preferences (SPEC §10.9). Every key is optional; missing keys use defaults on the client. */
 export const settingsSchema = z
 	.object({
@@ -100,6 +145,8 @@ export type Me = {
 	name: string | null;
 	tz: string;
 	settings: Settings;
+	/** To-do text is end-to-end encrypted (SPEC §8.5). */
+	encrypted: boolean;
 };
 
 export type ApiErrorBody = {
@@ -122,8 +169,23 @@ export const timeOfDaySchema = z
 const sortKeySchema = z.string().min(1).max(256);
 const epochMsSchema = z.number().int().nonnegative();
 const weekdaySchema = z.number().int().min(0).max(6);
-const titleSchema = z.string().max(1000);
-const notesSchema = z.string().max(100_000);
+/**
+ * Encrypted text (SPEC §8.5). Long enough for the plain-text limit below in
+ * any script (up to 3 UTF-8 bytes per character), base64 encoded.
+ */
+const envelopeSchema = (plainMax: number) =>
+	z
+		.string()
+		.max(Math.ceil(((plainMax * 3 + 28) * 4) / 3) + 8)
+		.regex(ENVELOPE_PATTERN);
+const titleSchema = z.union([
+	envelopeSchema(1000),
+	z.string().max(1000, "Title is too long"),
+]);
+const notesSchema = z.union([
+	envelopeSchema(100_000),
+	z.string().max(100_000, "Notes are too long"),
+]);
 const tagIdsSchema = z
 	.array(ulidSchema)
 	.max(50)
@@ -308,7 +370,7 @@ const checklistItemFields = z.object({
 
 const tagFields = z.object({
 	...baseFields,
-	title: z.string().trim().min(1).max(100),
+	title: z.union([envelopeSchema(100), z.string().trim().min(1).max(100)]),
 	parentId: ulidSchema.nullable(),
 	shortcut: z.string().length(1).nullable(),
 	sortKey: sortKeySchema,

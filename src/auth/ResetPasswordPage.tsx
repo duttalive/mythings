@@ -1,7 +1,8 @@
-import { type FormEvent, useId, useState } from "react";
+import { type FormEvent, useEffect, useId, useState } from "react";
 import type { Me } from "../../shared/schema";
 import { api } from "../api";
 import { PasswordInput } from "../components/PasswordInput";
+import { markUpgraded, newPasswordKeys } from "../crypto/account";
 import { messageFor } from "./LoginPage";
 
 /** /reset-password?token=…, from the email (SPEC §8). Sets the password and signs in. */
@@ -16,18 +17,33 @@ export function ResetPasswordPage({
 		token ? null : "This link is incomplete. Open it again from the email.",
 	);
 	const [busy, setBusy] = useState(false);
+	/** Whose account: the key sent instead of the password is derived from the email. */
+	const [email, setEmail] = useState<string | null>(null);
 	const passwordId = useId();
 	const errorId = useId();
 
+	useEffect(() => {
+		if (!token) return;
+		api<{ email: string }>("/auth/reset/link", {
+			method: "POST",
+			body: { token },
+		})
+			.then((link) => setEmail(link.email))
+			.catch((err) => setError(messageFor(err)));
+	}, [token]);
+
 	async function submit(e: FormEvent) {
 		e.preventDefault();
+		if (!email) return;
 		setBusy(true);
 		setError(null);
 		try {
+			const keys = await newPasswordKeys(email, password);
 			const user = await api<Me>("/auth/reset", {
 				method: "POST",
-				body: { token, password },
+				body: { token, password: keys.authKey },
 			});
+			await markUpgraded(email);
 			// Into the app, without the token in the address bar or history.
 			window.history.replaceState(null, "", "/today");
 			onSignedIn(user);
@@ -48,6 +64,14 @@ export function ResetPasswordPage({
 					You'll be signed out on your other devices.
 				</p>
 				<form onSubmit={submit} className="mt-8 flex flex-col gap-4" noValidate>
+					{/* For password managers, so they save the new password under this email. */}
+					<input
+						type="email"
+						autoComplete="username"
+						value={email ?? ""}
+						readOnly
+						hidden
+					/>
 					<div className="flex flex-col gap-1.5">
 						<label htmlFor={passwordId} className="text-sm font-medium">
 							New password
@@ -73,7 +97,7 @@ export function ResetPasswordPage({
 					)}
 					<button
 						type="submit"
-						disabled={busy || !token}
+						disabled={busy || !email}
 						className="mt-2 rounded-lg bg-accent px-3 py-2 font-medium text-on-accent transition-opacity hover:opacity-90 disabled:opacity-60"
 					>
 						{busy ? "…" : "Save and sign in"}

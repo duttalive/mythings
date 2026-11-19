@@ -1,10 +1,11 @@
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 import { ulid } from "ulid";
 import {
 	changePasswordSchema,
 	credentialsSchema,
 	forgotPasswordSchema,
+	resetLinkSchema,
 	resetPasswordSchema,
 	signupLinkSchema,
 	signupSchema,
@@ -239,8 +240,29 @@ auth.post("/signup/verify", passwordModeOnly, async (c) => {
 	return c.json(toMe(user), 201);
 });
 
+/**
+ * Checks a password key (and, for an account not yet upgraded, the legacy
+ * password) against a stored hash. On a legacy match the caller stores the
+ * hash of the key instead (`upgrade`).
+ */
+export async function checkPassword(
+	hash: string | undefined,
+	password: string,
+	legacyPassword: string | undefined,
+): Promise<{ ok: boolean; upgrade: boolean }> {
+	const stored = hash ?? (await getDummyHash());
+	const { ok, needsRehash } = await verifyPassword(password, stored);
+	if (ok) return { ok: true, upgrade: needsRehash };
+	if (legacyPassword === undefined) return { ok: false, upgrade: false };
+	const legacy = await verifyPassword(legacyPassword, stored);
+	return { ok: legacy.ok, upgrade: legacy.ok };
+}
+
 auth.post("/login", passwordModeOnly, async (c) => {
-	const { email, password } = await readJson(c, credentialsSchema);
+	const { email, password, legacyPassword } = await readJson(
+		c,
+		credentialsSchema,
+	);
 
 	const ip = clientIp(c);
 	// Per IP across all emails (so one IP can't try a password on many
@@ -254,9 +276,10 @@ auth.post("/login", passwordModeOnly, async (c) => {
 	const user = await c.env.DB.prepare("SELECT * FROM users WHERE email = ?")
 		.bind(email)
 		.first<UserRow>();
-	const { ok, needsRehash } = await verifyPassword(
+	const { ok, upgrade } = await checkPassword(
+		user?.password_hash,
 		password,
-		user?.password_hash ?? (await getDummyHash()),
+		legacyPassword,
 	);
 	if (!user || !ok) {
 		await recordLoginFailure(c.env, email);
@@ -264,7 +287,7 @@ auth.post("/login", passwordModeOnly, async (c) => {
 	}
 	await clearLoginFailures(c.env, email).run();
 
-	if (needsRehash) {
+	if (upgrade) {
 		await c.env.DB.prepare("UPDATE users SET password_hash = ? WHERE id = ?")
 			.bind(await hashPassword(password), user.id)
 			.run();
@@ -282,29 +305,62 @@ auth.post("/logout", async (c) => {
 	return c.json({ ok: true });
 });
 
-/** Changes the password and signs out every other device. */
-auth.post("/password", passwordModeOnly, requireUser, async (c) => {
-	const { currentPassword, newPassword } = await readJson(
-		c,
-		changePasswordSchema,
-	);
-	const user = c.get("user");
+/**
+ * Checks the signed-in person's password again (before changing it or the
+ * encryption keys), upgrading a legacy hash. Rejects with 403 `wrong_password`.
+ */
+export async function confirmPassword(
+	c: Context<AppEnv>,
+	userId: string,
+	password: string,
+	legacyPassword: string | undefined,
+): Promise<void> {
 	// Per account from any IP, so a stolen session can't guess the password.
 	if (clientIp(c) !== null)
-		await limit(c.env.LOGIN_LIMITER, "password", user.id);
+		await limit(c.env.LOGIN_LIMITER, "password", userId);
 	const row = await c.env.DB.prepare(
 		"SELECT password_hash FROM users WHERE id = ?",
 	)
-		.bind(user.id)
+		.bind(userId)
 		.first<{ password_hash: string }>();
-	const { ok } = await verifyPassword(
-		currentPassword,
-		row?.password_hash ?? (await getDummyHash()),
+	const { ok, upgrade } = await checkPassword(
+		row?.password_hash,
+		password,
+		legacyPassword,
 	);
 	if (!row || !ok) throw new ApiError(403, "wrong_password");
-	await c.env.DB.prepare("UPDATE users SET password_hash = ? WHERE id = ?")
-		.bind(await hashPassword(newPassword), user.id)
-		.run();
+	if (upgrade)
+		await c.env.DB.prepare("UPDATE users SET password_hash = ? WHERE id = ?")
+			.bind(await hashPassword(password), userId)
+			.run();
+}
+
+/** Changes the password and signs out every other device. */
+auth.post("/password", passwordModeOnly, requireUser, async (c) => {
+	const {
+		currentPassword,
+		currentLegacyPassword,
+		newPassword,
+		wrappedByPassword,
+	} = await readJson(c, changePasswordSchema);
+	const user = c.get("user");
+	await confirmPassword(c, user.id, currentPassword, currentLegacyPassword);
+	// An encrypted account's data key must move to the new password with it.
+	if (user.encrypted && !wrappedByPassword)
+		throw new ApiError(400, "keys_required");
+	const updates = [
+		c.env.DB.prepare("UPDATE users SET password_hash = ? WHERE id = ?").bind(
+			await hashPassword(newPassword),
+			user.id,
+		),
+	];
+	if (wrappedByPassword)
+		updates.push(
+			c.env.DB.prepare(
+				"UPDATE user_keys SET wrapped_by_password = ?, updated_at = ? WHERE user_id = ?",
+			).bind(wrappedByPassword, Date.now(), user.id),
+		);
+	await c.env.DB.batch(updates);
 	await destroyOtherSessions(c, user.id);
 	return c.json({ ok: true });
 });
@@ -356,18 +412,30 @@ async function sendResetLink(env: AppEnv["Bindings"], email: string) {
 	await sendMail(env, resetPasswordMail(email, link));
 }
 
+async function findReset(env: AppEnv["Bindings"], token: string) {
+	const row = await env.DB.prepare(
+		`SELECT u.* FROM password_resets r JOIN users u ON u.id = r.user_id
+		 WHERE r.token_hash = ? AND r.expires_at > ?`,
+	)
+		.bind(await sha256Hex(token), Date.now())
+		.first<UserRow>();
+	if (!row) throw new ApiError(400, "invalid_token");
+	return row;
+}
+
+/** The page a reset link opens asks whose it is: the new key is derived from the email. */
+auth.post("/reset/link", passwordModeOnly, async (c) => {
+	const { token } = await readJson(c, resetLinkSchema);
+	await limit(c.env.RESET_LIMITER, clientIp(c), "reset");
+	const row = await findReset(c.env, token);
+	return c.json({ email: row.email });
+});
+
 /** Sets a new password from a reset link, signs out everywhere else, and signs in here. */
 auth.post("/reset", passwordModeOnly, async (c) => {
 	const { token, password } = await readJson(c, resetPasswordSchema);
 	await limit(c.env.RESET_LIMITER, clientIp(c), "reset");
-	const tokenHash = await sha256Hex(token);
-	const row = await c.env.DB.prepare(
-		`SELECT u.* FROM password_resets r JOIN users u ON u.id = r.user_id
-		 WHERE r.token_hash = ? AND r.expires_at > ?`,
-	)
-		.bind(tokenHash, Date.now())
-		.first<UserRow>();
-	if (!row) throw new ApiError(400, "invalid_token");
+	const row = await findReset(c.env, token);
 	await c.env.DB.batch([
 		c.env.DB.prepare("UPDATE users SET password_hash = ? WHERE id = ?").bind(
 			await hashPassword(password),

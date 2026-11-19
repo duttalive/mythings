@@ -57,6 +57,7 @@ describe("signup", () => {
 			name: "Ada Lovelace",
 			tz: "Australia/Sydney",
 			settings: {},
+			encrypted: false,
 		});
 
 		const setCookie = res.headers.get("set-cookie") ?? "";

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 import { auth, clientIp } from "./auth";
 import { ApiError } from "./http";
+import { keys } from "./keys";
 import { devMail } from "./mail";
 import { me } from "./me";
 import { notifications } from "./notifications";
@@ -57,6 +58,7 @@ app.get("/health", async (c) => {
 
 app.route("/auth", auth);
 app.route("/me", me);
+app.route("/keys", keys);
 app.route("/sync", sync);
 app.route("/push", notifications);
 app.route("/", transfer);

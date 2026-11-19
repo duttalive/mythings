@@ -20,7 +20,13 @@ import {
 } from "../../shared/schema";
 import type { LocalDb } from "../db/local";
 import type { Channel } from "./channel";
-import { applyServerChanges, flushOutbox, syncLockName } from "./outbox";
+import {
+	applyServerChanges,
+	EncryptionRequired,
+	flushOutbox,
+	type PatchEncrypter,
+	syncLockName,
+} from "./outbox";
 import { NetworkError, type Transport, UnauthorizedError } from "./transport";
 
 export type Mutation =
@@ -69,6 +75,10 @@ type Options = {
 	tz?: string;
 	/** How long to wait for a push ack over the channel before giving up. */
 	socketTimeoutMs?: number;
+	/** Encrypts text before it's stored or sent, for an encrypted account. */
+	encrypt?: PatchEncrypter;
+	/** The server says this account is encrypted (another device turned it on). */
+	onEncryptionRequired?: () => void;
 };
 
 type AckWaiter = {
@@ -216,18 +226,49 @@ export class SyncEngine {
 		mutations: Mutation[],
 		options: { undoable?: boolean } = {},
 	): Promise<void> {
-		const inverse = await this.applyRecording(mutations);
+		const inverse = await this.applyRecording(
+			await this.encryptMutations(mutations),
+		);
 		if (options.undoable !== false && inverse.length > 0) {
 			this.pushHistory(this.#undo, inverse);
 			this.#redo = [];
 		}
 	}
 
+	/**
+	 * Text is encrypted before the transaction (WebCrypto can't run inside an
+	 * IndexedDB transaction), so the local copy and the outbox only ever hold
+	 * ciphertext for an encrypted account.
+	 */
+	private async encryptMutations(mutations: Mutation[]): Promise<Mutation[]> {
+		const encrypt = this.options.encrypt;
+		if (!encrypt) return mutations;
+		const out: Mutation[] = [];
+		for (const mutation of mutations) {
+			if (mutation.type !== "upsert") out.push(mutation);
+			else {
+				try {
+					out.push({
+						...mutation,
+						patch: await encrypt(mutation.entity, mutation.patch),
+					});
+				} catch (err) {
+					if (err instanceof Error && err.name === "PlainTextTooLong")
+						throw new InvalidMutation(err.message);
+					throw err;
+				}
+			}
+		}
+		return out;
+	}
+
 	/** Reverts the last undoable change. Returns false if there was nothing to undo. */
 	async undo(): Promise<boolean> {
 		const entry = await this.popRunnable(this.#undo);
 		if (!entry) return false;
-		const inverse = await this.applyRecording(entry);
+		const inverse = await this.applyRecording(
+			await this.encryptMutations(entry),
+		);
 		if (inverse.length > 0) this.pushHistory(this.#redo, inverse);
 		return true;
 	}
@@ -236,7 +277,9 @@ export class SyncEngine {
 	async redo(): Promise<boolean> {
 		const entry = await this.popRunnable(this.#redo);
 		if (!entry) return false;
-		const inverse = await this.applyRecording(entry);
+		const inverse = await this.applyRecording(
+			await this.encryptMutations(entry),
+		);
 		if (inverse.length > 0) this.pushHistory(this.#undo, inverse);
 		return true;
 	}
@@ -566,6 +609,13 @@ export class SyncEngine {
 					this.options.onUnauthorized?.();
 					return;
 				}
+				// Waits for this device to be unlocked; nothing to retry until then.
+				if (err instanceof EncryptionRequired || isLocked(err)) {
+					this.setStatus({ state: "error", error: "locked" });
+					if (err instanceof EncryptionRequired)
+						this.options.onEncryptionRequired?.();
+					return;
+				}
 				this.setStatus({
 					state: err instanceof NetworkError ? "offline" : "error",
 					error: err instanceof Error ? err.message : String(err),
@@ -597,8 +647,13 @@ export class SyncEngine {
 
 	/** Sends queued ops to the server in batches until the outbox is empty. */
 	async flush(): Promise<void> {
-		const errors = await flushOutbox(this.db, (ops) =>
-			this.#status.live ? this.pushOverChannel(ops) : this.transport.push(ops),
+		const errors = await flushOutbox(
+			this.db,
+			(ops) =>
+				this.#status.live
+					? this.pushOverChannel(ops)
+					: this.transport.push(ops),
+			this.options.encrypt,
 		);
 		if (errors.length > 0) this.options.onRejected?.(errors);
 	}
@@ -743,6 +798,9 @@ export class SyncEngine {
 	 * so unsent edits survive. Rows older than the local copy are ignored.
 	 */
 }
+
+const isLocked = (err: unknown) =>
+	err instanceof Error && err.name === "EncryptionLocked";
 
 function toOp(mutation: Mutation, now: number): Op {
 	const base = {

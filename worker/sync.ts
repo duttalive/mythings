@@ -21,6 +21,7 @@ export function userContext(user: Me): UserContext {
 		userId: user.id,
 		tz: user.tz,
 		weekStart: user.settings.weekStart ?? 1,
+		encrypted: user.encrypted,
 	};
 }
 

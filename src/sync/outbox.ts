@@ -13,7 +13,49 @@ import {
 	type OpError,
 	type PushResult,
 } from "../../shared/schema";
-import type { LocalDb } from "../db/local";
+import type { LocalDb, OutboxEntry } from "../db/local";
+
+/**
+ * Encrypts a patch's text for an encrypted account (src/crypto/session.ts).
+ * Throws `EncryptionLocked` when the account is encrypted but this device
+ * can't encrypt right now; the outbox then waits.
+ */
+export type PatchEncrypter = (
+	entity: EntityName,
+	patch: Record<string, unknown>,
+) => Promise<Record<string, unknown>>;
+
+/** The server wants this account's text encrypted, and the device didn't know. */
+export class EncryptionRequired extends Error {
+	constructor() {
+		super("encryption_required");
+	}
+}
+
+/** Encrypts any plain text still queued (written before encryption was on here). */
+async function encryptQueued(
+	db: LocalDb,
+	entries: OutboxEntry[],
+	encrypt: PatchEncrypter,
+): Promise<OutboxEntry[]> {
+	const out: OutboxEntry[] = [];
+	for (const entry of entries) {
+		const { op } = entry;
+		if (op.kind !== "upsert") {
+			out.push(entry);
+			continue;
+		}
+		const patch = await encrypt(op.entity, op.patch as Record<string, unknown>);
+		if (patch === op.patch) {
+			out.push(entry);
+			continue;
+		}
+		const next = { ...entry, op: { ...op, patch } as Op };
+		await db.outbox.put(next);
+		out.push(next);
+	}
+	return out;
+}
 
 type AnyRow = EntityRowMap[EntityName];
 
@@ -30,22 +72,32 @@ export const syncLockName = (db: LocalDb) => `mythings-sync-${db.name}`;
 export async function flushOutbox(
 	db: LocalDb,
 	push: (ops: Op[]) => Promise<PushResult>,
+	encrypt?: PatchEncrypter,
 ): Promise<OpError[]> {
 	const rejected: OpError[] = [];
 	for (;;) {
-		const entries = await db.outbox
+		let entries = await db.outbox
 			.orderBy("seq")
 			.limit(MAX_OPS_PER_PUSH)
 			.toArray();
 		if (entries.length === 0) return rejected;
+		if (encrypt) entries = await encryptQueued(db, entries, encrypt);
 		const result = await push(entries.map((e) => e.op));
+		// Kept queued (not rolled back): sent again once they're encrypted.
+		const keep = new Set(
+			result.errors
+				.filter((e) => e.code === "encryption_required")
+				.map((e) => e.opId),
+		);
 
 		await db.transaction("rw", db.allTables, async () => {
 			// The server has processed the whole batch: acked, rejected, or malformed.
-			await db.outbox.bulkDelete(entries.map((e) => e.seq as number));
+			await db.outbox.bulkDelete(
+				entries.filter((e) => !keep.has(e.op.opId)).map((e) => e.seq as number),
+			);
 			await applyServerChanges(db, result.rows, result.purged);
 			for (const error of result.errors) {
-				if (error.current === undefined) continue;
+				if (error.current === undefined || keep.has(error.opId)) continue;
 				const entry = entries.find((e) => e.op.opId === error.opId);
 				if (error.current === null && entry)
 					await db.rows(entry.entity).delete(entry.entityId);
@@ -53,6 +105,7 @@ export async function flushOutbox(
 					await applyServerChanges(db, [error.current], []);
 			}
 		});
+		if (keep.size > 0) throw new EncryptionRequired();
 		rejected.push(...result.errors);
 	}
 }

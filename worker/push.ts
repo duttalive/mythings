@@ -8,6 +8,8 @@ import {
 export type PushNotice = {
 	title: string;
 	body: string;
+	/** Which list's name `body` is, so an encrypted one can be decrypted. */
+	bodyEntity?: "project" | "area";
 	/** Where clicking the notification opens. */
 	url: string;
 	/** Notifications with the same tag replace each other. */

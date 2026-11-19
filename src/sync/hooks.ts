@@ -4,6 +4,7 @@ import { nextLocalMidnight, todayIn } from "../../shared/dates";
 import type { ChecklistItem } from "../../shared/schema";
 import { bySortKey, type ViewContext, type ViewData } from "../../shared/views";
 import { useAuth } from "../auth/AuthGate";
+import { decryptRows, useCryptoState } from "../crypto/session";
 import type { SyncEngine, SyncStatus } from "./engine";
 import { useSyncContext } from "./SyncProvider";
 
@@ -43,6 +44,8 @@ export function useSyncStatus(): SyncStatus {
 /** All entities the list views need, live from IndexedDB. Undefined while loading. */
 export function useViewData(): ViewData | undefined {
 	const { db } = useSyncContext();
+	// Re-read when the key opens or closes, so text shows decrypted (SPEC §8.5).
+	const { key } = useCryptoState();
 	return useLiveQuery(async () => {
 		const [areas, projects, headings, todos, tags] = await Promise.all([
 			db.areas.toArray(),
@@ -51,8 +54,14 @@ export function useViewData(): ViewData | undefined {
 			db.todos.toArray(),
 			db.tags.toArray(),
 		]);
-		return { areas, projects, headings, todos, tags };
-	}, [db]);
+		return {
+			areas: await decryptRows("area", areas),
+			projects: await decryptRows("project", projects),
+			headings: await decryptRows("heading", headings),
+			todos: await decryptRows("todo", todos),
+			tags: await decryptRows("tag", tags),
+		};
+	}, [db, key]);
 }
 
 /**
@@ -116,11 +125,15 @@ export function useChecklistProgress(): ChecklistProgress | undefined {
 /** A to-do's live checklist items, in order. Undefined while loading. */
 export function useChecklist(todoId: string): ChecklistItem[] | undefined {
 	const { db } = useSyncContext();
+	const { key } = useCryptoState();
 	return useLiveQuery(
 		async () =>
-			(await db.checklist.where("todoId").equals(todoId).toArray())
-				.filter((item) => item.deletedAt === null)
-				.sort(bySortKey),
-		[db, todoId],
+			decryptRows(
+				"checklist",
+				(await db.checklist.where("todoId").equals(todoId).toArray())
+					.filter((item) => item.deletedAt === null)
+					.sort(bySortKey),
+			),
+		[db, todoId, key],
 	);
 }
