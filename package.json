@@ -23,7 +23,8 @@
 		"vapid": "node scripts/vapid-keys.mjs",
 		"e2e": "playwright test",
 		"release": "node scripts/release.mjs",
-		"ship": "corepack pnpm release && corepack pnpm run deploy && git push --follow-tags"
+		"ship": "corepack pnpm release && corepack pnpm run deploy && git push --follow-tags",
+		"guide:screenshots": "playwright test -c scripts/guide-screenshots/playwright.config.ts"
 	},
 	"dependencies": {
 		"@block65/webcrypto-web-push": "^2.0.0",
