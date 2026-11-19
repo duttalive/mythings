@@ -1,7 +1,7 @@
 # mythings Core User Guide
 
-<!-- guide-version: 2.0.0 -->
-_Up to date with mythings **2.0.0**. This guide is updated with every release; see [CHANGELOG.md](CHANGELOG.md) for what changed in each one._
+<!-- guide-version: 2.1.0 -->
+_Up to date with mythings **2.1.0**. This guide is updated with every release; see [CHANGELOG.md](CHANGELOG.md) for what changed in each one._
 
 mythings is a free, open-source to-do app in the spirit of Things 3. It keeps a full copy of your to-dos on every device you use, so everything works instantly and offline, and changes sync to your other devices within a second or two when you're online. The hosted app lives at **https://mythings.dynocoder.com**.
 

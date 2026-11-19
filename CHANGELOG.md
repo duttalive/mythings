@@ -2,6 +2,17 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.1.0 — 2026-11-19
+
+A new Overdue list, and tags you can arrange right in the sidebar.
+
+- Overdue: to-dos and projects whose deadline has passed now leave Today and wait in a new **Overdue** list in the sidebar, after Someday, with a red count. It's grouped by the day each was due, most overdue first, and says how late each group is. Want to work on one today anyway? Set its When to Today and it shows in both.
+- Today now shows what's due today; its red count is for those, and for overdue items you've scheduled for today.
+- Open Overdue with **g o**, or type "Overdue" in Quick Find.
+- Tags: drag a tag in the sidebar onto another to nest it inside, or onto its top or bottom edge to change the order. On a phone, press and hold to drag.
+- Delete a tag from the sidebar: right-click it and choose Delete Tag…, or drag it onto Trash. Right-click a nested tag to move it out of its parent.
+- Deleting a tag now tells you how many tags nested inside it go too.
+
 ## Version 2.0.0 — 2026-11-19
 
 Your to-dos can now be end-to-end encrypted, so only you can read them.
