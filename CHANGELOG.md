@@ -2,6 +2,13 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 1.9.0 — 2026-11-19
+
+- Deadlines: see every open to-do and project with a deadline in one list, overdue first, then by day. Type "Deadlines" in Quick Find to open it, and use its search box to narrow it by title, notes, project, area or tag.
+- Today's tag bar now only offers tags that something in Today has, so picking one never leaves an empty list.
+- With "Group to-dos in Today by project" on, moving a to-do (by dragging or with ⌘↑ / ⌘↓) now keeps it within its project's group, instead of seeming to do nothing while quietly changing the order.
+- Today now moves on to the new day as soon as you come back to the app, even if your computer was asleep at midnight.
+
 ## Version 1.8.0 — 2026-10-27
 
 - Nested tags now show in the sidebar under their parent tag. Hide or show them with the arrow next to the parent: a hidden tag shows how many tags it holds, stays that way on all your devices, and opens again when you go to one of its tags.
