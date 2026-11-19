@@ -1,8 +1,7 @@
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import type { Tag } from "../../shared/schema";
 import { bySortKey, tagView } from "../../shared/views";
-import { useConfirmDelete } from "../components/ConfirmDelete";
 import { EditableTitle, IconButton } from "../components/controls";
 import { MoreIcon, RepeatIcon, TagIcon, TrashIcon } from "../components/icons";
 import {
@@ -15,10 +14,10 @@ import {
 import { LoggedItems } from "../components/LoggedItems";
 import { Popover, PopoverOption } from "../components/Popover";
 import { EntryRow, RowList } from "../components/rows";
-import { useToast } from "../components/Toast";
 import { useListData } from "../data";
-import { tagRequest } from "../editing/deleteRequests";
+import { tagDescendants } from "../dnd/tagMoves";
 import { tagShortcutMutations } from "../editing/tags";
+import { useDeleteTag } from "../editing/useDeleteTag";
 import { useOps } from "../sync/hooks";
 import { Missing } from "./not-found";
 
@@ -123,31 +122,14 @@ function TagTitle({ tag }: { tag: Tag }) {
 	);
 }
 
-/** Every tag below `id` (so it can't become its own ancestor). */
-function descendants(tags: Tag[], id: string): Set<string> {
-	const out = new Set<string>([id]);
-	let grew = true;
-	while (grew) {
-		grew = false;
-		for (const t of tags)
-			if (t.parentId && out.has(t.parentId) && !out.has(t.id)) {
-				out.add(t.id);
-				grew = true;
-			}
-	}
-	return out;
-}
-
 function TagActions({ tag }: { tag: Tag }) {
 	const ops = useOps();
-	const toast = useToast();
-	const navigate = useNavigate();
 	const { data } = useListData();
-	const confirmDelete = useConfirmDelete();
+	const deleteTag = useDeleteTag();
 	const [open, setOpen] = useState(false);
 	const shortcutId = useId();
 	const parentId = useId();
-	const excluded = descendants(data.tags, tag.id);
+	const excluded = tagDescendants(data.tags, tag.id);
 	const parents = data.tags
 		.filter((t) => t.deletedAt === null && !excluded.has(t.id))
 		.sort(bySortKey);
@@ -207,19 +189,9 @@ function TagActions({ tag }: { tag: Tag }) {
 			<div className="my-1 border-t border-[var(--border)]" />
 			<PopoverOption
 				icon={<TrashIcon className="size-4 text-overdue" />}
-				onSelect={async () => {
+				onSelect={() => {
 					setOpen(false);
-					if (!(await confirmDelete(tagRequest(tag, data)))) return;
-					void ops
-						.remove("tag", tag.id)
-						.then(() =>
-							toast.show(`Deleted “${tag.title}”`, {
-								label: "Undo",
-								run: () => void ops.undo().catch(console.error),
-							}),
-						)
-						.catch(console.error);
-					void navigate({ to: "/today" });
+					void deleteTag(tag);
 				}}
 			>
 				<span className="text-overdue">Delete Tag</span>

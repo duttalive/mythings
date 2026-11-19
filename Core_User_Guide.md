@@ -90,8 +90,9 @@ The app updates itself. When a new version has downloaded it's applied straight 
 **Sidebar** (left on a computer, a drawer on a phone):
 
 - **Inbox**, with a count of its to-dos.
-- **Today**, with a count, plus a red count of items whose deadline is today or past.
+- **Today**, with a count, plus a red count of items in Today whose deadline is today.
 - **Upcoming**, **Anytime**, **Someday**.
+- **Overdue**, with a red count of open items whose deadline has passed.
 - **Logbook** and **Trash**.
 - Your **projects** (those not in an area), then each **area** with its projects. An arrow next to an area hides or shows its projects.
 - **Tags**, nested under their parent tags, with a **+** to add one and arrows to hide nested tags.
@@ -135,7 +136,7 @@ Tags label to-dos, projects and areas across lists: `errands`, `phone`, `urgent`
 These are different on purpose:
 
 - **When** is when you _intend to start_: Today, This Evening, a future date, Anytime, Someday, or not decided yet (Inbox).
-- **Deadline** is when it's _due_. A to-do with a deadline today or in the past shows up in Today even if its When is later, with a red flag.
+- **Deadline** is when it's _due_. On the day it's due, a to-do shows up in Today even if its When is later, with a red flag. Once that day has passed, it moves to **Overdue** instead (see [Overdue](#46-overdue)).
 
 ### 3.7 Where an item shows up
 
@@ -165,7 +166,8 @@ Where new to-dos land when you haven't decided anything about them yet. Process 
 Everything you plan to do today:
 
 - To-dos and projects scheduled for today or earlier.
-- Anything whose deadline is today or past, even if scheduled later (overdue deadlines show "N days ago" in red).
+- Anything whose deadline is today, even if scheduled later.
+- Once a deadline has passed, the item leaves Today and waits in [Overdue](#46-overdue). To work on it today anyway, set its When to **Today** (or This Evening): it then shows in both, with its overdue deadline in red.
 - A **This Evening** section for things you've set for this evening. While you drag, it appears even when empty so you can drop items into it.
 
 Details:
@@ -174,7 +176,7 @@ Details:
 - **Group to-dos in Today by project** (Settings → Lists) shows loose items first, then a small heading per project with its to-dos. While grouped, moving a to-do keeps it within its project's group.
 - **Tag bar:** offers only the tags that something in Today has. If a filter leaves nothing, it says "Nothing in Today has these tags."
 - **A new day:** at midnight Today moves on. If your computer was asleep at midnight, Today catches up as soon as you come back to the app. Anything scheduled for "This Evening" yesterday comes back as a normal Today item.
-- The sidebar badge counts open items in Today; the red badge counts those whose deadline is today or past.
+- The sidebar badge counts open items in Today; the red badge counts those that are due (today, or overdue items you've scheduled for today).
 
 ### 4.3 Upcoming
 
@@ -194,7 +196,19 @@ Everything you could work on now: to-dos set to Anytime, and scheduled ones whos
 
 Things you might do one day. Someday projects appear as single entries (their to-dos stay inside them), plus Someday to-dos outside such projects, grouped by area and project.
 
-### 4.6 Logbook
+### 4.6 Overdue
+
+Everything whose deadline has passed and isn't done yet, so nothing late gets lost in Today. It sits in the sidebar after Someday, with a red count.
+
+- Grouped by the day it was due, **most overdue first**. Each group says how late it is ("3 days overdue"), and each row shows its project or area.
+- Projects with a passed deadline appear here too, as do to-dos with any When (Anytime, Someday, a date, or none).
+- Completed items, repeating templates and to-dos inside finished or deleted projects are left out. Tick one off and it leaves Overdue the same way it leaves other lists.
+- To deal with something here: complete it, give it a later **deadline** (it leaves Overdue, and comes back to Today on the new day), clear the deadline, or set its When to **Today** to keep it in Today as well while it's still overdue.
+- The **tag bar** offers only the tags that something overdue has.
+
+Open it from the sidebar, with **g o**, or by typing "Overdue" in Quick Find.
+
+### 4.7 Logbook
 
 Completed and canceled items, newest first, grouped by the day they were finished. A completed project's to-dos are filed under the project. Untick an item to reopen it; it goes straight back where it came from. Older entries load as you scroll.
 
@@ -203,27 +217,27 @@ When completed items move here depends on **Settings → Lists → Move complete
 - **Immediately** (default): a completed to-do stays in place, struck through, for a moment, then leaves its list.
 - **Daily:** completed items stay in their lists, struck through, until tomorrow.
 
-### 4.7 Trash
+### 4.8 Trash
 
 Deleted items stay here for **30 days**, then they're deleted for good. Each row has **Restore**, which brings it back with everything that was deleted with it (a project's to-dos and headings, an area's projects). **Empty Trash** deletes everything here permanently; see [Deleting](#11-deleting-trash-and-undo).
 
-### 4.8 Deadlines (hidden list)
+### 4.9 Deadlines (hidden list)
 
-Like in Things, Deadlines isn't in the sidebar: open **Quick Find**, type "Deadlines" and press Enter. It shows every open to-do and project that has a deadline:
+Like in Things, Deadlines isn't in the sidebar: open **Quick Find**, type "Deadlines" and press Enter. It shows every open to-do and project that has a deadline, overdue or not (for only the overdue ones, use [Overdue](#46-overdue)):
 
 - **Overdue** first (in red), then one group per deadline day ("Today", "Tomorrow", then dates).
 - Completed items, and to-dos inside finished or deleted projects, are left out.
 - The **Search deadlines** box narrows the list to items whose title, notes, project, area or tags contain every word you type. Escape clears it.
 
-### 4.9 A project's page
+### 4.10 A project's page
 
 See [Projects and headings](#7-projects-and-headings).
 
-### 4.10 An area's page
+### 4.11 An area's page
 
 See [Areas](#8-areas).
 
-### 4.11 A tag's page
+### 4.12 A tag's page
 
 See [Tags](#9-tags).
 
@@ -301,7 +315,7 @@ Keyboard shortcuts set When directly: **Alt+T** Today, **Alt+E** This Evening, *
 
 ### 6.2 Deadlines
 
-Open with the **Deadline** button or **⌘⇧D**. Type a date ("friday", "nov 30") or pick it on the calendar; **Clear deadline** removes it. Items with a deadline today or past appear in Today with a red flag; every deadline is collected in the [Deadlines list](#48-deadlines-hidden-list).
+Open with the **Deadline** button or **⌘⇧D**. Type a date ("friday", "nov 30") or pick it on the calendar; **Clear deadline** removes it. Items due today appear in Today with a red flag; once the day has passed they move to [Overdue](#46-overdue). Every deadline is collected in the [Deadlines list](#49-deadlines-hidden-list).
 
 ### 6.3 Reminders
 
@@ -388,9 +402,13 @@ With **Move to Area…** in the project's ⋯ menu, move it into another area or
 
 ### 9.2 Nesting
 
-On a tag's page, open the **⋯** menu and choose a parent under **Inside**. In the sidebar, nested tags show indented under their parent, at any depth. A parent tag with nested tags gets an arrow to hide or show them; a hidden parent shows how many tags it holds. This is saved to your account. Visiting a nested tag opens everything above it again.
+In the sidebar, **drag a tag onto the middle of another tag** to nest it inside (a highlight shows where it will go). To take it out again, drag it next to a top-level tag, or right-click it and choose **Move out of “…”**. You can also use **Inside** in the **⋯** menu on a tag's page. A tag can't be nested inside itself or one of its own nested tags. Nested tags show indented under their parent, at any depth. A parent tag with nested tags gets an arrow to hide or show them; a hidden parent shows how many tags it holds. This is saved to your account. Visiting a nested tag opens everything above it again.
 
-### 9.3 A tag's page
+### 9.3 Reordering tags
+
+Drag a tag in the sidebar onto the **top or bottom edge** of another tag: a line shows where it lands, and it moves just above or below that tag (alongside it, under the same parent). The order is saved to your account. On a touch screen, press and hold a tag to start dragging.
+
+### 9.4 A tag's page
 
 - Chips to the parent tag (↑) and the nested tags.
 - Everything open with this tag, **including tags nested inside it**, grouped like Anytime (loose to-dos, projects, then areas).
@@ -398,9 +416,9 @@ On a tag's page, open the **⋯** menu and choose a parent under **Inside**. In 
 - **Show N logged items** for what's already done.
 - The **⋯** menu: **Shortcut key** (a single letter that toggles this tag in any tag picker; a key used by another tag moves to this one), **Inside** (parent tag), and **Delete Tag**.
 
-### 9.4 Deleting a tag
+### 9.5 Deleting a tag
 
-Delete Tag asks first, saying how many items it will come off. The items themselves stay. Tags don't go to the Trash, so use **Undo** straight away if you change your mind. Deleting a tag also deletes the tags nested inside it.
+Delete a tag in any of three ways: right-click it in the sidebar and choose **Delete Tag…**, drag it onto **Trash** in the sidebar, or use **Delete Tag** in the **⋯** menu on its page. It asks first, saying how many items it will come off and how many tags nested inside it go too. The items themselves stay. Tags don't go to the Trash, so use **Undo** straight away if you change your mind. Deleting a tag also deletes the tags nested inside it.
 
 ---
 
@@ -426,6 +444,7 @@ With two or more selected, a bar appears with **When**, **Move**, **Tags**, **De
   - **Logbook**: completes a to-do.
   - **Trash**: deletes (it asks first).
   - A **project** or **area**: moves it there (to the end). Projects can be dropped onto an area.
+  - **Tags** in the sidebar: drag a tag onto another to nest it, or onto its top or bottom edge to reorder (see [Tags](#9-tags)), or onto Trash to delete it.
   - Upcoming isn't a drop target; projects can't be dropped onto the Logbook (complete them from their ring, so you're asked about remaining to-dos).
 - With the mouse, a drag starts after a small movement; on touch screens, press and hold.
 - Rows in Anytime, Someday, Upcoming and tag pages can be dragged to the sidebar but not reordered there.
@@ -462,7 +481,7 @@ Start typing any letter while you're not in a text field (or click the search ic
 
 Use ↑ / ↓ and **Enter** to open a result, or click it. Opening a to-do takes you to the list it's in and opens it there. Lists and projects rank above to-dos when they match about as well.
 
-The **g** shortcuts navigate without searching: **g i** Inbox, **g t** Today, **g u** Upcoming, **g a** Anytime, **g s** Someday, **g l** Logbook. After **g**, the app waits a moment; any other letter opens Quick Find with both letters.
+The **g** shortcuts navigate without searching: **g i** Inbox, **g t** Today, **g u** Upcoming, **g a** Anytime, **g s** Someday, **g o** Overdue, **g l** Logbook. After **g**, the app waits a moment; any other letter opens Quick Find with both letters.
 
 ---
 
@@ -487,6 +506,7 @@ Press **?** to see this list in the app. ⌘ means Ctrl on Windows and Linux. Sh
 | Tags…                                    | ⌘⇧T                                    |
 | Delete                                   | Backspace or Delete                    |
 | Go to Inbox … Logbook                    | ⌘1 … ⌘6, or g i / t / u / a / s / l    |
+| Go to Overdue                            | g o                                    |
 | Settings                                 | ⌘,                                     |
 | Undo / Redo                              | ⌘Z / ⌘⇧Z                               |
 | Shortcut help                            | ?                                      |
@@ -535,7 +555,7 @@ Open with the gear at the bottom of the sidebar, or **⌘,**. Changes apply at o
 **Lists**
 
 - **Group to-dos in Today by project.**
-- **Move completed to-dos to the Logbook:** Immediately or Daily (see [Logbook](#46-logbook)).
+- **Move completed to-dos to the Logbook:** Immediately or Daily (see [Logbook](#47-logbook)).
 
 **Notifications**
 
@@ -649,7 +669,9 @@ These work without signing in:
 
 **Something I completed is still showing.** If Settings → Lists → Move completed to-dos to the Logbook is set to **Daily**, completed items stay (struck through) until tomorrow.
 
-**A to-do with a later date is in Today.** Its deadline is today or past; deadlines bring items into Today.
+**A to-do with a later date is in Today.** Its deadline is today; deadlines bring items into Today on the day they're due.
+
+**A to-do disappeared from Today.** Its deadline has passed, so it moved to **Overdue**. Set its When to Today to keep it in Today too, or give it a new deadline.
 
 **A to-do scheduled for today isn't in Today.** Check its project: to-dos inside a Someday project, or a project scheduled for later, wait until the project is active.
 

@@ -4,6 +4,7 @@
 import type { Area, Heading, Project, Tag, Todo } from "../../shared/schema";
 import type { ViewData } from "../../shared/views";
 import { count, type DeleteRequest, quoted } from "../components/ConfirmDelete";
+import { tagDescendants } from "../dnd/tagMoves";
 
 const TRASH = "You can restore it from Trash for 30 days.";
 const TRASH_THEM = "You can restore them from Trash for 30 days.";
@@ -77,9 +78,10 @@ export function tagRequest(tag: Tag, data: ViewData): DeleteRequest {
 	const tagged =
 		live(data.todos).filter((t) => t.tagIds.includes(tag.id)).length +
 		live(data.projects).filter((p) => p.tagIds.includes(tag.id)).length;
+	const nested = tagDescendants(live(data.tags), tag.id).size - 1;
 	return {
 		title: `Delete tag ${quoted(tag.title, "this tag")}?`,
-		body: `${tagged ? `It comes off ${count(tagged, "to-do or project", "to-dos and projects")}; they stay. ` : ""}Tags don't go to Trash, so you can only undo this straight away.`,
+		body: `${nested ? `${count(nested, "tag")} inside it ${nested === 1 ? "goes" : "go"} too. ` : ""}${tagged ? `It comes off ${count(tagged, "to-do or project", "to-dos and projects")}; they stay. ` : ""}Tags don't go to Trash, so you can only undo this straight away.`,
 		confirmLabel: "Delete Tag",
 	};
 }
@@ -95,10 +97,14 @@ export function emptyTrashRequest(items: number): DeleteRequest {
 
 /** For something dragged onto Trash in the sidebar. */
 export function dragToTrashRequest(
-	kind: "todo" | "project" | "area",
+	kind: "todo" | "project" | "area" | "tag",
 	id: string,
 	data: ViewData,
 ): DeleteRequest | null {
+	if (kind === "tag") {
+		const tag = data.tags.find((t) => t.id === id);
+		return tag ? tagRequest(tag, data) : null;
+	}
 	if (kind === "todo") {
 		const todo = data.todos.find((t) => t.id === id);
 		return todo ? todosRequest([todo]) : null;

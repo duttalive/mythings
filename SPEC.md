@@ -223,10 +223,11 @@ An item whose project is `someday` (or whose project is not open) is excluded fr
 | List           | Membership                                                                                            | Grouping / order                                                                                                                                                                |
 | -------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Inbox**      | open, `when === "inbox"`                                                                              | `sortKey`                                                                                                                                                                       |
-| **Today**      | open, and (`when === "scheduled" && startDate <= today`)**or** `deadline <= today`                    | Two sections: main, then **This Evening** (`evening`). Ordered by `todaySortKey`. Overdue deadlines show red "N days ago". Also includes open projects that meet the same rule. |
+| **Today**      | open, and (`when === "scheduled" && startDate <= today`) **or** `deadline === today`; an overdue item (`deadline < today`) only if `startDate === today` | Two sections: main, then **This Evening** (`evening`). Ordered by `todaySortKey`. Also includes open projects that meet the same rule. |
 | **Upcoming**   | open with `when === "scheduled" && startDate > today`, **plus** repeat templates by `repeat.nextDate` | Next 7 days as individual day headers ("Tomorrow", "Wed 29"), then rest of the month, then by month. Days with no items still render in the 7-day band.                         |
 | **Anytime**    | open, `when === "anytime"` or (`scheduled` and `startDate <= today`)                                  | Grouped by Area → Project; loose to-dos first. Items also in Today show a ★.                                                                                                    |
 | **Someday**    | open, `when === "someday"`                                                                            | Grouped by Area → Project.                                                                                                                                                      |
+| **Overdue**    | open, `deadline < today` (to-dos in an open project only), any `when`                                   | One group per deadline day, oldest first, each showing "N days overdue". In the sidebar after Someday; `g o`.                    |
 | **Logbook**    | `status !== "open"`, not deleted                                                                      | Grouped by `completedAt` day, newest first. Paginate.                                                                                                                           |
 | **Trash**      | `deletedAt !== null`                                                                                  | "Empty Trash" button (confirm).                                                                                                                                                 |
 | **Project**    | to-dos with `projectId`                                                                               | Loose to-dos, then each heading; archived headings and repeat templates listed separately.                                                                                      |
@@ -234,7 +235,7 @@ An item whose project is `someday` (or whose project is not open) is excluded fr
 | **Deadlines**  | open to-dos and projects with a `deadline` (not inside a finished, deleted or repeating project)      | Not in the sidebar; opened from Quick Find (`/deadlines`). "Overdue" first, then one group per deadline day. A search field narrows it by title, notes, project, area and tags.  |
 | **Tag filter** | Any list can be filtered by one or more tags via a tag bar at the top                                 | Today's bar offers only the tags its items carry (directly, from their project or area, or as a parent tag), plus any selected.                                                 |
 
-Sidebar badge counts: Inbox = count; Today = count, plus a red count of Today items whose deadline is today or past.
+Sidebar badge counts: Inbox = count; Today = count, plus a red count of Today items whose deadline is today or past (overdue ones only appear when scheduled for today); Overdue = red count of open overdue items.
 
 Details settled in implementation (`shared/views.ts`):
 - **Logbook timing** (setting `logbookTiming`): `"immediately"` (default) moves completed items straight to the Logbook. `"daily"` keeps items completed today in their lists, struck through, and moves them to the Logbook tomorrow.
@@ -411,7 +412,7 @@ Implementation notes (milestone 12):
 
 ### 10.1 Layout
 
-- **Sidebar** (collapsible; a drawer on mobile): Inbox, Today, Upcoming, Anytime, Someday, Logbook, Trash; then Areas with their projects nested; then Tags, nested under their parents; an arrow on an area or a tag with nested tags hides what's inside (synced; a count shows how many are hidden; visiting one inside opens it again); drag to reorder; "+ New List" button at the bottom (project or area).
+- **Sidebar** (collapsible; a drawer on mobile): Inbox, Today, Upcoming, Anytime, Someday, Overdue, Logbook, Trash; then Areas with their projects nested; then Tags, nested under their parents; an arrow on an area or a tag with nested tags hides what's inside (synced; a count shows how many are hidden; visiting one inside opens it again); drag to reorder; "+ New List" button at the bottom (project or area).
 - **Main pane:** list title (editable for projects/areas), project notes, then items.
 - **Mobile:** bottom-right floating **+** button. Swipe right on a row to set When; swipe left to delete.
 
@@ -479,7 +480,7 @@ Implementation notes (milestone 11):
 - Selection: a plain click selects and opens a to-do; ⌘/Ctrl-click toggles, Shift-click selects a range in page order; ↑/↓ move and Shift+↑/↓ extend it. With 2+ selected (or when a shortcut opens a panel) a bar offers When, Move, Tags, Deadline, Complete and Delete for all of them. The open card has its own ⌘K, ⌘⌥K, ⌘S, ⌘⇧D and ⌘⇧T.
 - Undo: every change records the previous values of whatever it changed (by comparing rows before and after), so cascades and normalization undo correctly; undoing a create moves it to Trash. Redo is the undo of the undo. Purges aren't undoable, and entries whose rows were purged since are skipped.
 - Quick Entry tokens: `#tag` is one word (new tags are created); `@…`, `!…` and `/…` phrases run to the next token, so tokens go after the title. Tokens that don't parse stay in the title; markers only count at the start or after a space (`a@b.com`, `and/or` are left alone).
-- Tag shortcut characters are set from the tag page's menu (along with renaming, nesting under another tag, and deleting with Undo). In a tag picker, pressing a tag's key toggles it while the search field is empty; Shift types the letter instead. A key used by another tag moves to the new one.
+- Tag shortcut characters are set from the tag page's menu (along with renaming, nesting under another tag, and deleting with Undo; nesting, reordering and deleting also work from the sidebar, §10.7). In a tag picker, pressing a tag's key toggles it while the search field is empty; Shift types the letter instead. A key used by another tag moves to the new one.
 
 ### 10.7 Multi-select & drag
 
@@ -489,6 +490,7 @@ Implementation notes (milestone 11):
 
 Implementation notes (milestone 10):
 - Reorderable lists: Inbox, Today and This Evening (by `todaySortKey`), a project's loose to-dos and each heading, an area's projects and to-dos, and the sidebar's areas and projects. Dragging between lists on the same page moves the item (heading ↔ loose, Today ↔ This Evening, which schedules for today when needed). Rows in Anytime, Someday, Upcoming and tag pages can be dragged onto the sidebar but not reordered there.
+- Sidebar tags (`src/dnd/tagMoves.ts`): drag a tag onto the middle of another to nest it (end of its children; a collapsed parent opens), onto its top/bottom quarter to place it before/after it under the same parent, or onto Trash to delete it (asks, naming nested tags). Moves into itself or a descendant do nothing. Right-click a tag for **Move out of “parent”** and **Delete Tag…**.
 - Sidebar targets: Inbox, Today (top of the main section), Anytime, Someday, Logbook (completes a to-do), Trash, any project or area (to-dos go to the end; projects can be dropped onto an area). Upcoming is not a target. Projects can't be dropped onto the Logbook, which would skip the remaining-to-dos prompt.
 - Only the moved item gets a new key, unless the list's keys are missing, duplicated or not valid fractional keys; then the list is renumbered in one batch (`src/editing/reorder.ts`).
 - Reordering is off while a tag filter is active (items can still be dragged to the sidebar), since renumbering a filtered subset could scramble the hidden items.
@@ -538,7 +540,7 @@ _Implementation notes (milestone 13):_
 ## 12. Testing
 
 **Unit (`tests/shared`)** — the logic most likely to be wrong:
-- `views.ts`: membership for every list across edge cases — deadline today but `startDate` in the future (→ Today), someday project children, evening rollover, completed projects, deleted parents.
+- `views.ts`: membership for every list across edge cases — deadline today but `startDate` in the future (→ Today), deadline past (→ Overdue, and Today only if scheduled for today), someday project children, evening rollover, completed projects, deleted parents.
 - `repeat.ts`: daily/weekly multi-day/monthly-by-day (31st → short months clamp to last day)/monthly nth weekday/last weekday/yearly Feb 29; `afterCompletion`; `endsOn`; DST transitions in `America/New_York` and `Australia/Sydney`.
 - Title token parser (Quick Entry).
 - Fractional index moves.

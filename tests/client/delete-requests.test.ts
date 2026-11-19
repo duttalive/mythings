@@ -54,6 +54,13 @@ describe("delete confirmations", () => {
 		const d = data({ tags: [t], todos: [todo({ tagIds: [t.id] })] });
 		expect(tagRequest(t, d).body).toContain("comes off 1 to-do or project");
 		expect(tagRequest(t, d).permanent).toBeUndefined();
+		expect(tagRequest(t, d).body).not.toContain("inside it");
+		const child = tag({ parentId: t.id });
+		const grandchild = tag({ parentId: child.id });
+		const gone = tag({ parentId: t.id, deletedAt: 1 });
+		expect(
+			tagRequest(t, data({ tags: [t, child, grandchild, gone] })).body,
+		).toContain("2 tags inside it go too.");
 		expect(emptyTrashRequest(3)).toMatchObject({
 			permanent: true,
 			body: expect.stringContaining("3 items"),

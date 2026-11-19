@@ -65,6 +65,8 @@ export type DragData = {
 	isList?: boolean;
 	/** Sidebar target this item stands for. */
 	target?: SidebarTarget;
+	/** A sidebar tag row, which a dragged tag can be nested in or placed next to. */
+	tagRow?: string;
 };
 
 type DndRegistry = {
@@ -289,7 +291,9 @@ export function DndProvider({ children }: { children: ReactNode }) {
 				: active.kind === "heading"
 					? data.headings.find((h) => h.id === active.id)?.title ||
 						"New Heading"
-					: data.areas.find((a) => a.id === active.id)?.title || "New Area"
+					: active.kind === "tag"
+						? data.tags.find((t) => t.id === active.id)?.title || "Tag"
+						: data.areas.find((a) => a.id === active.id)?.title || "New Area"
 		: "";
 
 	return (

@@ -1,4 +1,10 @@
-import { useDroppable } from "@dnd-kit/core";
+import {
+	type DragEndEvent,
+	type DragMoveEvent,
+	useDndMonitor,
+	useDraggable,
+	useDroppable,
+} from "@dnd-kit/core";
 import { Link, type LinkProps, useRouterState } from "@tanstack/react-router";
 import {
 	type ReactNode,
@@ -20,14 +26,22 @@ import { useAuth } from "../auth/AuthGate";
 import { useListData } from "../data";
 import { type DragData, useDndRegistry } from "../dnd/DndProvider";
 import { canDrop, type SidebarTarget } from "../dnd/drop";
-import { DragItem, placed, SortableList } from "../dnd/sortable";
+import { DragItem, dndId, placed, SortableList } from "../dnd/sortable";
+import {
+	canMoveTag,
+	type TagZone,
+	tagMoveMutations,
+	tagZone,
+} from "../dnd/tagMoves";
 import { useCreateTag } from "../editing/useCreateTag";
+import { useDeleteTag } from "../editing/useDeleteTag";
 import { useOps } from "../sync/hooks";
 import {
 	AreaIcon,
 	BoxIcon,
 	CalendarIcon,
 	ChevronIcon,
+	FlagIcon,
 	GearIcon,
 	InboxIcon,
 	LayersIcon,
@@ -38,6 +52,7 @@ import {
 	TrashIcon,
 } from "./icons";
 import { NewListButton } from "./NewListButton";
+import { Popover, PopoverOption } from "./Popover";
 import { ProgressRing } from "./rows";
 import { SignOutButton } from "./SignOutButton";
 import { SyncPill } from "./SyncPill";
@@ -242,23 +257,73 @@ function tagTree(tags: Tag[]): TagNode[] {
 	return build(null);
 }
 
+type TagDrop = { id: string; zone: TagZone } | null;
+
+/** Where the pointer is during a drag, from the event that started it plus how far it's moved. */
+function pointerY(e: DragMoveEvent | DragEndEvent): number {
+	const start = e.activatorEvent as PointerEvent | TouchEvent;
+	const y =
+		"touches" in start
+			? (start.touches[0] ?? start.changedTouches[0])?.clientY
+			: start.clientY;
+	return (y ?? 0) + e.delta.y;
+}
+
+/**
+ * Tracks a dragged tag over the sidebar's tag rows (for the drop indicator)
+ * and moves it on drop: into the tag under it, or just before or after it.
+ */
+function useTagDrop(tags: Tag[]): TagDrop {
+	const ops = useOps();
+	const [drop, setDrop] = useState<TagDrop>(null);
+	const dropFor = (e: DragMoveEvent | DragEndEvent): TagDrop => {
+		const dragged = e.active.data.current as DragData | undefined;
+		const row = e.over?.data.current as DragData | undefined;
+		if (dragged?.kind !== "tag" || !dragged.id || !row?.tagRow || !e.over)
+			return null;
+		if (!canMoveTag(tags, dragged.id, row.tagRow)) return null;
+		return { id: row.tagRow, zone: tagZone(pointerY(e), e.over.rect) };
+	};
+	useDndMonitor({
+		onDragMove: (e) => {
+			const next = dropFor(e);
+			setDrop((prev) =>
+				prev?.id === next?.id && prev?.zone === next?.zone ? prev : next,
+			);
+		},
+		onDragEnd: (e) => {
+			const target = dropFor(e);
+			const id = (e.active.data.current as DragData | undefined)?.id;
+			setDrop(null);
+			if (!target || !id) return;
+			const mutations = tagMoveMutations(tags, id, target.id, target.zone);
+			if (mutations?.length) void ops.apply(mutations).catch(console.error);
+		},
+		onDragCancel: () => setDrop(null),
+	});
+	return drop;
+}
+
 function TagBranch({
 	node,
 	depth,
 	setCollapsed,
+	drop,
 }: {
 	node: TagNode;
 	depth: number;
 	setCollapsed: ReturnType<typeof useSidebarCollapse>;
+	drop: TagDrop;
 }) {
 	const { tag, children, size } = node;
 	// Rows synced before collapsing existed have no flag: open.
 	const collapsed = tag.collapsed === true;
 	const toggle = children.length > 0;
 	const groupId = `sidebar-tag-${tag.id}`;
+	const zone = drop?.id === tag.id ? drop.zone : null;
 	return (
 		<>
-			<div className="relative" style={{ paddingLeft: `${depth}rem` }}>
+			<TagRow tag={tag} depth={depth} zone={zone}>
 				<NavItem
 					to="/tag/$tagId"
 					params={{ tagId: tag.id }}
@@ -283,7 +348,7 @@ function TagBranch({
 						title={collapsed ? "Show nested tags" : "Hide nested tags"}
 					/>
 				)}
-			</div>
+			</TagRow>
 			{toggle && !collapsed && (
 				<div id={groupId} className="flex flex-col gap-px">
 					{children.map((child) => (
@@ -292,11 +357,111 @@ function TagBranch({
 							node={child}
 							depth={depth + 1}
 							setCollapsed={setCollapsed}
+							drop={drop}
 						/>
 					))}
 				</div>
 			)}
 		</>
+	);
+}
+
+/**
+ * A tag in the sidebar: drag it onto another tag to nest it, next to one to
+ * reorder, or onto Trash. Right-click (or the context-menu key) for actions.
+ */
+function TagRow({
+	tag,
+	depth,
+	zone,
+	children,
+}: {
+	tag: Tag;
+	depth: number;
+	zone: TagZone | null;
+	children: ReactNode;
+}) {
+	const { data } = useListData();
+	const ops = useOps();
+	const deleteTag = useDeleteTag();
+	const [menu, setMenu] = useState(false);
+	const drag = useDraggable({
+		id: dndId("tag", tag.id),
+		data: { kind: "tag", id: tag.id } satisfies DragData,
+	});
+	const target = useDroppable({
+		id: dndId("tagrow", tag.id),
+		data: { tagRow: tag.id } satisfies DragData,
+	});
+	const parent = tag.parentId
+		? data.tags.find((t) => t.id === tag.parentId && t.deletedAt === null)
+		: undefined;
+	const line = "pointer-events-none absolute right-1 h-0.5 rounded bg-accent";
+	return (
+		// The menu opens from the tag's link inside (right-click, or the
+		// context-menu key while it's focused); the same actions are on its page.
+		// biome-ignore lint/a11y/noStaticElementInteractions: see above
+		<div
+			ref={(node) => {
+				drag.setNodeRef(node);
+				target.setNodeRef(node);
+			}}
+			{...drag.listeners}
+			onContextMenu={(e) => {
+				e.preventDefault();
+				setMenu(true);
+			}}
+			data-drop-target={zone === "inside" || undefined}
+			className={`relative ${dropHighlight} ${drag.isDragging ? "opacity-40" : ""}`}
+			style={{ paddingLeft: `${depth}rem` }}
+		>
+			{children}
+			{zone === "before" && (
+				<span className={`${line} -top-px`} style={{ left: `${depth}rem` }} />
+			)}
+			{zone === "after" && (
+				<span
+					className={`${line} -bottom-px`}
+					style={{ left: `${depth}rem` }}
+				/>
+			)}
+			<Popover
+				label={`Actions for ${tag.title}`}
+				open={menu}
+				onOpenChange={setMenu}
+				anchorOnly
+				width="w-56"
+				trigger={
+					<span
+						aria-hidden
+						className="pointer-events-none absolute bottom-0 left-6"
+					/>
+				}
+			>
+				{parent && (
+					<PopoverOption
+						icon={<TagIcon className="size-4 text-[var(--fg-muted)]" />}
+						onSelect={() => {
+							setMenu(false);
+							void ops
+								.update("tag", tag.id, { parentId: null })
+								.catch(console.error);
+						}}
+					>
+						Move out of “{parent.title}”
+					</PopoverOption>
+				)}
+				<PopoverOption
+					icon={<TrashIcon className="size-4 text-overdue" />}
+					onSelect={() => {
+						setMenu(false);
+						void deleteTag(tag);
+					}}
+				>
+					<span className="text-overdue">Delete Tag…</span>
+				</PopoverOption>
+			</Popover>
+		</div>
 	);
 }
 
@@ -380,6 +545,7 @@ export function Sidebar() {
 	const counts = useMemo(() => sidebarCounts(data, ctx), [data, ctx]);
 	const tree = useMemo(() => sidebarTree(data), [data]);
 	const tags = useMemo(() => tagTree(data.tags), [data.tags]);
+	const tagDrop = useTagDrop(data.tags);
 
 	const projectLink = (project: (typeof tree.projects)[number]) => (
 		<DragItem
@@ -480,6 +646,13 @@ export function Sidebar() {
 							Someday
 						</NavItem>
 					</DropTarget>
+					<NavItem
+						to="/overdue"
+						icon={<FlagIcon className="size-[18px] text-overdue" />}
+						badge={<Badge count={counts.overdue} tone="red" />}
+					>
+						Overdue
+					</NavItem>
 				</div>
 				<div className="mt-4 flex flex-col gap-px">
 					<DropTarget type="logbook">
@@ -595,6 +768,7 @@ export function Sidebar() {
 							node={node}
 							depth={0}
 							setCollapsed={setCollapsed}
+							drop={tagDrop}
 						/>
 					))}
 					{addingTag && <NewTagField onDone={() => setAddingTag(false)} />}

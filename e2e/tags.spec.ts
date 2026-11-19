@@ -191,3 +191,60 @@ test("a tag's page shows its nested tags' items and its logged items", async ({
 		page.getByRole("list", { name: "Logged items" }).getByText("Return book"),
 	).toBeVisible();
 });
+
+test("tags can be nested, reordered and deleted from the sidebar", async ({
+	page,
+}) => {
+	await signUp(page);
+	await open(page, "/inbox");
+	const sidebar = page.getByRole("navigation", { name: "Lists" });
+	await sidebar.getByRole("button", { name: "New tag" }).click();
+	const field = sidebar.getByLabel("New tag name");
+	for (const name of ["work", "home", "calls"]) {
+		await field.fill(name);
+		await field.press("Enter");
+		await expect(sidebar.getByRole("link", { name })).toBeVisible();
+	}
+	await field.press("Escape");
+	const link = (name: string) => sidebar.getByRole("link", { name });
+	const tagNames = () => sidebar.locator('a[href^="/tag/"]').allTextContents();
+
+	/** Drags one sidebar tag to a spot on another: its top edge, middle or bottom edge. */
+	async function dragTag(from: string, to: string, at: "top" | "middle") {
+		const source = await link(from).boundingBox();
+		const target = await link(to).boundingBox();
+		if (!source || !target) throw new Error("not visible");
+		await page.mouse.move(source.x + 30, source.y + source.height / 2);
+		await page.mouse.down();
+		await page.mouse.move(source.x + 30, source.y + source.height / 2 - 10, {
+			steps: 5,
+		});
+		const y = at === "top" ? target.y + 2 : target.y + target.height / 2;
+		await page.mouse.move(target.x + 30, y, { steps: 15 });
+		await page.mouse.up();
+	}
+
+	// Onto the middle of "work": "calls" is nested inside it.
+	await dragTag("calls", "work", "middle");
+	await expect(
+		sidebar.getByRole("button", { name: "Hide tags in work" }),
+	).toBeVisible();
+	await expect.poll(tagNames).toEqual(["work", "calls", "home"]);
+
+	// Onto the top edge of "work": "home" moves above it.
+	await dragTag("home", "work", "top");
+	await expect.poll(tagNames).toEqual(["home", "work", "calls"]);
+
+	// Order and nesting are saved.
+	await expectSynced(page);
+	await page.reload();
+	await expect.poll(tagNames).toEqual(["home", "work", "calls"]);
+
+	// Right-click → Delete Tag… removes "work" and the tag inside it.
+	await link("work").click({ button: "right" });
+	await page.getByRole("button", { name: "Delete Tag…" }).click();
+	const dialog = page.getByRole("alertdialog");
+	await expect(dialog).toContainText("1 tag inside it goes too.");
+	await dialog.getByRole("button", { name: "Delete Tag" }).click();
+	await expect.poll(tagNames).toEqual(["home"]);
+});

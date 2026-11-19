@@ -6,7 +6,7 @@ import { insertAt, type Placed, placeMutations } from "../editing/reorder";
 import { keyAfter, maxKey } from "../lib/order";
 import type { Mutation } from "../sync/engine";
 
-export type DragKind = "todo" | "project" | "area" | "heading";
+export type DragKind = "todo" | "project" | "area" | "heading" | "tag";
 
 export type SidebarTarget =
 	| { type: "inbox" | "today" | "anytime" | "someday" | "logbook" | "trash" }
