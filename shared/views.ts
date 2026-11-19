@@ -110,6 +110,11 @@ function dueBy(item: Item, today: LocalDate): boolean {
 	return item.deadline !== null && item.deadline <= today;
 }
 
+/** Its deadline was before today. */
+export function isOverdue(item: Item, today: LocalDate): boolean {
+	return item.deadline !== null && item.deadline < today;
+}
+
 /** A project whose to-dos can show in Today and Anytime. */
 function isActiveProject(project: Project, today: LocalDate): boolean {
 	return (
@@ -117,8 +122,14 @@ function isActiveProject(project: Project, today: LocalDate): boolean {
 	);
 }
 
-/** Whether the item belongs in Today (ignoring its parent project); drives the ★ in other lists. */
+/**
+ * Whether the item belongs in Today (ignoring its parent project); drives the ★
+ * in other lists. Started or due today; once the deadline has passed it moves
+ * to Overdue, and stays in Today only if it's scheduled for today itself.
+ */
 export function isInToday(item: Item, today: LocalDate): boolean {
+	if (isOverdue(item, today))
+		return item.when === "scheduled" && item.startDate === today;
 	return startedBy(item, today) || dueBy(item, today);
 }
 
@@ -639,6 +650,46 @@ export function deadlines(
 	return groups;
 }
 
+export type OverdueGroup = { date: LocalDate; entries: Entry[] };
+
+/**
+ * To-dos and projects whose deadline has passed, most overdue first, one group
+ * per deadline day. Items ticked off today stay until they move to the Logbook,
+ * like in the other lists.
+ */
+export function overdue(data: ViewData, ctx: ViewContext): OverdueGroup[] {
+	const { idx, todos, projects } = prepare(data, ctx);
+	const late = (item: Item) =>
+		isListed(item, ctx) && isOverdue(item, ctx.today);
+	const entries: Entry[] = [
+		...projects
+			.filter(late)
+			.map((item) => ({ kind: "project" as const, item })),
+		...todos
+			.filter((t) => {
+				if (!late(t)) return false;
+				// Not inside a finished, deleted or repeating project.
+				const project = projectOf(t, idx);
+				return !project || isOpen(project);
+			})
+			.map((item) => ({ kind: "todo" as const, item })),
+	].sort(
+		(a, b) =>
+			compareStrings(a.item.deadline ?? "", b.item.deadline ?? "") ||
+			a.item.createdAt - b.item.createdAt ||
+			compareStrings(a.item.id, b.item.id),
+	);
+
+	const groups: OverdueGroup[] = [];
+	for (const entry of entries) {
+		const date = entry.item.deadline as LocalDate;
+		const last = groups.at(-1);
+		if (last?.date === date) last.entries.push(entry);
+		else groups.push({ date, entries: [entry] });
+	}
+	return groups;
+}
+
 export type LogbookEntry = Entry & { completedAt: number };
 export type LogbookGroup = { date: LocalDate; entries: LogbookEntry[] };
 export type LogbookCursor = { completedAt: number; id: string };
@@ -867,6 +918,8 @@ export type SidebarCounts = {
 	today: number;
 	/** Open Today items whose deadline is today or past (shown as a red badge). */
 	due: number;
+	/** Open to-dos and projects whose deadline has passed (red badge on Overdue). */
+	overdue: number;
 };
 
 export function sidebarCounts(data: ViewData, ctx: ViewContext): SidebarCounts {
@@ -879,6 +932,9 @@ export function sidebarCounts(data: ViewData, ctx: ViewContext): SidebarCounts {
 		inbox: inbox(data, base).filter((t) => t.status === "open").length,
 		today: todayItems.length,
 		due: todayItems.filter((e) => dueBy(e.item, ctx.today)).length,
+		overdue: overdue(data, base)
+			.flatMap((g) => g.entries)
+			.filter((e) => e.item.status === "open").length,
 	};
 }
 

@@ -118,3 +118,27 @@ test("Deadlines opens from Quick Find and can be searched", async ({
 	await search.press("Escape");
 	await expect.poll(() => rowTitles(page)).toEqual(["Pay rent", "File taxes"]);
 });
+
+test("Overdue items leave Today and wait in Overdue", async ({ page }) => {
+	await signUp(page);
+	// From Anytime, so Quick Entry doesn't also schedule them for today.
+	await open(page, "/anytime");
+	await quickEntry(page, "Pay rent !yesterday");
+	await quickEntry(page, "Call the bank !today");
+	await open(page, "/today");
+	await expect.poll(() => rowTitles(page)).toEqual(["Call the bank"]);
+
+	const overdueLink = page
+		.getByRole("navigation", { name: "Lists" })
+		.getByRole("link", { name: /Overdue/ });
+	await expect(overdueLink).toContainText("1");
+	await overdueLink.click();
+	await expect(page).toHaveURL(/\/overdue$/);
+	await expect(
+		page.getByRole("heading", { name: "Overdue", exact: true }),
+	).toBeVisible();
+	await expect.poll(() => rowTitles(page)).toEqual(["Pay rent"]);
+	await expect(page.getByRole("heading", { name: /Yesterday/ })).toContainText(
+		"1 day overdue",
+	);
+});

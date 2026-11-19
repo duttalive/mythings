@@ -13,6 +13,7 @@ import { DeadlinesPage } from "./routes/deadlines";
 import { InboxPage } from "./routes/inbox";
 import { LogbookPage } from "./routes/logbook";
 import { NotFound } from "./routes/not-found";
+import { OverduePage } from "./routes/overdue";
 import { ProjectPage } from "./routes/project";
 import { SharePage } from "./routes/share";
 import { SomedayPage } from "./routes/someday";
@@ -49,6 +50,7 @@ const routeTree = rootRoute.addChildren([
 	page("/upcoming", UpcomingPage),
 	page("/anytime", AnytimePage),
 	page("/someday", SomedayPage),
+	page("/overdue", OverduePage),
 	page("/logbook", LogbookPage),
 	// Not in the sidebar: reached from Quick Find.
 	page("/deadlines", DeadlinesPage),

@@ -12,7 +12,7 @@ import {
 	useState,
 } from "react";
 import type { Todo } from "../../shared/schema";
-import { isInToday } from "../../shared/views";
+import { isInToday, isOverdue } from "../../shared/views";
 import {
 	AreaIcon,
 	BoxIcon,
@@ -66,6 +66,11 @@ const LISTS: { title: string; to: string; icon: ReactNode }[] = [
 		title: "Someday",
 		to: "/someday",
 		icon: <BoxIcon className="size-4 text-amber-700" />,
+	},
+	{
+		title: "Overdue",
+		to: "/overdue",
+		icon: <FlagIcon className="size-4 text-overdue" />,
 	},
 	{
 		title: "Deadlines",
@@ -299,6 +304,7 @@ function routeFor(
 		return { to: "/area/$areaId", params: { areaId: todo.areaId } };
 	if (todo.when === "inbox") return { to: "/inbox" };
 	if (isInToday(todo, today)) return { to: "/today" };
+	if (isOverdue(todo, today)) return { to: "/overdue" };
 	if (todo.when === "scheduled") return { to: "/upcoming" };
 	if (todo.when === "someday") return { to: "/someday" };
 	return { to: "/anytime" };

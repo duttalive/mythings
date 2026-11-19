@@ -12,6 +12,7 @@ import {
 	isInToday,
 	type LogbookCursor,
 	logbook,
+	overdue,
 	projectProgress,
 	projectView,
 	sidebarCounts,
@@ -91,18 +92,41 @@ describe("today", () => {
 		);
 	});
 
-	it("includes items due today or overdue, whatever their When", () => {
+	it("includes items due today, whatever their When", () => {
 		const dueToday = todo({ deadline: TODAY });
-		const overdue = todo({ when: "someday", deadline: "2026-10-20" });
+		const somedayDue = todo({ when: "someday", deadline: TODAY });
 		const inboxDue = todo({ when: "inbox", deadline: TODAY });
 		const dueLater = todo({ deadline: "2026-10-26" });
 		const view = today(
-			data({ todos: [dueToday, overdue, inboxDue, dueLater] }),
+			data({ todos: [dueToday, somedayDue, inboxDue, dueLater] }),
 			ctx,
 		);
 		expect(entryIds(view.main).sort()).toEqual(
-			[dueToday.id, overdue.id, inboxDue.id].sort(),
+			[dueToday.id, somedayDue.id, inboxDue.id].sort(),
 		);
+	});
+
+	it("leaves out overdue items unless they're scheduled for today", () => {
+		const overdue = todo({ when: "someday", deadline: "2026-10-20" });
+		const rolledOver = todo({
+			...scheduled("2026-10-20"),
+			deadline: "2026-10-22",
+		});
+		const plannedToday = todo({ ...scheduled(TODAY), deadline: "2026-10-22" });
+		const overdueProject = project({
+			...scheduled("2026-10-01"),
+			deadline: "2026-10-20",
+		});
+		const view = today(
+			data({
+				todos: [overdue, rolledOver, plannedToday],
+				projects: [overdueProject],
+			}),
+			ctx,
+		);
+		expect(entryIds(view.main)).toEqual([plannedToday.id]);
+		expect(isInToday(overdue, TODAY)).toBe(false);
+		expect(isInToday(plannedToday, TODAY)).toBe(true);
 	});
 
 	it("excludes to-dos whose project is someday, finished, deleted or not started", () => {
@@ -807,6 +831,48 @@ describe("deadlines", () => {
 	});
 });
 
+describe("overdue", () => {
+	it("lists items past their deadline, most overdue first, grouped by day", () => {
+		const launch = project({ title: "Launch", deadline: "2026-10-20" });
+		const late = todo({ title: "Late fee", deadline: "2026-10-24" });
+		const inLaunch = todo({ projectId: launch.id, deadline: "2026-10-20" });
+		const sameDay = todo({ when: "someday", deadline: "2026-10-24" });
+		const dueToday = todo({ deadline: TODAY });
+		const finished = todo({ deadline: "2026-10-22", ...done() });
+		const template = todo({ deadline: "2026-10-22", repeat: rule() });
+		const gone = project({ deadline: "2026-10-22", deletedAt: 1 });
+		const inGone = todo({ projectId: gone.id, deadline: "2026-10-22" });
+		const groups = overdue(
+			data({
+				projects: [launch, gone],
+				todos: [late, inLaunch, sameDay, dueToday, finished, template, inGone],
+			}),
+			ctx,
+		);
+		expect(groups.map((g) => [g.date, entryIds(g.entries)])).toEqual([
+			["2026-10-20", [launch.id, inLaunch.id]],
+			["2026-10-24", [late.id, sameDay.id]],
+		]);
+	});
+
+	it("keeps items ticked off today while the Logbook moves daily", () => {
+		const ticked = todo({ deadline: "2026-10-20", ...done() });
+		expect(overdue(data({ todos: [ticked] }), daily)).toHaveLength(1);
+		expect(overdue(data({ todos: [ticked] }), ctx)).toHaveLength(0);
+	});
+
+	it("applies the tag filter", () => {
+		const t = tag();
+		const tagged = todo({ deadline: "2026-10-20", tagIds: [t.id] });
+		const other = todo({ deadline: "2026-10-20" });
+		const groups = overdue(data({ tags: [t], todos: [tagged, other] }), {
+			...ctx,
+			tagIds: [t.id],
+		});
+		expect(groups.flatMap((g) => entryIds(g.entries))).toEqual([tagged.id]);
+	});
+});
+
 describe("tagsInUse", () => {
 	it("collects items' own and inherited tags, with their parents", () => {
 		const errands = tag({ title: "errands" });
@@ -857,7 +923,7 @@ describe("sidebarTree", () => {
 });
 
 describe("sidebarCounts", () => {
-	it("counts open Inbox and Today items, and due ones, ignoring the tag filter", () => {
+	it("counts open Inbox, Today, due and overdue items, ignoring the tag filter", () => {
 		const t = tag();
 		const d = data({
 			tags: [t],
@@ -872,8 +938,9 @@ describe("sidebarCounts", () => {
 		});
 		expect(sidebarCounts(d, { ...daily, tagIds: [t.id] })).toEqual({
 			inbox: 2,
-			today: 3,
-			due: 2,
+			today: 2,
+			due: 1,
+			overdue: 1,
 		});
 	});
 });
