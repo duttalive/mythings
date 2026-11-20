@@ -2,6 +2,18 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.2.0 — 2026-11-20
+
+A clearer way to organize your lists: Life Buckets.
+
+- Life Buckets: group the big parts of your life, like Work, Family or Personal. Each Life Bucket holds its areas and projects side by side. Create one from New List; its page shows its areas and projects.
+- Areas are now for to-dos that keep going, like Health or Home upkeep. They hold to-dos only and have no deadline.
+- Projects are for work with an outcome, from start to finish, and can have a deadline. Every area and project sits in a Life Bucket.
+- Your lists were rearranged for you, and nothing was lost: an area that held projects is now a Life Bucket with the same name, and if it had its own to-dos, they're in an area of that name inside it. Other areas and projects are in a "Personal" Life Bucket. Rename, move or delete any of them.
+- In the sidebar, each Life Bucket shows its areas, then its projects. Drag to reorder them or move them between Life Buckets, and use the arrow to hide what's inside.
+- Long to-do titles now wrap onto more lines instead of being cut off, in lists and when a to-do is open.
+- The Privacy Policy now mentions Life Buckets among what you store.
+
 ## Version 2.1.0 — 2026-11-19
 
 A new Overdue list, and tags you can arrange right in the sidebar.
