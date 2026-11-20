@@ -2,6 +2,13 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.3.0 — 2026-11-20
+
+Choose how long to-do titles look.
+
+- Checklist items now wrap onto more lines as you type, like to-do titles, so you can read every step in full.
+- New setting in Settings → Appearance: **Long to-do titles**. Keep **Wrap** (the default) to see whole titles in your lists, or pick **One line** to keep each title on a single line ending in "…". An open to-do always shows its whole title and checklist. The choice is saved with your account, so it's the same on all your devices.
+
 ## Version 2.2.0 — 2026-11-20
 
 A clearer way to organize your lists: Life Buckets.
