@@ -122,6 +122,8 @@ export const settingsSchema = z
 		theme: z.enum(["system", "light", "dark"]),
 		groupTodayByProject: z.boolean(),
 		logbookTiming: z.enum(["immediately", "daily"]),
+		/** Long to-do titles in lists: wrap onto more lines, or one line ending in "…". */
+		longTitles: z.enum(["wrap", "oneLine"]),
 	})
 	.partial()
 	.strict();

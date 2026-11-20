@@ -91,3 +91,46 @@ test("the sidebar can be resized from the keyboard and keeps its width", async (
 	await handle.dblclick();
 	expect(await width()).toBe(240);
 });
+
+test("long titles wrap by default; One line is saved with the account", async ({
+	browser,
+}) => {
+	const long =
+		"Book the car service and ask about the brakes, the tyres, the wipers and the noise from the back when turning left";
+	const page = await (await browser.newContext()).newPage();
+	await page.setViewportSize({ width: 900, height: 800 });
+	const email = await signUp(page);
+	await open(page, "/inbox");
+	await quickEntry(page, long);
+	await expectSynced(page);
+	const titleHeight = async (p: typeof page) =>
+		(await row(p, long).locator("[data-row-title]").boundingBox())?.height ?? 0;
+	// Wraps onto more than one line.
+	expect(await titleHeight(page)).toBeGreaterThan(30);
+
+	// Checklist items in an open to-do wrap and grow too.
+	await row(page, long).click();
+	await page.getByRole("button", { name: "Add checklist" }).click();
+	const item = page.getByRole("textbox", { name: "Checklist item" });
+	await item.fill(long);
+	const itemBox = await item.boundingBox();
+	expect(itemBox?.height ?? 0).toBeGreaterThan(30);
+	await item.press("Escape");
+
+	await open(page, "/settings");
+	await page.getByRole("radio", { name: "One line" }).check({ force: true });
+	await expectSynced(page);
+	await open(page, "/inbox");
+	expect(await titleHeight(page)).toBeLessThan(30);
+
+	// Another device of the account picks it up.
+	const other = await (await browser.newContext()).newPage();
+	await other.setViewportSize({ width: 900, height: 800 });
+	await signIn(other, email);
+	await open(other, "/inbox");
+	await expect(other.locator("html")).toHaveAttribute(
+		"data-titles",
+		"one-line",
+	);
+	expect(await titleHeight(other)).toBeLessThan(30);
+});

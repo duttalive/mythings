@@ -130,6 +130,13 @@ export function AuthGate({ children }: { children: ReactNode }) {
 	useEffect(() => {
 		if (theme) applyTheme(theme);
 	}, [theme]);
+	// Long titles in lists wrap unless the account chose one line (styles.css).
+	const oneLine =
+		state.status === "signedIn" && state.user.settings.longTitles === "oneLine";
+	useEffect(() => {
+		if (oneLine) document.documentElement.dataset.titles = "one-line";
+		else delete document.documentElement.dataset.titles;
+	}, [oneLine]);
 
 	// A reset link works whether or not someone is signed in on this device.
 	if (

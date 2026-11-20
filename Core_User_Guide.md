@@ -268,12 +268,12 @@ Click a to-do (or select it and press **Enter**) to open it in place as a card:
 
 - **Title** at the top. Return closes the card.
 - **Notes** below, in Markdown; the box grows as you type.
-- **Checklist:** Return adds an item below; Backspace on an empty item removes it; tick items off as you go. The row shows progress like 2/5.
+- **Checklist:** Return adds an item below; Backspace on an empty item removes it; tick items off as you go. Long items wrap onto more lines as you type. The row shows progress like 2/5.
 - **Footer buttons:** When (which also holds reminders and repeats), Tags, Add checklist, Deadline, and **⋯ More actions** (Mark as Canceled, or Reopen, and Delete To-Do).
 - Changes save automatically a moment after you stop typing, and when the card closes.
 - Close it with Return in the title, **Escape**, **⌘Return**, or by clicking outside.
 
-The collapsed row shows, from left to right: the checkbox, the title, then tags, checklist progress, a notes icon, the deadline (red when due or overdue), ★ if it's in Today (in lists other than Today), and ↻ if it repeats. In Today and Upcoming, rows also show which project or area they belong to. Long titles wrap onto more lines, so they're never cut off.
+The collapsed row shows, from left to right: the checkbox, the title, then tags, checklist progress, a notes icon, the deadline (red when due or overdue), ★ if it's in Today (in lists other than Today), and ↻ if it repeats. In Today and Upcoming, rows also show which project or area they belong to. Long titles wrap onto more lines, so they're never cut off (or keep them to one line with **Settings → Appearance → Long to-do titles**).
 
 ### 5.3 Quick Entry
 
@@ -576,6 +576,7 @@ Open with the gear at the bottom of the sidebar, or **⌘,**. Changes apply at o
 
 - **Theme:** Light, Dark or System. Applied before the page even appears, so there's no flash.
 - **Text size:** Small, Default, Large, Larger. This device only. On a computer you can also drag the sidebar's edge to resize it.
+- **Long to-do titles:** **Wrap** (the default) shows the whole title in lists, on as many lines as it needs. **One line** keeps each title on a single line ending in "…". An open to-do always shows its whole title and every checklist item in full. Saved with your account, so it's the same on all your devices.
 
 **Date & time**
 

@@ -319,7 +319,7 @@ function RowShell({
 							)}
 							<span
 								data-row-title
-								className={`min-w-0 break-words [overflow-wrap:anywhere] ${done ? "text-[var(--fg-muted)]" : ""} ${struck ? "line-through" : ""}`}
+								className={`long-title min-w-0 break-words [overflow-wrap:anywhere] ${done ? "text-[var(--fg-muted)]" : ""} ${struck ? "line-through" : ""}`}
 							>
 								{title}
 							</span>

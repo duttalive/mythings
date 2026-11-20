@@ -221,3 +221,11 @@ body {
 	}
 }
 /* biome-ignore-end lint/complexity/noImportantStyles: see above */
+
+/* Settings → Appearance → Long to-do titles: "One line" keeps list titles
+   on a single line ending in "…" (they wrap by default). */
+:root[data-titles="one-line"] .long-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}

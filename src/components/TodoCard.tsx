@@ -469,8 +469,9 @@ function ChecklistRow({
 }) {
 	const ops = useOps();
 	const [title, setTitle] = useState(item.title);
-	const input = useRef<HTMLInputElement>(null);
+	const input = useRef<HTMLTextAreaElement>(null);
 	const saved = useRef(item.title);
+	useAutoGrow(input, title);
 
 	useEffect(() => {
 		if (autoFocus) input.current?.focus();
@@ -489,7 +490,7 @@ function ChecklistRow({
 	useEffect(() => save, [save]);
 
 	return (
-		<li className="flex items-center gap-2 border-b border-[var(--border)] py-1">
+		<li className="flex items-start gap-2 border-b border-[var(--border)] py-1">
 			<input
 				type="checkbox"
 				checked={item.done}
@@ -499,12 +500,14 @@ function ChecklistRow({
 						.update("checklist", item.id, { done: !item.done })
 						.catch(console.error)
 				}
-				className="size-3.5 shrink-0 cursor-pointer appearance-none rounded-full border border-[var(--checkbox)] checked:border-accent checked:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+				className="mt-[0.2rem] size-3.5 shrink-0 cursor-pointer appearance-none rounded-full border border-[var(--checkbox)] checked:border-accent checked:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
 			/>
-			<input
+			{/* One line that wraps onto more as it grows, like the title. */}
+			<textarea
 				ref={input}
 				value={title}
-				onChange={(e) => setTitle(e.target.value)}
+				rows={1}
+				onChange={(e) => setTitle(e.target.value.replace(/\s*\n\s*/g, " "))}
 				onBlur={save}
 				onKeyDown={(e) => {
 					if (e.key === "Enter") {
@@ -518,7 +521,7 @@ function ChecklistRow({
 				}}
 				placeholder="Checklist item"
 				aria-label="Checklist item"
-				className={`min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--fg-muted)] ${
+				className={`min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-sm break-words outline-none placeholder:text-[var(--fg-muted)] ${
 					item.done ? "text-[var(--fg-muted)] line-through" : ""
 				}`}
 			/>
