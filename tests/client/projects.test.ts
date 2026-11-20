@@ -80,6 +80,8 @@ const area = (overrides: Partial<Area> = {}): Area => ({
 	sortKey: "a0",
 	tagIds: [],
 	collapsed: false,
+	kind: "area",
+	bucketId: null,
 	...overrides,
 });
 
@@ -136,15 +138,20 @@ describe("placing new lists", () => {
 	});
 
 	it("puts a new area and heading last", () => {
-		expect(
-			(newAreaFields([area({ sortKey: "a5" })]).sortKey ?? "") > "a5",
-		).toBe(true);
+		const fields = newAreaFields("b1", [
+			area({ sortKey: "a5", bucketId: "b1" }),
+			area({ sortKey: "z9", bucketId: "b2" }),
+		]);
+		expect(fields).toMatchObject({ kind: "area", bucketId: "b1" });
+		expect((fields.sortKey ?? "") > "a5" && (fields.sortKey ?? "") < "z9").toBe(
+			true,
+		);
 		const p = project();
-		const fields = newHeadingFields(p.id, [
+		const headingFields = newHeadingFields(p.id, [
 			heading({ projectId: p.id, sortKey: "a2" }),
 		]);
-		expect(fields.projectId).toBe(p.id);
-		expect((fields.sortKey ?? "") > "a2").toBe(true);
+		expect(headingFields.projectId).toBe(p.id);
+		expect((headingFields.sortKey ?? "") > "a2").toBe(true);
 	});
 
 	it("puts a new to-do at the end of a heading", () => {

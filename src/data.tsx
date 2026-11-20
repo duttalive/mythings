@@ -16,7 +16,10 @@ export type ListData = {
 	data: ViewData;
 	ctx: ViewContext;
 	checklist: ChecklistProgress;
+	/** Areas only (to-dos' containers). */
 	areas: Map<string, Area>;
+	/** Life Buckets (projects' and areas' containers). */
+	buckets: Map<string, Area>;
 	projects: Map<string, Project>;
 	tags: Map<string, Tag>;
 };
@@ -64,6 +67,7 @@ export function ListDataProvider({
 						ctx,
 						checklist,
 						areas: new Map(data.areas.map((a) => [a.id, a])),
+						buckets: new Map(data.buckets.map((b) => [b.id, b])),
 						projects: new Map(data.projects.map((p) => [p.id, p])),
 						tags: new Map(data.tags.map((t) => [t.id, t])),
 					}

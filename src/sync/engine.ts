@@ -481,6 +481,10 @@ export class SyncEngine {
 			case "area":
 				return [
 					...tagged(
+						"area",
+						await this.db.areas.where("bucketId").equals(id).toArray(),
+					),
+					...tagged(
 						"project",
 						await this.db.projects.where("areaId").equals(id).toArray(),
 					),

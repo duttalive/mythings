@@ -3,9 +3,11 @@ import type { Todo } from "../../shared/schema";
 import {
 	anytime,
 	areaView,
+	bucketView,
 	daysUntilDeadline,
 	deadlines,
 	type Entry,
+	type GroupedList,
 	groupByProject,
 	inbox,
 	isEvening,
@@ -27,6 +29,7 @@ import {
 } from "../../shared/views";
 import {
 	area,
+	bucket,
 	ctx,
 	data,
 	done,
@@ -43,6 +46,10 @@ import {
 const ids = (items: { id: string }[]) => items.map((i) => i.id);
 const entryIds = (entries: Entry[]) => entries.map((e) => e.item.id);
 const daily = { ...ctx, logbookTiming: "daily" as const };
+
+/** Every project group in a grouped list, bucket by bucket. */
+const projectGroups = (list: GroupedList) =>
+	list.buckets.flatMap((b) => b.projects);
 
 describe("inbox", () => {
 	it("lists open inbox to-dos by sort key", () => {
@@ -308,11 +315,12 @@ describe("anytime", () => {
 		).toEqual([anytimeTodo.id, started.id].sort());
 	});
 
-	it("groups loose to-dos, then projects without an area, then areas", () => {
-		const work = area({ title: "Work", sortKey: "b" });
-		const home = area({ title: "Home", sortKey: "a" });
+	it("groups loose to-dos, then each Life Bucket's areas and projects", () => {
+		const work = bucket({ title: "Work", sortKey: "b" });
+		const life = bucket({ title: "Life", sortKey: "a" });
+		const home = area({ title: "Home", bucketId: life.id });
 		const site = project({ areaId: work.id });
-		const solo = project();
+		const solo = project({ areaId: life.id });
 		const looseTodo = todo();
 		const homeTodo = todo({ areaId: home.id });
 		const siteTodo = todo({ projectId: site.id });
@@ -320,20 +328,23 @@ describe("anytime", () => {
 
 		const view = anytime(
 			data({
-				areas: [work, home],
+				buckets: [work, life],
+				areas: [home],
 				projects: [site, solo],
 				todos: [looseTodo, homeTodo, siteTodo, soloTodo],
 			}),
 			ctx,
 		);
 		expect(ids(view.todos)).toEqual([looseTodo.id]);
-		expect(view.projects.map((g) => [g.project.id, ids(g.todos)])).toEqual([
-			[solo.id, [soloTodo.id]],
-		]);
-		expect(view.areas.map((g) => g.area.id)).toEqual([home.id, work.id]);
-		expect(ids(view.areas[0]?.todos ?? [])).toEqual([homeTodo.id]);
+		expect(view.buckets.map((g) => g.bucket?.id)).toEqual([life.id, work.id]);
 		expect(
-			view.areas[1]?.projects.map((g) => [g.project.id, ids(g.todos)]),
+			view.buckets[0]?.areas.map((g) => [g.area.id, ids(g.todos)]),
+		).toEqual([[home.id, [homeTodo.id]]]);
+		expect(
+			view.buckets[0]?.projects.map((g) => [g.project.id, ids(g.todos)]),
+		).toEqual([[solo.id, [soloTodo.id]]]);
+		expect(
+			view.buckets[1]?.projects.map((g) => [g.project.id, ids(g.todos)]),
 		).toEqual([[site.id, [siteTodo.id]]]);
 	});
 
@@ -346,7 +357,7 @@ describe("anytime", () => {
 			data({ projects: [empty, somedayProject, future], todos: [futureTodo] }),
 			ctx,
 		);
-		expect(view.projects.map((g) => g.project.id)).toEqual([empty.id]);
+		expect(projectGroups(view).map((g) => g.project.id)).toEqual([empty.id]);
 	});
 
 	it("orders project to-dos: no heading first, then by heading", () => {
@@ -364,7 +375,7 @@ describe("anytime", () => {
 			}),
 			ctx,
 		);
-		expect(ids(view.projects[0]?.todos ?? [])).toEqual([
+		expect(ids(projectGroups(view)[0]?.todos ?? [])).toEqual([
 			loose.id,
 			underH1.id,
 			underH2.id,
@@ -388,7 +399,9 @@ describe("someday", () => {
 		);
 		expect(ids(view.todos)).toEqual([loose.id]);
 		expect(
-			view.projects.map((g) => [g.project.id, ids(g.todos)]).sort(),
+			projectGroups(view)
+				.map((g) => [g.project.id, ids(g.todos)])
+				.sort(),
 		).toEqual(
 			[
 				[later.id, []],
@@ -586,25 +599,19 @@ describe("projectView", () => {
 });
 
 describe("areaView logged items", () => {
-	it("lists the area's logged projects and loose to-dos, not those inside projects", () => {
+	it("lists the area's logged to-dos, newest first", () => {
 		const a = area();
-		const loggedProject = project({ areaId: a.id, ...done("2026-10-10") });
-		const openProject = project({ areaId: a.id });
-		const loose = todo({ areaId: a.id, ...done("2026-10-12") });
+		const older = todo({ areaId: a.id, ...done("2026-10-10") });
+		const newer = todo({ areaId: a.id, ...done("2026-10-12") });
 		const d = data({
 			areas: [a],
-			projects: [loggedProject, openProject],
-			todos: [
-				loose,
-				todo({ projectId: openProject.id, ...done("2026-10-11") }),
-				todo({ areaId: a.id }),
-			],
+			todos: [older, newer, todo({ areaId: a.id }), todo({ ...done() })],
 		});
 		expect(
 			areaView(d, a.id, ctx)?.logged.map((e) => [e.kind, e.item.id]),
 		).toEqual([
-			["todo", loose.id],
-			["project", loggedProject.id],
+			["todo", newer.id],
+			["todo", older.id],
 		]);
 	});
 });
@@ -625,23 +632,51 @@ describe("projectProgress", () => {
 });
 
 describe("areaView", () => {
-	it("lists the area's projects with progress, then its loose to-dos", () => {
-		const a = area();
-		const p2 = project({ areaId: a.id, sortKey: "b" });
-		const p1 = project({ areaId: a.id, sortKey: "a" });
-		const inP1 = todo({ projectId: p1.id, ...done() });
+	it("lists the area's own to-dos and names its Life Bucket", () => {
+		const b = bucket();
+		const a = area({ bucketId: b.id });
 		const loose = todo({ areaId: a.id });
 		const elsewhere = todo();
 		const view = areaView(
-			data({ areas: [a], projects: [p2, p1], todos: [inP1, loose, elsewhere] }),
+			data({ buckets: [b], areas: [a], todos: [loose, elsewhere] }),
 			a.id,
 			ctx,
 		);
-		expect(view?.projects.map((x) => [x.project.id, x.progress])).toEqual([
-			[p1.id, { completed: 1, total: 1 }],
-			[p2.id, { completed: 0, total: 0 }],
-		]);
 		expect(ids(view?.todos ?? [])).toEqual([loose.id]);
+		expect(view?.bucket?.id).toBe(b.id);
+		expect(areaView(data({ buckets: [b] }), b.id, ctx)).toBeNull();
+	});
+});
+
+describe("bucketView", () => {
+	it("lists its areas with open counts, then its projects with progress", () => {
+		const b = bucket();
+		const a2 = area({ bucketId: b.id, sortKey: "b" });
+		const a1 = area({ bucketId: b.id, sortKey: "a" });
+		const p = project({ areaId: b.id });
+		const finished = project({ areaId: b.id, ...done() });
+		const view = bucketView(
+			data({
+				buckets: [b],
+				areas: [a2, a1, area()],
+				projects: [p, finished],
+				todos: [
+					todo({ areaId: a1.id }),
+					todo({ areaId: a1.id, ...done() }),
+					todo({ projectId: p.id, ...done() }),
+				],
+			}),
+			b.id,
+			ctx,
+		);
+		expect(view?.areas.map((x) => [x.area.id, x.open])).toEqual([
+			[a1.id, 1],
+			[a2.id, 0],
+		]);
+		expect(view?.projects.map((x) => [x.project.id, x.progress])).toEqual([
+			[p.id, { completed: 1, total: 1 }],
+		]);
+		expect(view?.logged.map((e) => e.item.id)).toEqual([finished.id]);
 	});
 });
 
@@ -672,19 +707,25 @@ describe("tag filter", () => {
 		]);
 	});
 
-	it("inherits tags from the project and area", () => {
-		const a = area({ tagIds: [urgent.id] });
-		const p = project({ areaId: a.id, tagIds: [shop.id] });
+	it("inherits tags from the project or area, and its Life Bucket", () => {
+		const b = bucket({ tagIds: [urgent.id] });
+		const p = project({ areaId: b.id, tagIds: [shop.id] });
+		const a = area({ bucketId: b.id, tagIds: [shop.id] });
 		const inProject = todo({ projectId: p.id });
+		const inArea = todo({ areaId: a.id });
 		const d = data({
 			tags: [errands, shop, urgent],
+			buckets: [b],
 			areas: [a],
 			projects: [p],
-			todos: [inProject],
+			todos: [inProject, inArea],
 		});
 		const view = anytime(d, { ...ctx, tagIds: [errands.id, urgent.id] });
-		expect(view.areas[0]?.projects[0]?.todos.map((t) => t.id)).toEqual([
+		expect(view.buckets[0]?.projects[0]?.todos.map((t) => t.id)).toEqual([
 			inProject.id,
+		]);
+		expect(view.buckets[0]?.areas[0]?.todos.map((t) => t.id)).toEqual([
+			inArea.id,
 		]);
 	});
 });
@@ -706,8 +747,8 @@ describe("tagged", () => {
 		});
 		const view = tagged(d, errands.id, ctx);
 		expect(ids(view.todos).sort()).toEqual([loose.id, someday.id].sort());
-		expect(view.projects.map((g) => g.project.id)).toEqual([p.id]);
-		expect(ids(view.projects[0]?.todos ?? [])).toEqual([inProject.id]);
+		expect(projectGroups(view).map((g) => g.project.id)).toEqual([p.id]);
+		expect(ids(projectGroups(view)[0]?.todos ?? [])).toEqual([inProject.id]);
 	});
 });
 
@@ -896,29 +937,41 @@ describe("tagsInUse", () => {
 });
 
 describe("sidebarTree", () => {
-	it("nests open projects under live areas, keeping empty areas", () => {
-		const work = area({ title: "Work", sortKey: "a1" });
-		const home = area({ title: "Home", sortKey: "a0" });
-		const gone = area({ deletedAt: 1 });
-		const inWork = project({ areaId: work.id });
-		const loose = project({ sortKey: "a1" });
-		const someday = project({ when: "someday", sortKey: "a2" });
+	it("nests areas and open projects under live Life Buckets, keeping empty ones", () => {
+		const work = bucket({ title: "Work", sortKey: "a1" });
+		const home = bucket({ title: "Home", sortKey: "a0" });
+		const gone = bucket({ deletedAt: 1 });
+		const chores = area({ bucketId: home.id });
+		const inWork = project({ areaId: work.id, sortKey: "a0" });
+		const someday = project({
+			areaId: work.id,
+			when: "someday",
+			sortKey: "a2",
+		});
+		const stray = project();
 		const d = data({
-			areas: [work, home, gone],
+			buckets: [work, home, gone],
+			areas: [chores, area({ bucketId: home.id, deletedAt: 1 })],
 			projects: [
 				inWork,
-				loose,
 				someday,
-				project({ ...done() }),
-				project({ deletedAt: 1 }),
-				project({ repeat: rule({ nextDate: "2026-11-01" }) }),
+				stray,
+				project({ areaId: work.id, ...done() }),
+				project({ areaId: work.id, deletedAt: 1 }),
+				project({ areaId: work.id, repeat: rule({ nextDate: "2026-11-01" }) }),
+				project({ areaId: gone.id }),
 			],
 		});
 		const tree = sidebarTree(d);
-		expect(ids(tree.projects)).toEqual([loose.id, someday.id]);
-		expect(tree.areas.map((g) => g.area.id)).toEqual([home.id, work.id]);
-		expect(ids(tree.areas[1]?.projects ?? [])).toEqual([inWork.id]);
-		expect(tree.areas[0]?.projects).toEqual([]);
+		expect(tree.buckets.map((g) => g.bucket.id)).toEqual([home.id, work.id]);
+		expect(ids(tree.buckets[0]?.areas ?? [])).toEqual([chores.id]);
+		expect(tree.buckets[0]?.projects).toEqual([]);
+		expect(ids(tree.buckets[1]?.projects ?? [])).toEqual([
+			inWork.id,
+			someday.id,
+		]);
+		// Not in a live bucket (only until the server places it).
+		expect(ids(tree.loose.projects).length).toBe(2);
 	});
 });
 

@@ -59,16 +59,34 @@ export function seedFile() {
 	const phone = tag("phone", null, "p");
 	const urgent = tag("urgent", null, "u");
 
-	// Areas
+	// Life Buckets and the areas inside them (both are "area" rows)
 	const areas: Row[] = [];
-	const area = (title: string, tagIds: string[] = []) => {
-		const row = { ...base(), title, sortKey: key(), tagIds, collapsed: false };
+	const list = (
+		title: string,
+		kind: "bucket" | "area",
+		bucketId: string | null,
+		tagIds: string[] = [],
+	) => {
+		const row = {
+			...base(),
+			title,
+			sortKey: key(),
+			tagIds,
+			collapsed: false,
+			kind,
+			bucketId,
+		};
 		areas.push(row);
 		return row.id;
 	};
-	const workArea = area("Work", [work]);
-	const homeArea = area("Home", [home]);
-	const healthArea = area("Health");
+	const workBucket = list("Work", "bucket", null, [work]);
+	const homeBucket = list("Home", "bucket", null, [home]);
+	const healthBucket = list("Health", "bucket", null);
+	const personalBucket = list("Personal", "bucket", null);
+	const workArea = list("Admin", "area", workBucket);
+	const homeArea = list("Household", "area", homeBucket);
+	const healthArea = list("Fitness", "area", healthBucket);
+	const checkups = list("Checkups", "area", healthBucket);
 
 	// Projects
 	const projects: Row[] = [];
@@ -99,26 +117,30 @@ export function seedFile() {
 		return row.id;
 	};
 	const move = project("Move apartments", {
-		areaId: homeArea,
+		areaId: homeBucket,
 		deadline: day(12),
 		notes:
-			"New place: **14 Linden Street**, 3rd floor.\n\nKeys handed over on the 1st. Movers booked for the morning.",
+			"New place: 14 Linden Street, 3rd floor.\n\nKeys handed over on the 1st. Movers booked for the morning.",
 	});
 	const website = project("Launch website", {
-		areaId: workArea,
+		areaId: workBucket,
 		deadline: day(20),
 		notes: "Portfolio site with case studies and a contact form.",
 	});
 	const report = project("Quarterly report", {
-		areaId: workArea,
+		areaId: workBucket,
 		deadline: day(-3),
 	});
 	const trip = project("Plan summer trip", {
+		areaId: personalBucket,
 		when: "scheduled",
 		startDate: day(9),
 	});
-	const spanish = project("Learn Spanish", { when: "someday" });
-	project("Run a half marathon", { areaId: healthArea });
+	const spanish = project("Learn Spanish", {
+		when: "someday",
+		areaId: personalBucket,
+	});
+	project("Run a half marathon", { areaId: healthBucket });
 
 	// Headings
 	const headings: Row[] = [];
@@ -194,7 +216,10 @@ export function seedFile() {
 	todo("Find a new running playlist");
 
 	// Today
-	todo("Reply to Maria about the proposal", { ...onDay(0), areaId: workArea });
+	todo("Reply to Maria about the proposal", {
+		...onDay(0),
+		areaId: workArea,
+	});
 	todo(
 		"Buy groceries",
 		{ ...onDay(0), tagIds: [errands, shop], notes: "The market closes at 6." },
@@ -244,7 +269,7 @@ export function seedFile() {
 	todo("Dentist appointment", {
 		...onDay(1),
 		reminderAt: at(day(1), "09:30"),
-		areaId: healthArea,
+		areaId: checkups,
 	});
 	todo("Prepare the team offsite agenda", { ...onDay(3), areaId: workArea });
 	todo("Pick up dry cleaning", { ...onDay(4), tagIds: [errands] });
@@ -411,7 +436,7 @@ export function seedFile() {
 
 	return {
 		format: "mythings-export",
-		version: 1,
+		version: 2,
 		exportedAt: new Date(now).toISOString(),
 		data: {
 			tag: tags,

@@ -54,8 +54,11 @@ export function useViewData(): ViewData | undefined {
 			db.todos.toArray(),
 			db.tags.toArray(),
 		]);
+		const lists = await decryptRows("area", areas);
 		return {
-			areas: await decryptRows("area", areas),
+			// Rows from before Life Buckets have no kind until they're synced again.
+			areas: lists.filter((a) => a.kind !== "bucket"),
+			buckets: lists.filter((a) => a.kind === "bucket"),
 			projects: await decryptRows("project", projects),
 			headings: await decryptRows("heading", headings),
 			todos: await decryptRows("todo", todos),

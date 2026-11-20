@@ -18,7 +18,7 @@ This guide walks through every feature and flow, end to end, with a screenshot o
 5. [Working with to-dos](#5-working-with-to-dos)
 6. [Scheduling: When, deadlines, reminders and repeats](#6-scheduling-when-deadlines-reminders-and-repeats)
 7. [Projects and headings](#7-projects-and-headings)
-8. [Areas](#8-areas)
+8. [Life Buckets and Areas](#8-life-buckets-and-areas)
 9. [Tags](#9-tags)
 10. [Selecting, moving and reordering](#10-selecting-moving-and-reordering)
 11. [Deleting, Trash and Undo](#11-deleting-trash-and-undo)
@@ -158,7 +158,7 @@ A quick path through the essentials:
 
 1. **Capture.** Press **Space** (or the blue **+** at the bottom right) and type a few things you need to do. In the Inbox they land in the [Inbox](#41-inbox); elsewhere they go into the list you're looking at.
 2. **Decide.** Open each Inbox item and give it a **When**: Today, a date, Anytime or Someday ([6.1](#61-the-when-popover)). Add a **deadline** to anything that's actually due ([6.2](#62-deadlines)).
-3. **Group.** Make a project for anything with several steps (**+ New List → New Project**), and areas for the big parts of your life such as Work and Home ([7](#7-projects-and-headings), [8](#8-areas)).
+3. **Group.** Make a project for anything with several steps (**+ New List → New Project**), and group your lists into **Life Buckets** for the big parts of your life, such as Work and Home, with **areas** inside them for ongoing to-dos ([7](#7-projects-and-headings), [8](#8-life-buckets-and-areas)).
 4. **Do.** Each morning open **Today**, drag things into the order you'll do them, and tick them off.
 5. **Install** the app on your phone and computer ([1.5](#15-installing-the-app)) and turn on **notifications** if you want reminders ([6.3](#63-reminders)).
 
@@ -168,7 +168,7 @@ A quick path through the essentials:
 
 On a computer, the window has two parts: the **sidebar** on the left and the **main pane** on the right.
 
-![The main window: the sidebar on the left with lists, projects, areas and tags; the Today list on the right](docs/guide/today.jpg)
+![The main window: the sidebar on the left with lists, Life Buckets and tags; the Today list on the right](docs/guide/today.jpg)
 
 ### 2.1 The sidebar
 
@@ -186,10 +186,9 @@ From top to bottom:
 | **Overdue** | Open items whose deadline has passed, with a red count. |
 | **Logbook** | Completed and canceled items. |
 | **Trash** | Deleted items, for 30 days. |
-| **Projects** | Projects that aren't in an area (here: _Plan summer trip_, _Learn Spanish_). The circle fills in as a project's to-dos are completed. A greyed-out project is set to Someday. |
-| **Areas** | Each area (here: _Work_, _Home_, _Health_) with its projects underneath. The arrow next to an area hides or shows its projects. |
+| **Life Buckets** | Each Life Bucket (here: _Work_, _Home_, _Health_, _Personal_) with its **areas** (cube icon) and then its **projects** (progress circle) underneath. The circle fills in as a project's to-dos are completed; a greyed-out project is set to Someday. The arrow next to a Life Bucket hides or shows what's inside. |
 | **Tags** | Your tags, with nested tags indented under their parent (here: _shop_ inside _errands_). **+** adds a tag; the arrow hides or shows nested tags. |
-| **+ New List** | Creates a project or an area. |
+| **+ New List** | Creates a project, an area or a Life Bucket. |
 | **Footer** | The [sync status](#15-sync-offline-and-devices) (**Synced**, **Syncing** or **Offline**), your email, the **Settings** gear and **Sign out**. |
 
 On a computer you can drag the sidebar's right edge to make it wider or narrower (double-click the edge to reset it); the width is remembered on that device. The **sidebar button** at the top left of the main pane hides or shows the sidebar.
@@ -197,8 +196,8 @@ On a computer you can drag the sidebar's right edge to make it wider or narrower
 ### 2.2 The main pane
 
 - **The top bar:** the sidebar button and the **search** icon, which opens [Quick Find](#12-finding-things-quick-find).
-- **The title** of the list, with its icon. Titles of projects, areas and tags can be edited by clicking them.
-- **Header details,** for projects, areas and tags: notes, the area a project belongs to, its When and deadline, tag chips and a **⋯** menu.
+- **The title** of the list, with its icon. Titles of projects, areas, Life Buckets and tags can be edited by clicking them.
+- **Header details,** for projects, areas, Life Buckets and tags: notes, the Life Bucket a project or area belongs to, a project's When and deadline, tag chips and a **⋯** menu.
 - **The tag bar:** a row of tag chips for [filtering the list](#410-filtering-a-list-by-tag).
 - **The items,** in sections where the list has them (for example _This Evening_ in Today, or days in Upcoming).
 - **The floating +** at the bottom right: adds a to-do to the list you're looking at.
@@ -230,17 +229,28 @@ A to-do has:
 - an optional **reminder**: a notification at a time you choose;
 - optionally a **repeat**.
 
-It lives in the Inbox, an area or a project, and inside a project it can sit under a heading.
+It lives in the Inbox, an area or a project, and inside a project it can sit under a heading. (Life Buckets don't hold to-dos themselves.)
 
 A to-do is **open**, **completed** or **canceled**. Completed and canceled to-dos move to the Logbook.
 
 ### 3.2 Projects
 
-A project is a goal with an end: "Move apartments", "Launch website". It holds to-dos (optionally grouped under **headings**), has notes, its own When and deadline, and shows a **progress ring** that fills as its to-dos are completed. A project can belong to an area. When everything's done, you complete the project.
+A project tracks work from start to finish toward an outcome: "Move apartments", "Launch website". It holds to-dos (optionally grouped under **headings**), has notes, its own When and an optional **deadline**, and shows a **progress ring** that fills as its to-dos are completed. Every project sits in a Life Bucket. When everything's done, you complete the project.
 
-### 3.3 Areas
+### 3.3 Life Buckets and Areas
 
-An area is an ongoing part of life that never "finishes": Work, Home, Health. It holds projects and loose to-dos. Tags on an area apply to everything inside it.
+- A **Life Bucket** is a big part of your life, like Work, Home or Health. It groups related **areas** and **projects** side by side. It doesn't hold to-dos itself.
+- An **area** is work that keeps going and never "finishes": Admin, Household, Fitness. It holds to-dos and has **no deadline**. Every area sits in a Life Bucket.
+- Use an area for what's ongoing, and a project for something you want to get done.
+
+```
+Life Bucket "Work"
+├── Area "Admin"              (to-dos that keep coming)
+├── Project "Launch website"  (to-dos toward an outcome, can have a deadline)
+└── Project "Quarterly report"
+```
+
+Tags on a Life Bucket apply to everything inside it; tags on an area or project apply to its to-dos.
 
 ### 3.4 Headings
 
@@ -248,7 +258,7 @@ Headings split a project into sections ("Packing", "Utilities", "Moving day"). T
 
 ### 3.5 Tags
 
-Tags label to-dos, projects and areas across lists: `errands`, `phone`, `urgent`. Tags can be nested ("shop" inside "errands"); filtering by a parent tag includes everything tagged with the tags inside it. Items **inherit** tags from their project and area: if the _Work_ area is tagged `work`, every to-do in it counts as tagged `work` too.
+Tags label to-dos, projects and areas across lists: `errands`, `phone`, `urgent`. Tags can be nested ("shop" inside "errands"); filtering by a parent tag includes everything tagged with the tags inside it. Items **inherit** tags from their project or area, and from its Life Bucket: if the _Work_ Life Bucket is tagged `work`, every to-do in its areas and projects counts as tagged `work` too.
 
 ### 3.6 When versus deadline
 
@@ -344,10 +354,10 @@ The **+** button on Upcoming adds a to-do for tomorrow. Rows here can be dragged
 
 Everything you could work on now.
 
-![Anytime: loose to-dos first, then each area with its to-dos and projects](docs/guide/anytime.jpg)
+![Anytime: loose to-dos first, then the Work Life Bucket with its Admin area's to-dos and then its projects' to-dos](docs/guide/anytime.jpg)
 
 - To-dos set to Anytime, and scheduled ones whose day has come.
-- Grouped as loose to-dos first, then projects, then each **area** (its loose to-dos, then its projects with theirs).
+- Grouped as loose to-dos first, then each **Life Bucket**: its areas' to-dos, then its projects' to-dos.
 - Items that are also in Today show a **★**.
 - Active projects appear even if none of their to-dos are listed.
 - Overdue items show how late they are in red ("5 days ago").
@@ -356,9 +366,9 @@ Everything you could work on now.
 
 Things you might do one day, kept out of the way until you're ready.
 
-![Someday: two loose to-dos, the "Learn Spanish" project, and a to-do in the Home area](docs/guide/someday.jpg)
+![Someday: two loose to-dos, a to-do in the Household area, and the "Learn Spanish" project](docs/guide/someday.jpg)
 
-Someday projects appear as single entries (their to-dos stay inside them), plus Someday to-dos outside such projects, grouped by area and project. When you're ready to start one, give it a When of Today, a date or Anytime.
+Someday projects appear as single entries (their to-dos stay inside them), plus Someday to-dos outside such projects, grouped by Life Bucket, area and project. When you're ready to start one, give it a When of Today, a date or Anytime.
 
 ### 4.6 Overdue
 
@@ -400,7 +410,7 @@ Deleted items stay here for **30 days**, then they're deleted for good.
 
 ![The Trash with a deleted project and a deleted to-do, and an "Empty Trash" button](docs/guide/trash.jpg)
 
-- Each item has **Restore**, which brings it back with everything that was deleted with it (a project's to-dos and headings, an area's projects).
+- Each item has **Restore**, which brings it back with everything that was deleted with it (a project's to-dos and headings, an area's to-dos, a Life Bucket's areas and projects).
 - **Empty Trash** deletes everything here permanently; see [11.2](#112-trash).
 
 ### 4.9 Deadlines (hidden list)
@@ -417,18 +427,18 @@ Like in Things, Deadlines isn't in the sidebar: open **Quick Find**, type "Deadl
 
 Most lists have a **tag bar** under the title, listing the tags used by what's in the list. Click a tag to show only the items that have it:
 
-![Anytime filtered by the "home" tag: only items in the Home area remain](docs/guide/tag-filter.jpg)
+![Anytime filtered by the "home" tag: only items in the Home Life Bucket remain](docs/guide/tag-filter.jpg)
 
 - Click more tags to narrow further: only items with **all** the selected tags (or tags nested inside them) remain.
 - Click a selected tag again to remove it.
-- Tags inherited from an area or project count, so filtering by `home` here shows everything in the _Home_ area.
+- Tags inherited from a Life Bucket, area or project count, so filtering by `home` here shows everything in the _Home_ Life Bucket.
 - The filter is part of the page's address, so Back and bookmarks keep it.
 - New to-dos you add while filtering get the selected tags, so they stay visible.
 - While a filter is on, rows can't be reordered (they can still be dragged to the sidebar), so hidden items keep their places.
 
-### 4.11 A project's page, an area's page, a tag's page
+### 4.11 A project's, Life Bucket's, area's or tag's page
 
-See [Projects and headings](#7-projects-and-headings), [Areas](#8-areas) and [Tags](#9-tags).
+See [Projects and headings](#7-projects-and-headings), [Life Buckets and Areas](#8-life-buckets-and-areas) and [Tags](#9-tags).
 
 ---
 
@@ -440,7 +450,7 @@ There are several ways, depending on where you are:
 
 - **The floating +** at the bottom right, or **Space** / **Alt+N** when nothing is being typed: adds a to-do to the current list and opens it, with the title ready for typing.
   - In **Upcoming** it's scheduled for tomorrow.
-  - On a **project**, **area** or **tag** page it goes there (or gets that tag).
+  - On a **project**, **area** or **tag** page it goes there (or gets that tag). A Life Bucket's page has no **+**: add to-dos to one of its areas or projects.
   - Tags selected in the **tag bar** are added, so it stays visible.
 - With a to-do **selected**, **Space** adds the new one just below it.
 - **Quick Entry** (Alt+Space) adds a to-do from anywhere, with shortcuts for tags, dates and projects; see [5.3](#53-quick-entry).
@@ -606,20 +616,20 @@ How it behaves:
 
 ### 7.1 Creating a project
 
-Choose **+ New List** at the bottom of the sidebar, then **New Project** ("A goal with an end, made of to-dos"):
+Choose **+ New List** at the bottom of the sidebar, then **New Project** ("Work toward an outcome, from start to finish. Can have a deadline."):
 
-![The New List menu open above the button, offering New Project and New Area](docs/guide/new-list.jpg)
+![The New List menu open above the button, offering New Project, New Area and New Life Bucket, each with a one-line description](docs/guide/new-list.jpg)
 
-The new project opens with its title ready to type. If you're on an area's page, the new project goes into that area. An area's ⋯ menu also has **New Project in Area**.
+The new project opens with its title ready to type. It goes into the Life Bucket you're looking at (or the one holding the area or project you're on), otherwise into your first Life Bucket. A Life Bucket's ⋯ menu also has **New Project in Life Bucket**.
 
 ### 7.2 A project's page
 
-![The "Move apartments" project: its progress ring, area, deadline, notes, tag bar, a loose to-do, and the headings Packing, Utilities and Moving day with their to-dos](docs/guide/project.jpg)
+![The "Move apartments" project: its progress ring, Life Bucket, deadline, notes, tag bar, a loose to-do, and the headings Packing, Utilities and Moving day with their to-dos](docs/guide/project.jpg)
 
 From top to bottom:
 
 - **Title** (click to edit) with the **progress ring** next to it. The ring fills in as to-dos are completed.
-- **Details** under the title: the **area** it belongs to, its **deadline** ("Deadline Dec 1 · 12 days left"), and buttons for **When**, **Tags** and the **⋯** menu.
+- **Details** under the title: the **Life Bucket** it belongs to (click it to go there), its **deadline** ("Deadline Dec 1 · 12 days left"), and buttons for **When**, **Tags** and the **⋯** menu.
 - **Notes**, in Markdown (here, the new address and moving-day plans).
 - The **tag bar**.
 - **Loose to-dos** (not under any heading).
@@ -634,10 +644,10 @@ The **+** button and Space add to-dos to the project.
 
 **The project's ⋯ menu:**
 
-![The project actions menu: Add Heading, Move to Area…, Cancel Project and Delete Project](docs/guide/project-menu.jpg)
+![The project actions menu: Add Heading, Move to Life Bucket…, Cancel Project and Delete Project](docs/guide/project-menu.jpg)
 
 - **Add Heading**
-- **Move to Area…**
+- **Move to Life Bucket…** (when you have more than one)
 - **Cancel Project** (or **Reopen Project** when it's finished)
 - **Delete Project**
 
@@ -653,8 +663,8 @@ The **+** button and Space add to-dos to the project.
 
 ### 7.4 Moving a project
 
-- **Move to Area…** in the project's ⋯ menu moves it into another area, or out of areas (**No Area**).
-- In the sidebar, drag it onto an area, or up and down to reorder it within its group.
+- **Move to Life Bucket…** in the project's ⋯ menu moves it to another Life Bucket.
+- In the sidebar, drag it onto a Life Bucket, or up and down to reorder it among its bucket's projects.
 
 ### 7.5 Headings
 
@@ -672,23 +682,50 @@ The **+** button and Space add to-dos to the project.
 
 ---
 
-## 8. Areas
+## 8. Life Buckets and Areas
 
-- **Create:** **+ New List → New Area** ("An ongoing part of life, like Work or Home").
-- **The area's page:** its projects (with progress rings and deadlines) first, then its loose to-dos, then **Show N logged items** for its completed projects and finished loose to-dos. To-dos inside its projects stay with those projects.
+### 8.1 Life Buckets
 
-  ![The Home area: its tag chip "home", the "Move apartments" project, and four loose to-dos](docs/guide/area.jpg)
+- **Create:** **+ New List → New Life Bucket** ("A big part of life, like Work or Family, holding its areas and projects"). A new account starts with a **Personal** Life Bucket; rename it any time.
+- **The Life Bucket's page:** its **Areas** (with how many open to-dos each has), then its **Projects** (with progress rings and deadlines), then **Show N logged items** for its finished projects.
 
-- **Rename** by clicking the title.
-- **Tags** on an area (the chips under its title) apply to everything inside it.
+  ![The Home Life Bucket: its tag "home", the Household area with 4 open to-dos, and the "Move apartments" project with 12 days left](docs/guide/bucket.jpg)
+
+- **Rename** by clicking the title. **Tags** on a Life Bucket apply to everything inside it.
+- **The Life Bucket's ⋯ menu:**
+
+  ![The Life Bucket actions menu: New Area in Life Bucket, New Project in Life Bucket and Delete Life Bucket](docs/guide/bucket-menu.jpg)
+
+  - **New Area in Life Bucket**
+  - **New Project in Life Bucket**
+  - **Delete Life Bucket** (it asks first): its areas, projects and their to-dos go to the Trash with it, and Restore brings them all back. Your last Life Bucket can't be deleted, since every area and project needs one.
+- **In the sidebar:** each Life Bucket shows its areas, then its projects. The arrow next to it hides or shows them, and a hidden bucket shows how many it holds. This is saved to your account, so it's the same on all devices. Opening one of its areas or projects (from search, a link or a new list) opens it again.
+- **Reorder** Life Buckets by dragging them in the sidebar.
+
+### 8.2 Areas
+
+- **Create:** **+ New List → New Area** ("To-dos for work that keeps going, like Health or Home. No deadline."), or **New Area in Life Bucket** in a Life Bucket's ⋯ menu. It goes into the Life Bucket you're looking at, otherwise your first one.
+- **The area's page:** its to-dos, then **Show N logged items** for finished ones. Areas have no deadline. A link under the title goes to its Life Bucket.
+
+  ![The Household area in the Home Life Bucket: four to-dos, the first in Today with an "urgent" tag and a deadline of today, and "Show 1 logged item"](docs/guide/area.jpg)
+
+- **Rename** by clicking the title. **Tags** on an area apply to its to-dos.
 - **The area's ⋯ menu:**
 
-  ![The area actions menu with "New Project in Area" and "Delete Area"](docs/guide/area-menu.jpg)
+  ![The area actions menu: "Move to Life Bucket" with Work, Home, Health and Personal, then Delete Area](docs/guide/area-menu.jpg)
 
-  - **New Project in Area**
-  - **Delete Area** (it asks first): its projects and to-dos go to the Trash with it.
-- **In the sidebar:** the arrow next to an area hides or shows its projects. A hidden area shows how many projects it holds. This is saved to your account, so it's the same on all devices. Opening one of its projects (from search, a link or a new project) opens the area again.
-- **Reorder** areas, and projects within and between areas, by dragging in the sidebar.
+  - **Move to Life Bucket:** pick another Life Bucket (the current one is in bold).
+  - **Delete Area** (it asks first): its to-dos go to the Trash with it.
+- **In the sidebar:** drag an area onto another Life Bucket to move it there, or up and down to reorder it within its bucket.
+
+### 8.3 After updating to Life Buckets
+
+If you used mythings before Life Buckets, your lists were rearranged for you once, and nothing was lost:
+
+- An area that held projects became a **Life Bucket** with the same name, keeping its projects. If it also had its own to-dos, they're now in an area of the same name inside it.
+- Other areas, and projects that weren't in an area, are in a **Personal** Life Bucket.
+
+You can rename, move or delete any of them.
 
 ---
 
@@ -723,7 +760,7 @@ Click a tag in the sidebar to open its page:
 ![The "errands" tag page: a chip for its nested tag "shop", its shortcut "e", three to-dos with the tag, and "Show 1 logged item"](docs/guide/tag.jpg)
 
 - **Chips** to the parent tag (↑) and the nested tags, plus the tag's shortcut key if it has one.
-- Everything open with this tag, **including tags nested inside it**, grouped like Anytime (loose to-dos, projects, then areas).
+- Everything open with this tag, **including tags nested inside it**, grouped like Anytime (loose to-dos, then each Life Bucket with its areas and projects).
 - **Repeating** to-dos and projects with the tag, soonest next date first.
 - **Show N logged items** for what's already done.
 - **The ⋯ menu:**
@@ -768,14 +805,15 @@ Its buttons, from left to right: **When**, **Move**, **Tags**, **Deadline**, **C
 
 ### 10.3 Drag and drop
 
-- **Reorder** by dragging rows in the Inbox, Today and This Evening, a project's loose to-dos and each heading, an area's projects and to-dos, and the sidebar's areas, projects and tags.
+- **Reorder** by dragging rows in the Inbox, Today and This Evening, a project's loose to-dos and each heading, an area's to-dos, a Life Bucket's areas and projects, and the sidebar's Life Buckets, areas, projects and tags.
 - **Between sections on one page:** heading ↔ loose to-dos in a project; Today ↔ This Evening (scheduling for today when needed).
 - **Onto the sidebar:**
   - **Inbox**, **Anytime**, **Someday**: sets that When.
   - **Today**: schedules for today and puts it at the top of Today.
   - **Logbook**: completes a to-do.
   - **Trash**: deletes (it asks first).
-  - A **project** or **area**: moves it there (to the end). Projects can be dropped onto an area.
+  - A **project** or **area**: moves a to-do there (to the end).
+  - A **Life Bucket**: moves a project or area there (to the end).
   - **Tags** in the sidebar: drag a tag onto another to nest it, or onto its top or bottom edge to reorder (see [Tags](#9-tags)), or onto Trash to delete it.
   - Upcoming isn't a drop target; projects can't be dropped onto the Logbook (complete them from their ring, so you're asked about remaining to-dos).
 - With the mouse, a drag starts after a small movement; on touch screens, press and hold.
@@ -820,12 +858,12 @@ Deleted items wait in the [Trash](#48-trash) for 30 days and can be restored wit
 
 Start typing any letter while you're not in a text field (or click the **search** icon at the top) and **Quick Find** opens with what you typed:
 
-![Quick Find with "mov" typed: the project "Move apartments" (in Home) first, then matching to-dos](docs/guide/quick-find.jpg)
+![Quick Find with "mov" typed: the project "Move apartments" (in the Home Life Bucket) first, then matching to-dos](docs/guide/quick-find.jpg)
 
 It searches, as you type:
 
 - Lists (Inbox, Today, Upcoming, Anytime, Someday, Overdue, **Deadlines**, Logbook, Trash).
-- Projects (with their area), areas and tags.
+- Life Buckets, projects and areas (with their Life Bucket), and tags.
 - To-dos, by title and notes, with the project or area they're in.
 
 Use ↑ / ↓ and **Enter** to open a result, or click it. Opening a to-do takes you to the list it's in and opens it there. Lists and projects rank above to-dos when they match about as well. Escape closes it. With encryption on, search still works: it happens on your device.
@@ -992,7 +1030,7 @@ Shows whether this browser can show [reminders](#63-reminders), with **Turn on**
 
 ### 17.1 End-to-end encryption
 
-With end-to-end encryption on, the words in your account are encrypted on your own devices before they're saved or synced: to-do titles and notes, checklist items, and the names of projects, areas, headings and tags. Only your devices can read them; the server stores them in a form nobody else can read, including us.
+With end-to-end encryption on, the words in your account are encrypted on your own devices before they're saved or synced: to-do titles and notes, checklist items, and the names of projects, areas, Life Buckets, headings and tags. Only your devices can read them; the server stores them in a form nobody else can read, including us.
 
 So that repeats, reminders and the Trash keep working, some details stay readable to the server: dates and deadlines, repeat settings, reminder times, whether something is completed or in the Trash, and how items are arranged.
 
@@ -1088,7 +1126,7 @@ The passcode belongs to that device only; your other devices have their own (or 
 ## 18. Your data
 
 - **Export** (Settings → Data → **Export…**) downloads everything in your account, Trash included, as a JSON file. With encryption on, it's decrypted on your device first, so the file is readable: keep it somewhere safe.
-- **Import** (Settings → Data → **Import…**) adds the contents of an export file as copies: to-dos, projects, areas, headings, checklists and tags. A message says how many items were imported.
+- **Import** (Settings → Data → **Import…**) adds the contents of an export file as copies: to-dos, projects, areas, Life Buckets, headings, checklists and tags. Files exported before Life Buckets are rearranged the same way your account was ([8.3](#83-after-updating-to-life-buckets)). A message says how many items were imported.
   - Top-level tags with the same name are matched rather than duplicated.
   - Items that were in the Trash aren't imported.
   - Importing never overwrites or changes what you already have, so importing the same file twice gives you two copies.
@@ -1111,6 +1149,8 @@ These work without signing in:
 ## 20. Troubleshooting and FAQ
 
 **Something I completed is still showing.** If Settings → Lists → Move completed to-dos to the Logbook is set to **Daily**, completed items stay (ticked) until the end of the day.
+
+**My areas and projects look rearranged.** Since Life Buckets arrived, areas no longer hold projects; your lists were moved once, without losing anything. See [After updating to Life Buckets](#83-after-updating-to-life-buckets).
 
 **A to-do with a later date is in Today.** Its deadline is today; deadlines bring items into Today on the day they're due.
 

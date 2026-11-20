@@ -133,6 +133,8 @@ const area = (title: string): Area => ({
 	sortKey: "a0",
 	tagIds: [],
 	collapsed: false,
+	kind: "area",
+	bucketId: null,
 });
 
 describe("parseQuickEntry", () => {

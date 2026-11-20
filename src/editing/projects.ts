@@ -51,10 +51,27 @@ export function newProjectFields(
 	};
 }
 
-export function newAreaFields(areas: Area[]): Partial<Area> {
+/** A new area at the end of its Life Bucket. */
+export function newAreaFields(
+	bucketId: string | null,
+	areas: Area[],
+): Partial<Area> {
+	const siblings = live(areas).filter((a) => a.bucketId === bucketId);
 	return {
 		title: "",
-		sortKey: keyAfter(maxKey(live(areas).map((a) => a.sortKey))),
+		kind: "area",
+		bucketId,
+		sortKey: keyAfter(maxKey(siblings.map((a) => a.sortKey))),
+	};
+}
+
+/** A new Life Bucket at the end of the sidebar. */
+export function newBucketFields(buckets: Area[]): Partial<Area> {
+	return {
+		title: "",
+		kind: "bucket",
+		bucketId: null,
+		sortKey: keyAfter(maxKey(live(buckets).map((b) => b.sortKey))),
 	};
 }
 

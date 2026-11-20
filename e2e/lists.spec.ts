@@ -1,7 +1,10 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { checkbox, expectSynced, row, rowTitles, signUp } from "./helpers";
 
-async function newList(page: Page, kind: "New Project" | "New Area") {
+async function newList(
+	page: Page,
+	kind: "New Project" | "New Area" | "New Life Bucket",
+) {
 	await page.getByRole("button", { name: "New List" }).click();
 	await page.getByRole("button", { name: new RegExp(`^${kind}`) }).click();
 }
@@ -24,7 +27,12 @@ async function addTodo(page: Page, title: string) {
 }
 
 /** Drags one element onto another with the mouse (past dnd-kit's 6px threshold). */
-async function dragBox(page: Page, from: Locator, to: Locator) {
+async function dragBox(
+	page: Page,
+	from: Locator,
+	to: Locator,
+	at: "top" | "middle" = "top",
+) {
 	const source = await from.boundingBox();
 	const target = await to.boundingBox();
 	if (!source || !target) throw new Error("not visible");
@@ -33,7 +41,8 @@ async function dragBox(page: Page, from: Locator, to: Locator) {
 	await page.mouse.move(source.x + 40, source.y + source.height / 2 - 10, {
 		steps: 5,
 	});
-	await page.mouse.move(target.x + 40, target.y + 4, { steps: 15 });
+	const y = at === "top" ? target.y + 4 : target.y + target.height / 2;
+	await page.mouse.move(target.x + 40, y, { steps: 15 });
 	await page.mouse.up();
 }
 
@@ -41,7 +50,7 @@ async function dragBox(page: Page, from: Locator, to: Locator) {
 const drag = (page: Page, from: string, to: string) =>
 	dragBox(page, row(page, from), row(page, to));
 
-test("area → project → heading → to-dos; reorder by dragging survives a reload", async ({
+test("area and project → heading → to-dos; reorder by dragging survives a reload", async ({
 	page,
 }) => {
 	await signUp(page);
@@ -70,7 +79,7 @@ test("area → project → heading → to-dos; reorder by dragging survives a re
 	await typeTitle(page, "New Heading", "Packing");
 	await expect(page.getByRole("region", { name: "Packing" })).toBeVisible();
 
-	// The project sits under its area in the sidebar.
+	// The area and project sit in a Life Bucket in the sidebar.
 	const sidebar = page.getByRole("navigation", { name: "Lists" });
 	await expect(sidebar.getByRole("link", { name: "Home" })).toBeVisible();
 	await expect(
@@ -95,70 +104,76 @@ test("area → project → heading → to-dos; reorder by dragging survives a re
 	await expect(page.getByRole("region", { name: "Packing" })).toBeVisible();
 });
 
-test("areas, projects outside areas, and projects within an area reorder in the sidebar and stay put", async ({
+test("Life Buckets, their areas and their projects reorder in the sidebar and stay put", async ({
 	page,
 }) => {
 	await signUp(page);
 	const sidebar = page.getByRole("navigation", { name: "Lists" });
 	const link = (name: string) => sidebar.getByRole("link", { name });
-	/** Areas and projects in sidebar order. */
+	const names = ["Personal", "Solo", "Work", "Admin", "W1", "W2"];
+	/** Buckets, areas and projects in sidebar order. */
 	const order = () =>
 		sidebar
 			.getByRole("link")
-			.evaluateAll((links) =>
-				links
-					.map((a) => a.textContent?.trim() ?? "")
-					.filter((t) => /^(Area|Loose|In) /.test(t)),
+			.evaluateAll(
+				(links, wanted) =>
+					links
+						.map((a) => a.textContent?.trim() ?? "")
+						.filter((t) => wanted.includes(t)),
+				names,
 			);
 
-	for (const title of ["Loose 1", "Loose 2"]) {
-		await page.goto("/today");
-		await newList(page, "New Project");
-		await typeTitle(page, "New Project", title);
-		await expect(link(title)).toBeVisible();
-	}
-	for (const area of ["Area A", "Area B"]) {
-		await newList(page, "New Area");
-		await typeTitle(page, "New Area", area);
-		await expect(link(area)).toBeVisible();
-	}
-	// New projects from an area's page go into that area.
-	for (const title of ["In B 1", "In B 2"]) {
-		await link("Area B").click();
-		await newList(page, "New Project");
-		await typeTitle(page, "New Project", title);
-		await expect(link(title)).toBeVisible();
-	}
-	await expect
-		.poll(order)
-		.toEqual(["Loose 1", "Loose 2", "Area A", "Area B", "In B 1", "In B 2"]);
+	// The first project of a new account goes into a "Personal" Life Bucket.
+	await newList(page, "New Project");
+	await typeTitle(page, "New Project", "Solo");
+	await expect(link("Personal")).toBeVisible();
 
-	await dragBox(page, link("Loose 2"), link("Loose 1"));
+	await newList(page, "New Life Bucket");
+	await typeTitle(page, "New Life Bucket", "Work");
+	// New lists made on a Life Bucket's page go into it.
+	for (const title of ["W1", "W2"]) {
+		await link("Work").click();
+		await newList(page, "New Project");
+		await typeTitle(page, "New Project", title);
+		await expect(link(title)).toBeVisible();
+	}
+	await link("Work").click();
+	await newList(page, "New Area");
+	await typeTitle(page, "New Area", "Admin");
 	await expect
 		.poll(order)
-		.toEqual(["Loose 2", "Loose 1", "Area A", "Area B", "In B 1", "In B 2"]);
-	// An area moves with its projects.
-	await dragBox(page, link("Area B"), link("Area A"));
+		.toEqual(["Personal", "Solo", "Work", "Admin", "W1", "W2"]);
+
+	await dragBox(page, link("W2"), link("W1"));
 	await expect
 		.poll(order)
-		.toEqual(["Loose 2", "Loose 1", "Area B", "In B 1", "In B 2", "Area A"]);
-	await dragBox(page, link("In B 2"), link("In B 1"));
-	const moved = ["Loose 2", "Loose 1", "Area B", "In B 2", "In B 1", "Area A"];
+		.toEqual(["Personal", "Solo", "Work", "Admin", "W2", "W1"]);
+	// A Life Bucket moves with everything in it.
+	await page.waitForTimeout(400);
+	await dragBox(page, link("Work"), link("Personal"));
+	await expect
+		.poll(order)
+		.toEqual(["Work", "Admin", "W2", "W1", "Personal", "Solo"]);
+	// A project dropped on another Life Bucket moves into it, last. (Let the
+	// sidebar finish sliding into place first, so the drop lands where aimed.)
+	await page.waitForTimeout(400);
+	await dragBox(page, link("Solo"), link("Work"), "middle");
+	const moved = ["Work", "Admin", "W2", "W1", "Solo", "Personal"];
 	await expect.poll(order).toEqual(moved);
 	await expectSynced(page);
 
 	await page.reload();
-	await expect(link("Area A")).toBeVisible();
+	await expect(link("Admin")).toBeVisible();
 	expect(await order()).toEqual(moved);
 });
 
-test("an area's projects can be hidden in the sidebar, stay hidden, and show again when one is opened", async ({
+test("a Life Bucket's lists can be hidden in the sidebar, stay hidden, and show again when one is opened", async ({
 	page,
 }) => {
 	await signUp(page);
 	const sidebar = page.getByRole("navigation", { name: "Lists" });
-	await newList(page, "New Area");
-	await typeTitle(page, "New Area", "Home");
+	await newList(page, "New Life Bucket");
+	await typeTitle(page, "New Life Bucket", "Home");
 	for (const title of ["Garden", "Move"]) {
 		await sidebar.getByRole("link", { name: "Home" }).click();
 		await newList(page, "New Project");
@@ -167,26 +182,30 @@ test("an area's projects can be hidden in the sidebar, stay hidden, and show aga
 	}
 
 	await page.goto("/today");
-	await sidebar.getByRole("button", { name: "Hide projects in Home" }).click();
+	await sidebar
+		.getByRole("button", { name: "Hide areas and projects in Home" })
+		.click();
 	await expect(sidebar.getByRole("link", { name: "Garden" })).toBeHidden();
 	await expect(
-		sidebar.getByRole("link", { name: "Home (2 hidden projects)" }),
+		sidebar.getByRole("link", { name: "Home (2 hidden lists)" }),
 	).toBeVisible();
-	// The arrow doesn't open the area.
+	// The arrow doesn't open the bucket.
 	await expect(page).toHaveURL(/\/today$/);
 	await expectSynced(page);
 
 	await page.reload();
-	const show = sidebar.getByRole("button", { name: "Show projects in Home" });
+	const show = sidebar.getByRole("button", {
+		name: "Show areas and projects in Home",
+	});
 	await expect(show).toHaveAttribute("aria-expanded", "false");
 	await expect(sidebar.getByRole("link", { name: "Garden" })).toBeHidden();
 
-	// Opening one of its projects opens the area.
+	// Opening one of its projects opens the bucket.
 	await sidebar.getByRole("link", { name: /^Home/ }).click();
 	await page.locator("main").getByRole("link", { name: "Garden" }).click();
 	await expect(sidebar.getByRole("link", { name: "Garden" })).toBeVisible();
 	await expect(
-		sidebar.getByRole("button", { name: "Hide projects in Home" }),
+		sidebar.getByRole("button", { name: "Hide areas and projects in Home" }),
 	).toHaveAttribute("aria-expanded", "true");
 });
 

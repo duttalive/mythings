@@ -6,12 +6,19 @@ import { insertAt, type Placed, placeMutations } from "../editing/reorder";
 import { keyAfter, maxKey } from "../lib/order";
 import type { Mutation } from "../sync/engine";
 
-export type DragKind = "todo" | "project" | "area" | "heading" | "tag";
+export type DragKind =
+	| "todo"
+	| "project"
+	| "area"
+	| "bucket"
+	| "heading"
+	| "tag";
 
 export type SidebarTarget =
 	| { type: "inbox" | "today" | "anytime" | "someday" | "logbook" | "trash" }
 	| { type: "project"; id: string }
-	| { type: "area"; id: string };
+	| { type: "area"; id: string }
+	| { type: "bucket"; id: string };
 
 /** Whether a dragged kind can be dropped on a sidebar target (for highlighting). */
 export function canDrop(
@@ -20,9 +27,11 @@ export function canDrop(
 ): boolean {
 	if (kind === "heading") return false;
 	if (target === "trash") return true;
-	if (kind === "todo") return true;
+	// To-dos go in areas and projects; a Life Bucket holds areas and projects.
+	if (kind === "todo") return target !== "bucket";
 	if (kind === "project")
-		return ["today", "anytime", "someday", "area"].includes(target);
+		return ["today", "anytime", "someday", "bucket"].includes(target);
+	if (kind === "area") return target === "bucket";
 	return false;
 }
 
@@ -58,7 +67,25 @@ export function sidebarDropMutations(
 	data: ViewData,
 	ctx: ViewContext,
 ): Mutation[] | null {
-	if (target.type === "trash") return [{ type: "delete", entity: kind, id }];
+	if (target.type === "trash")
+		return [{ type: "delete", entity: kind === "bucket" ? "area" : kind, id }];
+
+	if (kind === "area" && target.type === "bucket") {
+		const siblings = live(data.areas).filter(
+			(a) => a.bucketId === target.id && a.id !== id,
+		);
+		return [
+			{
+				type: "upsert",
+				entity: "area",
+				id,
+				patch: {
+					bucketId: target.id,
+					sortKey: keyAfter(maxKey(siblings.map((a) => a.sortKey))),
+				},
+			},
+		];
+	}
 
 	if (kind === "todo") {
 		const upsert = (patch: Record<string, unknown>): Mutation[] => [
@@ -120,7 +147,7 @@ export function sidebarDropMutations(
 				return upsert({ when: "anytime" });
 			case "someday":
 				return upsert({ when: "someday" });
-			case "area": {
+			case "bucket": {
 				const siblings = live(data.projects).filter(
 					(p) => p.areaId === target.id && p.id !== id,
 				);

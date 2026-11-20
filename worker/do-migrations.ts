@@ -141,4 +141,11 @@ export const DO_MIGRATIONS: string[] = [
 	-- Tags with nested tags can be collapsed in the sidebar too.
 	ALTER TABLE tags ADD COLUMN collapsed INTEGER NOT NULL DEFAULT 0;
 	`,
+	`
+	-- Life Buckets (2.2.0): an area row is either a bucket or an area inside
+	-- one. Existing rows are converted once by convertToLifeBuckets().
+	ALTER TABLE areas ADD COLUMN kind TEXT NOT NULL DEFAULT 'area';
+	ALTER TABLE areas ADD COLUMN bucket_id TEXT;
+	CREATE INDEX idx_areas_bucket ON areas(bucket_id);
+	`,
 ];

@@ -57,6 +57,7 @@ const project = (o: Partial<Project> = {}): Project => ({
 
 const data = (parts: Partial<ViewData>): ViewData => ({
 	areas: [],
+	buckets: [],
 	projects: [],
 	headings: [],
 	todos: [],
@@ -178,21 +179,31 @@ describe("dropping a to-do on the sidebar", () => {
 });
 
 describe("dropping a project on the sidebar", () => {
-	it("moves it into an area, last", () => {
-		const sibling = project({ areaId: "AREA", sortKey: "a3" });
+	it("moves it into a Life Bucket, last", () => {
+		const sibling = project({ areaId: "BUCKET", sortKey: "a3" });
 		const dragged = project();
 		const patch = patchOf(
 			sidebarDropMutations(
 				"project",
 				dragged.id,
-				{ type: "area", id: "AREA" },
+				{ type: "bucket", id: "BUCKET" },
 				data({ projects: [sibling, dragged] }),
 				ctx,
 			),
 			dragged.id,
 		);
-		expect(patch?.areaId).toBe("AREA");
+		expect(patch?.areaId).toBe("BUCKET");
 		expect((patch?.sortKey as string) > "a3").toBe(true);
+		// Projects don't go into areas, which hold only to-dos.
+		expect(
+			sidebarDropMutations(
+				"project",
+				dragged.id,
+				{ type: "area", id: "AREA" },
+				data({ projects: [dragged] }),
+				ctx,
+			),
+		).toBeNull();
 	});
 
 	it("refuses targets that don't make sense", () => {

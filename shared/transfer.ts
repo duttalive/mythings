@@ -5,9 +5,11 @@
 
 import { z } from "zod";
 import type { EntityName, EntityRowMap, Op } from "./schema";
+import { restructure } from "./structure";
 
 export const EXPORT_FORMAT = "mythings-export";
-export const EXPORT_VERSION = 1;
+/** 2: Life Buckets (2.2.0). Version 1 files are converted on import. */
+export const EXPORT_VERSION = 2;
 
 /** Entity names in the order an import must create them (referenced rows first). */
 export const IMPORT_ORDER = [
@@ -31,7 +33,7 @@ const rows = z.array(z.record(z.string(), z.unknown())).default([]);
 /** The envelope only; each row is validated as an op when it's applied. */
 export const exportFileSchema = z.object({
 	format: z.literal(EXPORT_FORMAT),
-	version: z.literal(EXPORT_VERSION),
+	version: z.union([z.literal(1), z.literal(EXPORT_VERSION)]),
 	exportedAt: z.string().optional(),
 	data: z.object({
 		tag: rows,
@@ -53,7 +55,7 @@ const DROPPED = new Set(["id", "rev", "updatedAt"]);
 /** Single references to other rows, and whether a dangling one drops the row. */
 const REFS: Record<EntityName, [field: string, required: boolean][]> = {
 	tag: [["parentId", false]],
-	area: [],
+	area: [["bucketId", false]],
 	project: [
 		["areaId", false],
 		["repeatTemplateId", false],
@@ -98,6 +100,7 @@ export function planImport(
 	newId: () => string,
 	now: number,
 ): ImportPlan {
+	if (file.version === 1) file = fromVersion1(file, newId, now);
 	const ids = new Map<string, string>();
 	const ops: Op[] = [];
 	let skipped = 0;
@@ -111,6 +114,7 @@ export function planImport(
 			return true;
 		});
 		if (entity === "tag") rows = byDepth(rows, "parentId");
+		if (entity === "area") rows = byDepth(rows, "bucketId");
 		// Repeating templates before the instances that point at them.
 		if (entity === "project" || entity === "todo")
 			rows = [...rows].sort(
@@ -171,4 +175,40 @@ export function planImport(
 		}
 	}
 	return { ops, skipped };
+}
+
+/**
+ * An export from before Life Buckets, in today's shape. Rows that need a
+ * bucket are left without one; the server puts them into the first one.
+ */
+function fromVersion1(
+	file: ImportFile,
+	newId: () => string,
+	now: number,
+): ImportFile {
+	const withId = (rows: Row[]) =>
+		rows.filter((row): row is Row & { id: string } => !!str(row.id));
+	const plan = restructure(
+		{
+			areas: withId(file.data.area),
+			projects: withId(file.data.project),
+			todos: withId(file.data.todo),
+		},
+		{ newId, now, createDefault: false },
+	);
+	const patched = (rows: Row[], changes: Map<string, Row>) =>
+		rows.map((row) => {
+			const change = changes.get(str(row.id) ?? "");
+			return change ? { ...row, ...change } : row;
+		});
+	return {
+		...file,
+		version: EXPORT_VERSION,
+		data: {
+			...file.data,
+			area: [...patched(file.data.area, plan.areas), ...plan.created],
+			project: patched(file.data.project, plan.projects),
+			todo: patched(file.data.todo, plan.todos),
+		},
+	};
 }

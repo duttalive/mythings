@@ -72,7 +72,8 @@ export function rowTitles(page: Page) {
 		.locator("main [data-row-id]")
 		.evaluateAll((rows) =>
 			rows.map(
-				(row) => row.querySelector("span.truncate")?.textContent?.trim() ?? "",
+				(row) =>
+					row.querySelector("[data-row-title]")?.textContent?.trim() ?? "",
 			),
 		);
 }
@@ -89,7 +90,7 @@ export function row(page: Page, title: string) {
 	const exact = new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`);
 	return page
 		.locator("main [data-row-id]")
-		.filter({ has: page.locator("span.truncate", { hasText: exact }) });
+		.filter({ has: page.locator("[data-row-title]", { hasText: exact }) });
 }
 
 /** Opens the app's Quick Entry (⌥Space) and saves a to-do. */

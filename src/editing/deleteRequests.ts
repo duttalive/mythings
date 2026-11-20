@@ -13,9 +13,15 @@ const live = <T extends { deletedAt: number | null }>(rows: T[]) =>
 	rows.filter((r) => r.deletedAt === null);
 
 /** "It moves to Trash with its 3 to-dos." or "It moves to Trash." */
+/** "a", "a and b", "a, b and c". */
+const list = (parts: string[]) =>
+	parts.length > 2
+		? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`
+		: parts.join(" and ");
+
 const withContents = (parts: string[]) =>
 	parts.length > 0
-		? `It moves to Trash with its ${parts.join(" and ")}. ${TRASH_THEM}`
+		? `It moves to Trash with its ${list(parts)}. ${TRASH_THEM}`
 		: `It moves to Trash. ${TRASH}`;
 
 export function todosRequest(todos: Todo[]): DeleteRequest {
@@ -59,15 +65,31 @@ export function projectRequest(
 	};
 }
 
+/** An area (with its to-dos) or a Life Bucket (with its areas, projects and their to-dos). */
 export function areaRequest(area: Area, data: ViewData): DeleteRequest {
-	const projects = live(data.projects).filter((p) => p.areaId === area.id);
+	const areas =
+		area.kind === "bucket"
+			? live(data.areas).filter((a) => a.bucketId === area.id)
+			: [area];
+	const projects =
+		area.kind === "bucket"
+			? live(data.projects).filter((p) => p.areaId === area.id)
+			: [];
+	const areaIds = new Set(areas.map((a) => a.id));
 	const projectIds = new Set(projects.map((p) => p.id));
 	const todos = live(data.todos).filter(
-		(t) => t.areaId === area.id || (t.projectId && projectIds.has(t.projectId)),
+		(t) =>
+			(t.areaId && areaIds.has(t.areaId)) ||
+			(t.projectId && projectIds.has(t.projectId)),
 	);
+	const inner = area.kind === "bucket" ? areas.length : 0;
 	return {
-		title: `Delete area ${quoted(area.title, "“New Area”")}?`,
+		title:
+			area.kind === "bucket"
+				? `Delete Life Bucket ${quoted(area.title, "“New Life Bucket”")}?`
+				: `Delete area ${quoted(area.title, "“New Area”")}?`,
 		body: withContents([
+			...(inner ? [count(inner, "area")] : []),
 			...(projects.length ? [count(projects.length, "project")] : []),
 			...(todos.length ? [count(todos.length, "to-do")] : []),
 		]),
@@ -113,6 +135,6 @@ export function dragToTrashRequest(
 		const project = data.projects.find((p) => p.id === id);
 		return project ? projectRequest(project, data) : null;
 	}
-	const area = data.areas.find((a) => a.id === id);
+	const area = [...data.areas, ...data.buckets].find((a) => a.id === id);
 	return area ? areaRequest(area, data) : null;
 }

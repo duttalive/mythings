@@ -68,9 +68,10 @@ export function TodoCard({ todo }: { todo: Todo }) {
 	const [focusItemId, setFocusItemId] = useState<string | null>(null);
 
 	const card = useRef<HTMLDivElement>(null);
-	const titleRef = useRef<HTMLInputElement>(null);
+	const titleRef = useRef<HTMLTextAreaElement>(null);
 	const notesRef = useRef<HTMLTextAreaElement>(null);
 	useAutoGrow(notesRef, notes);
+	useAutoGrow(titleRef, title);
 
 	// Title and notes save shortly after typing stops, and whenever the card closes.
 	const latest = useRef({ title, notes });
@@ -274,11 +275,13 @@ export function TodoCard({ todo }: { todo: Todo }) {
 					label={title || "New To-Do"}
 					onToggle={() => toggleComplete(todo.id, todo.status)}
 				/>
-				<input
+				{/* A one-line title that wraps onto more lines as it grows. */}
+				<textarea
 					ref={titleRef}
 					value={title}
+					rows={1}
 					onChange={(e) => {
-						setTitle(e.target.value);
+						setTitle(e.target.value.replace(/\s*\n\s*/g, " "));
 						scheduleSave();
 					}}
 					onKeyDown={(e) => {
@@ -289,7 +292,7 @@ export function TodoCard({ todo }: { todo: Todo }) {
 					}}
 					placeholder="New To-Do"
 					aria-label="Title"
-					className={`min-w-0 flex-1 bg-transparent text-[0.9375rem] font-medium outline-none placeholder:text-[var(--fg-muted)] ${
+					className={`min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-[0.9375rem] font-medium break-words outline-none placeholder:text-[var(--fg-muted)] ${
 						status !== "open" ? "text-[var(--fg-muted)] line-through" : ""
 					}`}
 				/>

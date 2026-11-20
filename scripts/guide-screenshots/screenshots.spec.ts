@@ -363,13 +363,29 @@ test("guide screenshots", async ({ page, browser }) => {
 		await shot(page, "new-list");
 	});
 
-	await step(page, "area page", async () => {
+	await step(page, "life bucket page", async () => {
 		await open(page, "/today");
 		await sidebar(page).getByRole("link", { name: /^Home/ }).first().click();
 		await expect(page.getByRole("heading", { level: 1 })).toContainText("Home");
+		await shot(page, "bucket");
+		await page.getByRole("button", { name: "Life Bucket actions" }).click();
+		await shot(page, "bucket-menu");
+		await page.keyboard.press("Escape");
+	});
+
+	await step(page, "area page", async () => {
+		await open(page, "/today");
+		await sidebar(page)
+			.getByRole("link", { name: /^Household/ })
+			.first()
+			.click();
+		await expect(page.getByRole("heading", { level: 1 })).toContainText(
+			"Household",
+		);
 		await shot(page, "area");
 		await page.getByRole("button", { name: "Area actions" }).click();
 		await shot(page, "area-menu");
+		await page.keyboard.press("Escape");
 	});
 
 	await step(page, "tag page", async () => {

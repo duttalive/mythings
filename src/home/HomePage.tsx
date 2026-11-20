@@ -392,7 +392,7 @@ function TodayPreview() {
 							Logbook
 						</SideItem>
 						<li className="mt-4 px-2 pb-1 text-xs font-semibold text-[var(--fg-muted)]">
-							Areas
+							Life Buckets
 						</li>
 						<SideItem icon={<span className="size-2 rounded-full bg-accent" />}>
 							Home
