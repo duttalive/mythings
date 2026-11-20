@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import { Shell } from "./components/Shell";
 import { AnytimePage } from "./routes/anytime";
 import { AreaPage } from "./routes/area";
+import { BucketPage } from "./routes/bucket";
 import { DeadlinesPage } from "./routes/deadlines";
 import { InboxPage } from "./routes/inbox";
 import { LogbookPage } from "./routes/logbook";
@@ -57,6 +58,7 @@ const routeTree = rootRoute.addChildren([
 	page("/trash", TrashPage),
 	page("/project/$projectId", ProjectPage),
 	page("/area/$areaId", AreaPage),
+	page("/bucket/$bucketId", BucketPage),
 	page("/tag/$tagId", TagPage),
 	page("/share", SharePage),
 	// Rarely visited: loaded on demand to keep the main bundle smaller.

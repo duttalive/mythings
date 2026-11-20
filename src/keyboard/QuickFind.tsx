@@ -16,6 +16,7 @@ import { isInToday, isOverdue } from "../../shared/views";
 import {
 	AreaIcon,
 	BoxIcon,
+	BucketIcon,
 	CalendarIcon,
 	FlagIcon,
 	InboxIcon,
@@ -103,7 +104,7 @@ export function QuickFind({
 	const [query, setQuery] = useState(initialQuery);
 	const [active, setActive] = useState(0);
 	const navigate = useNavigate();
-	const { data, ctx, projects, areas } = useListData();
+	const { data, ctx, projects, areas, buckets } = useListData();
 	const { expand } = useEditing();
 	const { select } = useSelection();
 	const listId = useId();
@@ -139,11 +140,11 @@ export function QuickFind({
 			});
 		for (const project of data.projects) {
 			if (project.deletedAt !== null) continue;
-			const area = project.areaId ? areas.get(project.areaId) : undefined;
+			const bucket = project.areaId ? buckets.get(project.areaId) : undefined;
 			add("project", project.title, {
 				key: project.id,
 				title: project.title || "New Project",
-				subtitle: area?.title,
+				subtitle: bucket?.title,
 				icon: (
 					<ProgressRing
 						progress={{ completed: 0, total: 0 }}
@@ -155,11 +156,21 @@ export function QuickFind({
 				open: go("/project/$projectId", { projectId: project.id }),
 			});
 		}
+		for (const bucket of data.buckets) {
+			if (bucket.deletedAt !== null) continue;
+			add("area", bucket.title, {
+				key: bucket.id,
+				title: bucket.title || "New Life Bucket",
+				icon: <BucketIcon className="size-4" />,
+				open: go("/bucket/$bucketId", { bucketId: bucket.id }),
+			});
+		}
 		for (const area of data.areas) {
 			if (area.deletedAt !== null) continue;
 			add("area", area.title, {
 				key: area.id,
 				title: area.title || "New Area",
+				subtitle: buckets.get(area.bucketId ?? "")?.title,
 				icon: <AreaIcon className="size-4" />,
 				open: go("/area/$areaId", { areaId: area.id }),
 			});
@@ -206,6 +217,7 @@ export function QuickFind({
 		ctx.today,
 		projects,
 		areas,
+		buckets,
 		navigate,
 		onClose,
 		expand,

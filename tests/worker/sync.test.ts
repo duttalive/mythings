@@ -394,15 +394,48 @@ describe("delete, restore and purge", () => {
 		expect((await get("todo", earlier)).deletedAt).toBe(earlierDeletedAt);
 	});
 
-	it("cascades an area delete through its projects", async () => {
-		const [a, p, t] = [ulid(), ulid(), ulid()];
+	it("cascades a Life Bucket delete through its areas and projects, and restores them", async () => {
+		const [b, a, p, t, inArea] = [ulid(), ulid(), ulid(), ulid(), ulid()];
 		await ok(
-			upsert("area", a, {}),
-			upsert("project", p, { areaId: a }),
+			upsert("area", b, { kind: "bucket" }),
+			upsert("area", a, { bucketId: b }),
+			upsert("project", p, { areaId: b }),
 			upsert("todo", t, { projectId: p }),
+			upsert("todo", inArea, { areaId: a }),
 		);
-		await ok(remove("area", a));
-		expect((await get("todo", t)).deletedAt).not.toBeNull();
+		await ok(remove("area", b));
+		for (const [entity, id] of [
+			["area", a],
+			["project", p],
+			["todo", t],
+			["todo", inArea],
+		] as const)
+			expect((await get(entity, id)).deletedAt).not.toBeNull();
+		await ok(upsert("area", b, { deletedAt: null }));
+		expect((await get("todo", inArea)).deletedAt).toBeNull();
+		expect((await get("project", p)).deletedAt).toBeNull();
+	});
+
+	it("keeps every area and project in a Life Bucket", async () => {
+		const [a, p, b, t] = [ulid(), ulid(), ulid(), ulid()];
+		// Sent without a bucket (as an app version before buckets would): both go into a new "Personal" one.
+		await ok(upsert("area", a, { title: "Home" }), upsert("project", p, {}));
+		const personal = (await all("area")).find((r) => r.kind === "bucket");
+		expect(personal).toMatchObject({ title: "Personal", bucketId: null });
+		expect((await get("area", a)).bucketId).toBe(personal?.id);
+		expect((await get("project", p)).areaId).toBe(personal?.id);
+		// A project put into an area goes into that area's bucket.
+		await ok(upsert("area", b, { kind: "bucket", title: "Work" }));
+		await ok(upsert("area", a, { bucketId: b }));
+		await ok(upsert("project", p, { areaId: a }));
+		expect((await get("project", p)).areaId).toBe(b);
+		// To-dos go in areas, not buckets; and a list's kind can't change.
+		expect((await rejected(upsert("todo", t, { areaId: b }))).code).toBe(
+			"invalid_reference",
+		);
+		expect((await rejected(upsert("area", a, { kind: "bucket" }))).code).toBe(
+			"invalid_row",
+		);
 	});
 
 	it("purges a to-do and its checklist, and tells clients", async () => {

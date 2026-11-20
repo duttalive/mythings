@@ -114,21 +114,22 @@ export function PrivacyPage() {
 				</li>
 				<li>
 					<strong>Your to-dos:</strong> everything you put into mythings
-					(to-dos, notes, checklists, projects, areas, headings, tags, dates,
-					reminders and repeat rules), and items in Trash until they're deleted
-					permanently (after 30 days, or sooner if you empty Trash).
+					(to-dos, notes, checklists, projects, areas, Life Buckets, headings,
+					tags, dates, reminders and repeat rules), and items in Trash until
+					they're deleted permanently (after 30 days, or sooner if you empty
+					Trash).
 				</li>
 				<li>
 					<strong>If you turn on end-to-end encryption:</strong> your to-do
 					titles and notes, checklist items, and the names of your projects,
-					areas, headings and tags are encrypted on your devices, and we store
-					only the encrypted form, which we can't read. We also store your
-					encryption key, locked with your password and with your recovery key,
-					neither of which we have. Dates, reminder times, repeat rules, whether
-					items are completed or in the Trash, and how they're arranged stay
-					readable to us so that repeats, reminders and the Trash keep working.
-					Because we can't read encrypted content, we can't recover it if you
-					lose both your password and your recovery key.
+					areas, Life Buckets, headings and tags are encrypted on your devices,
+					and we store only the encrypted form, which we can't read. We also
+					store your encryption key, locked with your password and with your
+					recovery key, neither of which we have. Dates, reminder times, repeat
+					rules, whether items are completed or in the Trash, and how they're
+					arranged stay readable to us so that repeats, reminders and the Trash
+					keep working. Because we can't read encrypted content, we can't
+					recover it if you lose both your password and your recovery key.
 				</li>
 				<li>
 					<strong>Sign-in sessions:</strong> for each device you're signed in

@@ -17,12 +17,17 @@ export type ListLocation =
 	  }
 	| { list: "project"; projectId: string }
 	| { list: "area"; areaId: string }
+	| { list: "bucket"; bucketId: string }
 	| { list: "tag"; tagId: string }
 	| { list: "other" };
 
-/** Lists where creating a to-do makes no sense. */
+/** Lists where creating a to-do makes no sense (a Life Bucket holds areas and projects, not to-dos). */
 export function canCreateIn(location: ListLocation): boolean {
-	return location.list !== "logbook" && location.list !== "trash";
+	return (
+		location.list !== "logbook" &&
+		location.list !== "trash" &&
+		location.list !== "bucket"
+	);
 }
 
 export function locationFromPath(pathname: string): ListLocation {
@@ -42,6 +47,8 @@ export function locationFromPath(pathname: string): ListLocation {
 				: { list: "other" };
 		case "area":
 			return second ? { list: "area", areaId: second } : { list: "other" };
+		case "bucket":
+			return second ? { list: "bucket", bucketId: second } : { list: "other" };
 		case "tag":
 			return second ? { list: "tag", tagId: second } : { list: "other" };
 		default:

@@ -54,6 +54,12 @@ export class LocalDb extends Dexie {
 			outbox: "++seq, [entity+entityId]",
 			meta: "key",
 		});
+		// Life Buckets (2.2.0): area rows gained `kind` and `bucketId`. Fetch
+		// everything again, since an older version may have stored the server's
+		// converted rows without those fields.
+		this.version(2)
+			.stores({ areas: "id, bucketId" })
+			.upgrade((tx) => tx.table("meta").delete("lastRev"));
 	}
 
 	rows<E extends EntityName>(entity: E): Table<EntityRowMap[E], string> {

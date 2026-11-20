@@ -80,8 +80,19 @@ export function area(overrides: Partial<Area> = {}): Area {
 		sortKey: "a0",
 		tagIds: [],
 		collapsed: false,
+		kind: "area",
+		bucketId: null,
 		...overrides,
 	};
+}
+
+export function bucket(overrides: Partial<Area> = {}): Area {
+	return area({
+		title: "Bucket",
+		kind: "bucket",
+		bucketId: null,
+		...overrides,
+	});
 }
 
 export function heading(
@@ -121,6 +132,7 @@ export function rule(overrides: Partial<RepeatRule> = {}): RepeatRule {
 export function data(parts: Partial<ViewData> = {}): ViewData {
 	return {
 		areas: [],
+		buckets: [],
 		projects: [],
 		headings: [],
 		todos: [],

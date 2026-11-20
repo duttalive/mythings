@@ -22,6 +22,7 @@ import {
 	planImport,
 } from "../shared/transfer";
 import { Applier, OpRejected, type UserContext } from "./apply";
+import { convertToLifeBuckets } from "./life-buckets";
 import { sendPush } from "./push";
 import { migrate, Store } from "./store";
 
@@ -68,6 +69,7 @@ export class UserStore extends DurableObject<Env> {
 		super(ctx, env);
 		ctx.storage.transactionSync(() => migrate(ctx.storage.sql));
 		this.store = new Store(ctx.storage.sql);
+		ctx.storage.transactionSync(() => convertToLifeBuckets(this.store));
 		// Answered by the runtime without waking the object.
 		ctx.setWebSocketAutoResponse(
 			new WebSocketRequestResponsePair("ping", "pong"),

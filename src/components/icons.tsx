@@ -96,6 +96,14 @@ export const AreaIcon = (p: IconProps) => (
 	</Icon>
 );
 
+/** A Life Bucket: a pail with a handle. */
+export const BucketIcon = (p: IconProps) => (
+	<Icon {...p}>
+		<path d="M3.5 7.5h13l-1.6 9H5.1z" />
+		<path d="M5.5 7.5a4.5 4.5 0 0 1 9 0" />
+	</Icon>
+);
+
 export const TagIcon = (p: IconProps) => (
 	<Icon {...p}>
 		<path d="M3 3h6.5l7.5 7.5-6.5 6.5L3 9.5z" />

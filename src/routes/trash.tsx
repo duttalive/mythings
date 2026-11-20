@@ -1,6 +1,11 @@
 import { type TrashEntry, trash } from "../../shared/views";
 import { useConfirmDelete } from "../components/ConfirmDelete";
-import { AreaIcon, RestoreIcon, TrashIcon } from "../components/icons";
+import {
+	AreaIcon,
+	BucketIcon,
+	RestoreIcon,
+	TrashIcon,
+} from "../components/icons";
 import { Empty, ListPage } from "../components/ListPage";
 import { ProjectRow, RowList, TodoRow } from "../components/rows";
 import { useListData } from "../data";
@@ -13,6 +18,14 @@ const UNTITLED: Record<TrashEntry["kind"], string> = {
 	heading: "New Heading",
 	area: "New Area",
 };
+
+/** What kind of list an area or heading entry is. */
+function label(entry: TrashEntry): string {
+	if (entry.kind === "heading") return "Heading";
+	if (entry.kind === "area")
+		return entry.item.kind === "bucket" ? "Life Bucket" : "Area";
+	return entry.kind === "project" ? "Project" : "To-Do";
+}
 
 export function TrashPage() {
 	const { data } = useListData();
@@ -99,17 +112,18 @@ export function TrashPage() {
 										key={entry.item.id}
 										className="group flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-[var(--hover)]"
 									>
-										{entry.kind === "area" ? (
+										{entry.kind === "area" && entry.item.kind === "bucket" ? (
+											<BucketIcon className="size-[18px] text-[var(--fg-muted)]" />
+										) : entry.kind === "area" ? (
 											<AreaIcon className="size-[18px] text-[var(--fg-muted)]" />
 										) : (
 											<span className="w-[18px]" aria-hidden />
 										)}
 										<span className="font-medium">
-											{entry.item.title ||
-												(entry.kind === "area" ? "New Area" : "New Heading")}
+											{entry.item.title || `New ${label(entry)}`}
 										</span>
 										<span className="flex-1 text-xs text-[var(--fg-muted)]">
-											{entry.kind === "area" ? "Area" : "Heading"}
+											{label(entry)}
 										</span>
 										{restoreButton(entry)}
 									</li>

@@ -24,17 +24,19 @@ describe("delete confirmations", () => {
 	it("says what goes with a project, area or heading, skipping deleted rows", () => {
 		const p = project({ title: "Taxes" });
 		const h = heading({ projectId: p.id, title: "Forms" });
-		const a = area({ title: "Home" });
-		const inArea = project({ areaId: a.id });
+		const b = area({ title: "Life", kind: "bucket" });
+		const a = area({ title: "Home", bucketId: b.id });
+		const inBucket = project({ areaId: b.id });
 		const d = data({
-			projects: [p, inArea],
+			projects: [p, inBucket],
+			buckets: [b],
 			areas: [a],
 			headings: [h],
 			todos: [
 				todo({ projectId: p.id, headingId: h.id }),
 				todo({ projectId: p.id }),
 				todo({ projectId: p.id, deletedAt: 1 }),
-				todo({ projectId: inArea.id }),
+				todo({ projectId: inBucket.id }),
 				todo({ areaId: a.id }),
 			],
 		});
@@ -43,7 +45,11 @@ describe("delete confirmations", () => {
 			body: expect.stringContaining("with its 2 to-dos and 1 heading"),
 		});
 		expect(headingRequest(h, d).body).toContain("with its 1 to-do.");
-		expect(areaRequest(a, d).body).toContain("with its 1 project and 2 to-dos");
+		expect(areaRequest(a, d).body).toContain("with its 1 to-do.");
+		expect(areaRequest(b, d)).toMatchObject({
+			title: "Delete Life Bucket “Life”?",
+			body: expect.stringContaining("with its 1 area, 1 project and 2 to-dos"),
+		});
 		expect(areaRequest(area(), data()).body).toBe(
 			"It moves to Trash. You can restore it from Trash for 30 days.",
 		);

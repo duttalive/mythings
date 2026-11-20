@@ -183,13 +183,14 @@ function TagChips({ tagIds }: { tagIds: string[] }) {
 		));
 }
 
-/** Where the item lives: its project, or its area. */
+/** Where the item lives: a to-do's project or area, or a project's Life Bucket. */
 function useContainerTitle(item: Todo | Project): string | null {
-	const { areas, projects } = useListData();
-	const project =
-		"projectId" in item && item.projectId
-			? projects.get(item.projectId)
-			: undefined;
+	const { areas, buckets, projects } = useListData();
+	if (!("projectId" in item)) {
+		const bucket = item.areaId ? buckets.get(item.areaId) : undefined;
+		return bucket ? bucket.title || "New Life Bucket" : null;
+	}
+	const project = item.projectId ? projects.get(item.projectId) : undefined;
 	if (project) return project.title || "New Project";
 	const area = item.areaId ? areas.get(item.areaId) : undefined;
 	return area ? area.title || "New Area" : null;
@@ -302,34 +303,36 @@ function RowShell({
 					className={`flex min-w-0 flex-1 items-start gap-3 pointer-coarse:-my-3 pointer-coarse:py-3 ${onOpen ? "cursor-default rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent" : ""}`}
 				>
 					<div className="min-w-0 flex-1">
-						<div className="flex items-center gap-1.5">
+						{/* Titles wrap onto more lines rather than being cut off. */}
+						<div className="flex items-start gap-1.5">
 							{date && (
-								<span className="shrink-0 rounded bg-[var(--hover)] px-1.5 text-xs font-medium text-[var(--fg-muted)]">
+								<span className="mt-px shrink-0 rounded bg-[var(--hover)] px-1.5 text-xs font-medium text-[var(--fg-muted)]">
 									{shortDate(date, ctx.today)}
 								</span>
 							)}
 							{star && (
 								<StarIcon
-									className="size-3.5 shrink-0 text-today"
+									className="mt-[0.2em] size-3.5 shrink-0 text-today"
 									aria-label="In Today"
 									role="img"
 								/>
 							)}
 							<span
-								className={`truncate ${done ? "text-[var(--fg-muted)]" : ""} ${struck ? "line-through" : ""}`}
+								data-row-title
+								className={`min-w-0 break-words [overflow-wrap:anywhere] ${done ? "text-[var(--fg-muted)]" : ""} ${struck ? "line-through" : ""}`}
 							>
 								{title}
 							</span>
 							{notes && (
 								<NotesIcon
-									className="size-3.5 shrink-0 text-[var(--fg-muted)]"
+									className="mt-[0.2em] size-3.5 shrink-0 text-[var(--fg-muted)]"
 									aria-label="Has notes"
 									role="img"
 								/>
 							)}
 						</div>
 						{container && (
-							<div className="truncate text-xs text-[var(--fg-muted)]">
+							<div className="text-xs break-words text-[var(--fg-muted)]">
 								{container}
 							</div>
 						)}
