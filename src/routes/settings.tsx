@@ -113,6 +113,22 @@ export function SettingsPage() {
 					)}
 				</Field>
 				<TextSizeField />
+				<Field
+					label="Long to-do titles"
+					hint="How titles show in lists. An open to-do always shows the whole title and checklist."
+				>
+					{(ids) => (
+						<Segmented
+							ids={ids}
+							value={settings.longTitles ?? "wrap"}
+							options={[
+								["wrap", "Wrap"],
+								["oneLine", "One line"],
+							]}
+							onChange={(longTitles) => save({ settings: { longTitles } })}
+						/>
+					)}
+				</Field>
 			</Section>
 
 			<Section title="Date & time">

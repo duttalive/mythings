@@ -208,7 +208,7 @@ Each to-do is a row. From left to right it can show:
 
 - the **checkbox** (square for to-dos; projects have a round progress ring instead);
 - **★** if it's in Today (in lists other than Today);
-- the **title**, with a small notes icon if it has notes. Long titles wrap onto more lines, so they're never cut off;
+- the **title**, with a small notes icon if it has notes. Long titles wrap onto more lines, so they're never cut off (or keep them to one line in [Settings → Appearance](#161-appearance));
 - underneath, in grey, the **project or area** it belongs to (in Today, Upcoming, Overdue, Deadlines and the Logbook);
 - on the right: its **tags**, **checklist progress** (like `2/5`), a **reminder time** (🔔 9:30 AM), the **deadline** (red when it's due today or overdue, otherwise like "10 days left"), and **↻** if it repeats.
 
@@ -470,6 +470,7 @@ Click a to-do (or select it and press **Enter**) to open it in place as a card:
 - **Checklist:**
   - **Add checklist** (in the footer) starts one; Return adds an item below the current one.
   - Backspace on an empty item removes it.
+  - Long items wrap onto more lines as you type, so you can read every step in full.
   - Tick items off as you go (they're struck through). The collapsed row shows progress like `2/5`.
 - **The footer** shows what's set and offers what isn't:
   - Set values appear as chips on the left: the **When** (★ Today here), a **reminder** time, the **tags** (_errands, shop_) and the **deadline**. Click a chip to change it.
@@ -977,6 +978,7 @@ The page has these sections, from top to bottom.
   ![Today in the dark theme](docs/guide/today-dark.jpg)
 
 - **Text size:** Small, Default, Large, Larger. This device only, so you can use larger text on your phone than on your computer. On a computer you can also drag the sidebar's edge to resize it.
+- **Long to-do titles:** **Wrap** (the default) shows the whole title in your lists, on as many lines as it needs. **One line** keeps each title on a single line ending in "…". An open to-do always shows its whole title and every checklist item in full. Saved with your account, so it's the same on all your devices.
 
 ### 16.2 Date & time
 

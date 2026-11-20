@@ -144,6 +144,8 @@ test("Life Buckets, their areas and their projects reorder in the sidebar and st
 		.poll(order)
 		.toEqual(["Personal", "Solo", "Work", "Admin", "W1", "W2"]);
 
+	// Let the new area finish sliding in before dragging past it.
+	await page.waitForTimeout(400);
 	await dragBox(page, link("W2"), link("W1"));
 	await expect
 		.poll(order)

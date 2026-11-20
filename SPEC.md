@@ -516,11 +516,12 @@ Implementation notes (milestone 10):
 
 ### 10.9 Settings
 
-Time zone (auto-detected), week start day, theme, "Group to-dos in Today by project", Logbook move timing ("immediately" / "daily"), notification permission, export/import, change password, sign out of all devices.
+Time zone (auto-detected), week start day, theme, long to-do titles ("wrap" / "oneLine"), "Group to-dos in Today by project", Logbook move timing ("immediately" / "daily"), notification permission, export/import, change password, sign out of all devices.
 
 _Implementation notes (milestone 14):_
 - `/settings` (sidebar gear, ⌘,), loaded on demand. Changes apply at once and are saved with `PATCH /me`, which also hands the new time zone and week start to the UserStore (alarms, repeats); the client re-sends `hello` with the new zone. Offline, a change is put back with a message.
 - Theme: `data-theme` on `<html>` overrides `prefers-color-scheme`; mirrored to `localStorage` (`mythings:theme`) and applied by an inline script in `index.html` before first paint. Colors that depend on the theme (accent, overdue) are CSS variables, with `--on-accent` / `--on-overdue` for text on them, picked for 4.5:1 contrast in both themes.
+- Long titles (setting `longTitles`, synced): `"wrap"` (default) or `"oneLine"`. `AuthGate` sets `data-titles="one-line"` on `<html>`, and `styles.css` truncates `.long-title` (to-do rows, area rows on a bucket page) with an ellipsis. The open to-do's title and checklist items are auto-growing textareas that always wrap.
 - Export (`GET /api/export`) is every row, Trash included, as `{format: "mythings-export", version: 2, exportedAt, data: {tag, area, project, heading, todo, checklist}}`. Import (`POST /api/import`) adds copies with fresh ids (`shared/transfer.ts`): references are remapped, top-level tags are matched by title, and trashed rows (and rows that need them) are left out. It's applied in batches of 200 ops so each broadcast stays small. Version 1 files (before Life Buckets) are converted first (§5.1).
 - Swipes (touch only): right opens When for the row, left moves it to the Trash with an Undo toast. Decided after 10px; mostly vertical moves scroll, long presses still drag.
 - Animations: cards, popovers, dialogs, toasts and page changes fade or slide in over 150–180ms; `prefers-reduced-motion` turns all motion off.
