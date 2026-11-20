@@ -971,7 +971,7 @@ The page has these sections, from top to bottom.
 
 ### 16.1 Appearance
 
-![Appearance settings: Theme (System, Light, Dark) and Text size (Small, Default, Large, Larger)](docs/guide/settings-appearance.jpg)
+![Appearance settings: Theme (System, Light, Dark) and Text size (Small, Default, Large, Larger) and Long to-do titles (Wrap, One line)](docs/guide/settings-appearance.jpg)
 
 - **Theme:** **System** (follows your device), **Light** or **Dark**. It's applied before the page even appears, so there's no flash of the wrong colors.
 
