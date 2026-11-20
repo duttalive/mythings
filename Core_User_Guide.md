@@ -208,7 +208,7 @@ Each to-do is a row. From left to right it can show:
 
 - the **checkbox** (square for to-dos; projects have a round progress ring instead);
 - **★** if it's in Today (in lists other than Today);
-- the **title**, with a small notes icon if it has notes;
+- the **title**, with a small notes icon if it has notes. Long titles wrap onto more lines, so they're never cut off;
 - underneath, in grey, the **project or area** it belongs to (in Today, Upcoming, Overdue, Deadlines and the Logbook);
 - on the right: its **tags**, **checklist progress** (like `2/5`), a **reminder time** (🔔 9:30 AM), the **deadline** (red when it's due today or overdue, otherwise like "10 days left"), and **↻** if it repeats.
 
@@ -465,7 +465,7 @@ Click a to-do (or select it and press **Enter**) to open it in place as a card:
 
 ![An open to-do card for "Buy groceries": title, notes, a five-item checklist with two items ticked, and footer buttons for When, Tags, Deadline and More](docs/guide/todo-card.jpg)
 
-- **Title** at the top. Return closes the card.
+- **Title** at the top; a long title wraps onto more lines. Return closes the card.
 - **Notes** below, in Markdown; the box grows as you type.
 - **Checklist:**
   - **Add checklist** (in the footer) starts one; Return adds an item below the current one.
@@ -686,7 +686,7 @@ The **+** button and Space add to-dos to the project.
 
 ### 8.1 Life Buckets
 
-- **Create:** **+ New List → New Life Bucket** ("A big part of life, like Work or Family, holding its areas and projects"). A new account starts with a **Personal** Life Bucket; rename it any time.
+- **Create:** **+ New List → New Life Bucket** ("A big part of life, like Work or Family, holding its areas and projects"). Your first area or project, if you don't have a Life Bucket yet, goes into a new **Personal** one; rename it any time.
 - **The Life Bucket's page:** its **Areas** (with how many open to-dos each has), then its **Projects** (with progress rings and deadlines), then **Show N logged items** for its finished projects.
 
   ![The Home Life Bucket: its tag "home", the Household area with 4 open to-dos, and the "Move apartments" project with 12 days left](docs/guide/bucket.jpg)
