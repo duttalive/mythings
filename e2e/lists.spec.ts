@@ -6,7 +6,10 @@ async function newList(
 	kind: "New Project" | "New Area" | "New Life Bucket",
 ) {
 	await page.getByRole("button", { name: "New List" }).click();
-	await page.getByRole("button", { name: new RegExp(`^${kind}`) }).click();
+	await page
+		.locator("[data-popover-content]")
+		.getByRole("button", { name: new RegExp(`^${kind}`) })
+		.click();
 }
 
 /** Types into the field that just took focus (a new list's or heading's title). */
@@ -320,4 +323,35 @@ test("a project shows its logged to-dos on request, and they can be reopened the
 	await expect
 		.poll(() => rowTitles(page))
 		.toEqual(["Set the budget", "Pick paint"]);
+});
+
+test("a Life Bucket's page adds areas and projects, and an open to-do moves to any list", async ({
+	page,
+}) => {
+	await signUp(page);
+	const sidebar = page.getByRole("navigation", { name: "Lists" });
+	const main = page.locator("main");
+	await newList(page, "New Life Bucket");
+	await typeTitle(page, "New Life Bucket", "Work");
+	await main.getByRole("button", { name: /^New Area/ }).click();
+	await typeTitle(page, "New Area", "Admin");
+	await sidebar.getByRole("link", { name: "Work" }).click();
+	await main.getByRole("button", { name: /^New Project/ }).click();
+	await typeTitle(page, "New Project", "Launch");
+	await expect(main.getByRole("heading", { name: "Launch" })).toBeVisible();
+	await expect(sidebar.getByRole("link", { name: "Admin" })).toBeVisible();
+	await expect(sidebar.getByRole("link", { name: "Launch" })).toBeVisible();
+	await addTodo(page, "Write copy");
+
+	// Open it and move it to the area, picked under its Life Bucket.
+	await row(page, "Write copy").click();
+	await page.getByRole("button", { name: "Launch", exact: true }).click();
+	const picker = page.locator("[data-popover-content]");
+	await expect(picker.getByText("Work", { exact: true })).toBeVisible();
+	await picker.getByRole("button", { name: "Admin" }).click();
+	await expect(page.getByText("Moved to Admin")).toBeVisible();
+	await expect(row(page, "Write copy")).toBeHidden();
+	await expectSynced(page);
+	await sidebar.getByRole("link", { name: "Admin" }).click();
+	await expect(row(page, "Write copy")).toBeVisible();
 });

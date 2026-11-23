@@ -5,10 +5,11 @@ import type { LocalDate } from "../../shared/dates";
 import type { Todo } from "../../shared/schema";
 import { useConfirmDelete } from "../components/ConfirmDelete";
 import { useListData } from "../data";
-import { type SidebarTarget, sidebarDropMutations } from "../dnd/drop";
+import { moveTodoMutations } from "../dnd/drop";
 import type { Mutation } from "../sync/engine";
 import { useOps } from "../sync/hooks";
 import { todosRequest } from "./deleteRequests";
+import type { ListChoice } from "./listOptions";
 import type { WhenFields } from "./schedule";
 
 export function useBulkActions() {
@@ -57,18 +58,12 @@ export function useBulkActions() {
 						: [...new Set([...t.tagIds, tagId])],
 				}));
 			},
-			moveTo: async (ids: string[], target: SidebarTarget) => {
-				if (
-					target.type === "trash" &&
-					!(await confirmDelete(todosRequest(todosFor(ids))))
-				)
-					return;
+			moveTo: (ids: string[], choice: ListChoice) =>
 				run(
 					todosFor(ids).flatMap(
-						(t) => sidebarDropMutations("todo", t.id, target, data, ctx) ?? [],
+						(t) => moveTodoMutations(t.id, choice, data, ctx) ?? [],
 					),
-				);
-			},
+				),
 			/** Moves them to Trash once confirmed. Resolves whether they went. */
 			remove: async (ids: string[]): Promise<boolean> => {
 				const todos = todosFor(ids);

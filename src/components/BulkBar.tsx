@@ -60,7 +60,7 @@ function BulkBar({
 }) {
 	const { selectedIds, clear } = useSelection();
 	const { expandedId } = useEditing();
-	const { data, ctx, projects, areas } = useListData();
+	const { data, ctx } = useListData();
 	const { user } = useAuth();
 	const actions = useBulkActions();
 	const createTag = useCreateTag();
@@ -125,8 +125,7 @@ function BulkBar({
 				trigger={button("Move", <LayersIcon className="size-4" />)}
 			>
 				<ListPicker
-					projects={[...projects.values()]}
-					areas={[...areas.values()]}
+					data={data}
 					onSelect={(choice) => {
 						actions.moveTo(ids, choice);
 						done();

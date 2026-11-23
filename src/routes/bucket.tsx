@@ -66,80 +66,125 @@ export function BucketPage() {
 			}
 			filterable
 		>
-			{empty && (
-				<Empty>
-					Nothing in this Life Bucket yet. Add an area for work that keeps
-					going, or a project for something you want to finish.
-				</Empty>
-			)}
-			{view.areas.length > 0 && (
+			{readOnly && empty && <Empty>Nothing in this Life Bucket.</Empty>}
+			{(view.areas.length > 0 || !readOnly) && (
 				<Section title="Areas" className="">
-					<SortableList
-						disabled={!reorderable}
-						list={{
-							id: `bucket:${bucket.id}:areas`,
-							accepts: ["area"],
-							keyField: "sortKey",
-							items: placed(
-								"area",
-								view.areas.map(({ area }) => area),
-								"sortKey",
-							),
-							moveInPatch: () => ({ bucketId: bucket.id }),
-						}}
-					>
-						<RowList label="Areas">
-							{view.areas.map(({ area, open }) => (
-								<DragItem key={area.id} kind="area" id={area.id}>
-									<Link
-										to="/area/$areaId"
-										params={{ areaId: area.id }}
-										className="flex items-start gap-2.5 rounded-md px-2 py-1.5 hover:bg-[var(--hover)] pointer-coarse:py-3"
-									>
-										<AreaIcon className="mt-0.5 size-4 shrink-0 text-[var(--fg-muted)]" />
-										<span className="long-title min-w-0 flex-1 break-words">
-											{area.title || "New Area"}
-										</span>
-										{open > 0 && (
-											<span className="text-xs text-[var(--fg-muted)] tabular-nums">
-												{open}
+					{view.areas.length > 0 && (
+						<SortableList
+							disabled={!reorderable}
+							list={{
+								id: `bucket:${bucket.id}:areas`,
+								accepts: ["area"],
+								keyField: "sortKey",
+								items: placed(
+									"area",
+									view.areas.map(({ area }) => area),
+									"sortKey",
+								),
+								moveInPatch: () => ({ bucketId: bucket.id }),
+							}}
+						>
+							<RowList label="Areas">
+								{view.areas.map(({ area, open }) => (
+									<DragItem key={area.id} kind="area" id={area.id}>
+										<Link
+											to="/area/$areaId"
+											params={{ areaId: area.id }}
+											className="flex items-start gap-2.5 rounded-md px-2 py-1.5 hover:bg-[var(--hover)] pointer-coarse:py-3"
+										>
+											<AreaIcon className="mt-0.5 size-4 shrink-0 text-[var(--fg-muted)]" />
+											<span className="long-title min-w-0 flex-1 break-words">
+												{area.title || "New Area"}
 											</span>
-										)}
-									</Link>
-								</DragItem>
-							))}
-						</RowList>
-					</SortableList>
+											{open > 0 && (
+												<span className="text-xs text-[var(--fg-muted)] tabular-nums">
+													{open}
+												</span>
+											)}
+										</Link>
+									</DragItem>
+								))}
+							</RowList>
+						</SortableList>
+					)}
+					{!readOnly && (
+						<AddButton
+							hint={
+								view.areas.length === 0
+									? "For to-dos that keep coming, like Health or Home."
+									: undefined
+							}
+							onClick={() => void createArea(bucket.id).catch(console.error)}
+						>
+							New Area
+						</AddButton>
+					)}
 				</Section>
 			)}
-			{view.projects.length > 0 && (
-				<Section
-					title="Projects"
-					className={view.areas.length > 0 ? "mt-8" : ""}
-				>
-					<SortableList
-						disabled={!reorderable}
-						list={{
-							id: `bucket:${bucket.id}:projects`,
-							accepts: ["project"],
-							keyField: "sortKey",
-							items: placed(
-								"project",
-								view.projects.map(({ project }) => project),
-								"sortKey",
-							),
-							moveInPatch: () => ({ areaId: bucket.id }),
-						}}
-					>
-						<RowList label="Projects">
-							{view.projects.map(({ project }) => (
-								<ProjectRow key={project.id} project={project} showStar />
-							))}
-						</RowList>
-					</SortableList>
+			{(view.projects.length > 0 || !readOnly) && (
+				<Section title="Projects" className="mt-8">
+					{view.projects.length > 0 && (
+						<SortableList
+							disabled={!reorderable}
+							list={{
+								id: `bucket:${bucket.id}:projects`,
+								accepts: ["project"],
+								keyField: "sortKey",
+								items: placed(
+									"project",
+									view.projects.map(({ project }) => project),
+									"sortKey",
+								),
+								moveInPatch: () => ({ areaId: bucket.id }),
+							}}
+						>
+							<RowList label="Projects">
+								{view.projects.map(({ project }) => (
+									<ProjectRow key={project.id} project={project} showStar />
+								))}
+							</RowList>
+						</SortableList>
+					)}
+					{!readOnly && (
+						<AddButton
+							hint={
+								view.projects.length === 0
+									? "For something you want to finish, with an optional deadline."
+									: undefined
+							}
+							onClick={() => void createProject(bucket.id).catch(console.error)}
+						>
+							New Project
+						</AddButton>
+					)}
 				</Section>
 			)}
 			<LoggedItems key={bucket.id} entries={view.logged} />
 		</ListPage>
+	);
+}
+
+/** "+ New Area" / "+ New Project" under a section, with a hint while it's empty. */
+function AddButton({
+	children,
+	hint,
+	onClick,
+}: {
+	children: string;
+	hint?: string | undefined;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:py-3"
+		>
+			<PlusIcon className="size-4 shrink-0" />
+			<span>
+				{children}
+				{hint && <span className="ml-2 text-xs">{hint}</span>}
+			</span>
+		</button>
 	);
 }

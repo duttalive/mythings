@@ -14,7 +14,9 @@ import { useAuth } from "../auth/AuthGate";
 import { useListData } from "../data";
 import { todosRequest } from "../editing/deleteRequests";
 import { useEditing } from "../editing/EditingProvider";
+import { choiceForTodo, choiceTitle } from "../editing/listOptions";
 import { describeRule } from "../editing/repeatForm";
+import { useBulkActions } from "../editing/useBulkActions";
 import { useCreateTag } from "../editing/useCreateTag";
 import { comboFromEvent } from "../keyboard/keys";
 import { deadlineLabel, shortDate } from "../lib/format";
@@ -35,6 +37,7 @@ import {
 	ChecklistIcon,
 	CrossIcon,
 	FlagIcon,
+	LayersIcon,
 	MoreIcon,
 	RepeatIcon,
 	RestoreIcon,
@@ -42,13 +45,21 @@ import {
 	TrashIcon,
 } from "./icons";
 import { Popover, PopoverOption } from "./Popover";
-import { DeadlinePicker, TagPicker } from "./pickers";
+import { DeadlinePicker, ListPicker, TagPicker } from "./pickers";
 import { Checkbox } from "./rows";
 import { SchedulePanel, type ScheduleView, scheduleWidth } from "./schedule";
+import { useToast } from "./Toast";
 
 const SAVE_DELAY_MS = 400;
 
-type PopoverName = "when" | "reminder" | "deadline" | "tags" | "more" | null;
+type PopoverName =
+	| "when"
+	| "reminder"
+	| "deadline"
+	| "tags"
+	| "move"
+	| "more"
+	| null;
 
 export function TodoCard({ todo }: { todo: Todo }) {
 	const ops = useOps();
@@ -187,6 +198,8 @@ export function TodoCard({ todo }: { todo: Todo }) {
 	};
 
 	const close = () => setPopover(null);
+	const { moveTo } = useBulkActions();
+	const toast = useToast();
 	const status = displayStatus(todo.id, todo.status);
 	const isTemplate = todo.repeat !== null;
 	const tags = todo.tagIds
@@ -237,6 +250,26 @@ export function TodoCard({ todo }: { todo: Todo }) {
 			/>
 		</Popover>
 	);
+	const place = choiceForTodo(todo);
+	const movePopover = (trigger: ReactNode) => (
+		<Popover
+			label="Move"
+			open={popover === "move"}
+			onOpenChange={(o) => setPopover(o ? "move" : null)}
+			trigger={trigger}
+		>
+			<ListPicker
+				data={data}
+				selected={place}
+				onSelect={(choice) => {
+					close();
+					moveTo([todo.id], choice);
+					toast.show(`Moved to ${choiceTitle(choice, data)}`);
+				}}
+			/>
+		</Popover>
+	);
+
 	const tagsPopover = (trigger: ReactNode) => (
 		<Popover
 			label="Tags"
@@ -360,6 +393,16 @@ export function TodoCard({ todo }: { todo: Todo }) {
 						"reminder",
 						"reminder",
 					)}
+				{place &&
+					place.type !== "inbox" &&
+					movePopover(
+						<ChipButton
+							icon={<LayersIcon className="size-3.5" />}
+							title="Move to another list"
+						>
+							{choiceTitle(place, data)}
+						</ChipButton>,
+					)}
 				{tags.length > 0 &&
 					tagsPopover(
 						<ChipButton icon={<TagIcon className="size-3.5" />}>
@@ -386,6 +429,12 @@ export function TodoCard({ todo }: { todo: Todo }) {
 						whenPopover(
 							<IconButton label="When">
 								{<CalendarIcon className="size-4" />}
+							</IconButton>,
+						)}
+					{(!place || place.type === "inbox") &&
+						movePopover(
+							<IconButton label="Move">
+								<LayersIcon className="size-4" />
 							</IconButton>,
 						)}
 					{tags.length === 0 &&

@@ -2,6 +2,7 @@
 
 import type { ViewContext, ViewData } from "../../shared/views";
 import { today } from "../../shared/views";
+import type { ListChoice } from "../editing/listOptions";
 import { insertAt, type Placed, placeMutations } from "../editing/reorder";
 import { keyAfter, maxKey } from "../lib/order";
 import type { Mutation } from "../sync/engine";
@@ -163,4 +164,34 @@ export function sidebarDropMutations(
 	}
 
 	return null;
+}
+
+/**
+ * Mutations for moving a to-do to a list chosen in the Move picker: the end of
+ * that list (or of that heading in its project). Null when nothing changes.
+ */
+export function moveTodoMutations(
+	id: string,
+	choice: ListChoice,
+	data: ViewData,
+	ctx: ViewContext,
+): Mutation[] | null {
+	if (choice.type !== "heading")
+		return sidebarDropMutations("todo", id, choice, data, ctx);
+	const under = live(data.todos).filter(
+		(t) => t.headingId === choice.id && t.id !== id,
+	);
+	return [
+		{
+			type: "upsert",
+			entity: "todo",
+			id,
+			patch: {
+				projectId: choice.projectId,
+				headingId: choice.id,
+				areaId: null,
+				sortKey: keyAfter(maxKey(under.map((t) => t.sortKey))),
+			},
+		},
+	];
 }

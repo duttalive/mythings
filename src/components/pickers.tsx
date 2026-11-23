@@ -8,8 +8,14 @@ import {
 	useState,
 } from "react";
 import type { LocalDate } from "../../shared/dates";
-import type { Area, Project, Tag } from "../../shared/schema";
-import { bySortKey } from "../../shared/views";
+import type { Tag } from "../../shared/schema";
+import { bySortKey, type ViewData } from "../../shared/views";
+import {
+	type ListChoice,
+	type ListOption,
+	listGroups,
+	sameChoice,
+} from "../editing/listOptions";
 import {
 	type WhenChoice,
 	type WhenFields,
@@ -23,6 +29,7 @@ import { Calendar } from "./Calendar";
 import {
 	AreaIcon,
 	BoxIcon,
+	BucketIcon,
 	CheckIcon,
 	CrossIcon,
 	InboxIcon,
@@ -326,57 +333,74 @@ export function TagPicker({
 	);
 }
 
-export type ListChoice =
-	| { type: "inbox" }
-	| { type: "project"; id: string }
-	| { type: "area"; id: string };
+export type { ListChoice } from "../editing/listOptions";
 
-/** Pick a destination list: the Inbox, an open project, or an area. */
+/**
+ * Pick a destination list: the Inbox, or an area, project or (with
+ * `headings`) a project's heading, grouped by Life Bucket. Typing searches
+ * them all and shows where each one is.
+ */
 export function ListPicker({
-	projects,
-	areas,
+	data,
 	selected,
 	onSelect,
+	headings = true,
 }: {
-	projects: Project[];
-	areas: Area[];
+	data: Pick<ViewData, "areas" | "buckets" | "projects" | "headings">;
 	selected?: ListChoice | null;
 	onSelect: (choice: ListChoice) => void;
+	headings?: boolean;
 }) {
 	const [query, setQuery] = useState("");
-	const options: {
-		choice: ListChoice;
-		title: string;
-		kind: "inbox" | "project" | "area";
-	}[] = [
-		{ choice: { type: "inbox" }, title: "Inbox", kind: "inbox" },
-		...projects
-			.filter(
-				(p) => p.deletedAt === null && p.status === "open" && p.repeat === null,
-			)
-			.sort(bySortKey)
-			.map((p) => ({
-				choice: { type: "project", id: p.id } as ListChoice,
-				title: p.title || "New Project",
-				kind: "project" as const,
-			})),
-		...areas
-			.filter((a) => a.deletedAt === null)
-			.sort(bySortKey)
-			.map((a) => ({
-				choice: { type: "area", id: a.id } as ListChoice,
-				title: a.title || "New Area",
-				kind: "area" as const,
-			})),
-	];
-	const shown = query.trim()
-		? fuzzyFilter(query, options, (o) => o.title)
-		: options;
-	const isSelected = (choice: ListChoice) =>
-		!!selected &&
-		selected.type === choice.type &&
-		("id" in selected ? selected.id : null) ===
-			("id" in choice ? choice.id : null);
+	const groups = useMemo(
+		() => listGroups(data, { headings }),
+		[data, headings],
+	);
+	const searching = query.trim() !== "";
+	const found = useMemo(
+		() =>
+			searching
+				? fuzzyFilter(
+						query,
+						groups.flatMap((g) => g.options),
+						(o) => o.title,
+					)
+				: [],
+		[searching, query, groups],
+	);
+	const first = searching ? found[0] : groups[0]?.options[0];
+
+	const option = (o: ListOption, showPath: boolean) => (
+		<PopoverOption
+			key={o.kind + ("id" in o.choice ? o.choice.id : "")}
+			pressed={sameChoice(selected, o.choice)}
+			icon={
+				o.kind === "inbox" ? (
+					<InboxIcon className="size-4 text-accent" />
+				) : o.kind === "area" ? (
+					<AreaIcon className="size-4" />
+				) : o.kind === "project" ? (
+					<ProgressRing
+						progress={{ completed: 0, total: 0 }}
+						decorative
+						className="size-3.5"
+					/>
+				) : (
+					<span aria-hidden className="ml-1.5 h-px w-2.5 bg-current" />
+				)
+			}
+			onSelect={() => onSelect(o.choice)}
+		>
+			<span className={o.depth === 1 && !showPath ? "pl-2" : ""}>
+				{o.title}
+				{showPath && o.path && (
+					<span className="ml-1.5 text-xs text-[var(--fg-muted)]">
+						{o.path}
+					</span>
+				)}
+			</span>
+		</PopoverOption>
+	);
 
 	return (
 		<div>
@@ -386,38 +410,37 @@ export function ListPicker({
 				value={query}
 				onChange={(e) => setQuery(e.target.value)}
 				onKeyDown={(e) => {
-					if (e.key === "Enter" && shown[0]) {
+					if (e.key === "Enter" && first) {
 						e.preventDefault();
-						onSelect(shown[0].choice);
+						onSelect(first.choice);
 					}
 				}}
 				placeholder="Move to…"
 				aria-label="Find a list"
 				className={inputClass}
 			/>
-			<div className="max-h-64 overflow-y-auto">
-				{shown.map((option) => (
-					<PopoverOption
-						key={option.kind + ("id" in option.choice ? option.choice.id : "")}
-						pressed={isSelected(option.choice)}
-						icon={
-							option.kind === "inbox" ? (
-								<InboxIcon className="size-4 text-accent" />
-							) : option.kind === "area" ? (
-								<AreaIcon className="size-4" />
-							) : (
-								<ProgressRing
-									progress={{ completed: 0, total: 0 }}
-									decorative
-									className="size-3.5"
-								/>
-							)
-						}
-						onSelect={() => onSelect(option.choice)}
-					>
-						{option.title}
-					</PopoverOption>
-				))}
+			<div className="max-h-72 overflow-y-auto">
+				{searching ? (
+					found.length > 0 ? (
+						found.map((o) => option(o, true))
+					) : (
+						<p className="px-2 py-1.5 text-xs text-[var(--fg-muted)]">
+							No list matches.
+						</p>
+					)
+				) : (
+					groups.map((g, index) => (
+						<div key={g.bucket?.id ?? `loose-${index}`}>
+							{g.bucket && (
+								<p className="mt-1 flex items-center gap-1.5 border-t border-[var(--border)] px-2 pt-2 pb-0.5 text-xs font-semibold text-[var(--fg-muted)]">
+									<BucketIcon className="size-3.5" />
+									{g.bucket.title}
+								</p>
+							)}
+							{g.options.map((o) => option(o, false))}
+						</div>
+					))
+				)}
 			</div>
 		</div>
 	);

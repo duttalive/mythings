@@ -284,8 +284,8 @@ export function QuickEntry({
 						)}
 					>
 						<ListPicker
-							projects={data.projects}
-							areas={data.areas}
+							data={data}
+							headings={false}
 							selected={effectiveList}
 							onSelect={(choice) => {
 								setList(choice);
