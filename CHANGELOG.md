@@ -2,6 +2,17 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.4.0 — 2026-11-23
+
+A Scratch Pad for every to-do, and easier ways to organize.
+
+- Scratch Pad: a to-do's notes are now a place to write as much as you need. Type / for headings, bulleted and numbered lists, checkboxes, toggles, callouts, quotes, code, tables and dividers, or use Markdown shortcuts like # and - as you type. Your existing notes open just as they were.
+- Open any to-do in the Scratch Pad (the notes icon at the bottom of an open to-do) to write on a full page.
+- The new Scratch Pad tab, from the icon at the top of every page, Quick Find or g then p, lists every to-do with notes and searches all of them. Quick Find also shows where your search words appear in notes.
+- Move a to-do from the open to-do: click the list it's in (or the Move icon) and pick another. The list picker now groups areas and projects by Life Bucket and includes project headings.
+- A Life Bucket's page has New Area and New Project buttons, so you can add one right where it belongs.
+- If you close or reload the page right after typing, what you typed is still saved.
+
 ## Version 2.3.0 — 2026-11-20
 
 Choose how long to-do titles look.
