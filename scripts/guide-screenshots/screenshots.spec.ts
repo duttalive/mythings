@@ -255,14 +255,14 @@ test("guide screenshots", async ({ page, browser }) => {
 		await page.keyboard.press("Escape");
 	});
 
-	await step(page, "scratch pad", async () => {
+	await step(page, "task notes", async () => {
 		await open(page, "/today");
 		await row(page, "Book a van for moving day").click();
-		await page.getByRole("link", { name: "Open in Scratch Pad" }).click();
-		const pad = page.getByRole("textbox", { name: "Scratch Pad" });
+		await page.getByRole("link", { name: "Open in Task Notes" }).click();
+		const pad = page.getByRole("textbox", { name: "Task Notes" });
 		await expect(pad.locator("table")).toBeVisible();
 		await page.getByRole("textbox", { name: "To-do title" }).blur();
-		await shot(page, "scratch-page");
+		await shot(page, "task-notes-page");
 		// The / menu, on a new line at the end (undone afterwards).
 		await pad.locator("p", { hasText: "parking permit" }).click();
 		await page.keyboard.press("End");
@@ -270,18 +270,18 @@ test("guide screenshots", async ({ page, browser }) => {
 		await page.keyboard.type("/");
 		const menu = page.getByRole("listbox", { name: "Insert a block" });
 		await expect(menu).toBeVisible();
-		await shot(page, "scratch-slash", menu, pad.locator("[data-callout]"));
+		await shot(page, "task-notes-slash", menu, pad.locator("[data-callout]"));
 		await page.keyboard.press("Escape");
 		await page.keyboard.press("ControlOrMeta+z");
 		await page.keyboard.press("ControlOrMeta+z");
 		await page
-			.getByRole("link", { name: "Scratch Pad", exact: true })
+			.getByRole("link", { name: "Task Notes", exact: true })
 			.first()
 			.click();
 		await expect(
-			page.getByRole("heading", { name: "Scratch Pad" }),
+			page.getByRole("heading", { name: "Task Notes" }),
 		).toBeVisible();
-		await shot(page, "scratch-pad");
+		await shot(page, "task-notes-pad");
 	});
 
 	await step(page, "when popover", async () => {

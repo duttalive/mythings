@@ -8,13 +8,16 @@ import { APP_VERSION } from "../changelog";
 import {
 	BellIcon,
 	BoxIcon,
+	BucketIcon,
 	CalendarIcon,
 	CloudOffIcon,
+	EyeOffIcon,
 	FlagIcon,
 	InboxIcon,
 	LayersIcon,
 	LogbookIcon,
 	MoonIcon,
+	NotesIcon,
 	RepeatIcon,
 	SearchIcon,
 	StarIcon,
@@ -154,6 +157,18 @@ export function HomePage({ go }: Props) {
 						<Feature icon={<SearchIcon />} title="Keyboard first">
 							Quick Entry and Quick Find from anywhere, and shortcuts for nearly
 							everything.
+						</Feature>
+						<Feature icon={<BucketIcon />} title="Life Buckets">
+							Group the big parts of your life, like Work or Family. Areas hold
+							what keeps going; projects run to a finish.
+						</Feature>
+						<Feature icon={<NotesIcon />} title="Task Notes">
+							Notion-style notes on any to-do: headings, checklists, toggles and
+							tables. Open them full page and search them all.
+						</Feature>
+						<Feature icon={<EyeOffIcon />} title="End-to-end encryption">
+							Turn it on and your to-dos are locked on your devices before they
+							sync. Only you can read them.
 						</Feature>
 						<Feature icon={<BellIcon />} title="Reminders that arrive">
 							Notifications on your phone and desktop, without another app.

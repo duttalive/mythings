@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { matchesNotes, plainText, snippet } from "../../src/notes/plain";
 
-describe("Scratch Pad text", () => {
+describe("Task Notes text", () => {
 	it("drops Markdown but keeps what was typed", () => {
 		expect(
 			plainText(

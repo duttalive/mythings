@@ -129,6 +129,11 @@ export function SettingsPage() {
 						/>
 					)}
 				</Field>
+				<Toggle
+					label="Full width"
+					checked={settings.fullWidth ?? false}
+					onChange={(fullWidth) => save({ settings: { fullWidth } })}
+				/>
 			</Section>
 
 			<Section title="Date & time">

@@ -134,3 +134,33 @@ test("long titles wrap by default; One line is saved with the account", async ({
 	);
 	expect(await titleHeight(other)).toBeLessThan(30);
 });
+
+test("full width: one switch in the top bar and Settings, off by default, on every list", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1600, height: 900 });
+	await signUp(page);
+	await open(page, "/inbox");
+	const content = page.locator("main article").locator("..");
+	const width = async () => (await content.boundingBox())?.width ?? 0;
+	expect(await width()).toBeLessThanOrEqual(720);
+
+	const button = page.getByRole("button", { name: "Full width" });
+	await expect(button).toHaveAttribute("aria-pressed", "false");
+	await button.click();
+	await expect(button).toHaveAttribute("aria-pressed", "true");
+	await expect.poll(width).toBeGreaterThan(1000);
+	// The same on other lists, and after a reload.
+	await open(page, "/today");
+	await expect.poll(width).toBeGreaterThan(1000);
+	await page.reload();
+	await expect.poll(width).toBeGreaterThan(1000);
+	// Settings shows it, and turns it off again.
+	await open(page, "/settings");
+	expect(await width()).toBeLessThanOrEqual(720);
+	const toggle = page.getByRole("switch", { name: "Full width" });
+	await expect(toggle).toBeChecked();
+	await toggle.uncheck();
+	await open(page, "/today");
+	await expect.poll(width).toBeLessThanOrEqual(720);
+});

@@ -1,4 +1,4 @@
-// The Scratch Pad editor's building blocks (SPEC §10.2): Notion-style blocks
+// The Task Notes editor's building blocks (SPEC §10.2): Notion-style blocks
 // that are saved as Markdown in a to-do's `notes`, so sync, encryption, export
 // and repeats keep working on plain text. Toggles and callouts use Pandoc-style
 // `:::toggle` / `:::callout` blocks; tables and checkboxes use GitHub Markdown.

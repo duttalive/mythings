@@ -1,6 +1,6 @@
-// The Scratch Pad: every to-do's notes in one searchable place, and a full
+// Task Notes: every to-do's notes in one searchable place, and a full
 // page for writing in one (SPEC §10.10). Not in the sidebar: it opens from the
-// top bar, Quick Find or `g p`.
+// top bar, Quick Find or `g n`.
 
 import { Link, useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -22,7 +22,7 @@ import { Missing } from "./not-found";
 
 const SAVE_DELAY_MS = 400;
 
-/** Where a to-do is, for the Scratch Pad's list: "Work › Launch website". */
+/** Where a to-do is, for the Task Notes' list: "Work › Launch website". */
 function useWhere() {
 	const { areas, buckets, projects } = useListData();
 	return useCallback(
@@ -47,7 +47,7 @@ function useWhere() {
 	);
 }
 
-export function ScratchPadPage() {
+export function TaskNotesPage() {
 	const { data, ctx } = useListData();
 	const where = useWhere();
 	const [query, setQuery] = useState("");
@@ -66,7 +66,7 @@ export function ScratchPadPage() {
 
 	return (
 		<ListPage
-			title="Scratch Pad"
+			title="Task Notes"
 			icon={<NotesIcon className="size-7 shrink-0 text-accent" />}
 		>
 			<label className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 focus-within:border-accent">
@@ -94,7 +94,7 @@ export function ScratchPadPage() {
 						return (
 							<li key={todo.id}>
 								<Link
-									to="/scratch/$todoId"
+									to="/notes/$todoId"
 									params={{ todoId: todo.id }}
 									className="block rounded-lg px-3 py-2.5 hover:bg-[var(--hover)]"
 								>
@@ -134,16 +134,16 @@ export function ScratchPadPage() {
 }
 
 /** One to-do's notes as a full page. */
-export function ScratchPage() {
+export function TaskNotePage() {
 	const { todoId } = useParams({ strict: false });
 	const { data, ctx } = useListData();
 	const todo = data.todos.find((t) => t.id === todoId);
 	if (!todo) return <Missing what="to-do" />;
 	// Re-mount per to-do so each page starts from its own notes.
-	return <ScratchEditor key={todo.id} todo={todo} today={ctx.today} />;
+	return <TaskNoteEditor key={todo.id} todo={todo} today={ctx.today} />;
 }
 
-function ScratchEditor({ todo, today }: { todo: Todo; today: string }) {
+function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 	const ops = useOps();
 	const where = useWhere();
 	const { toggleComplete, displayStatus } = useEditing();
@@ -208,11 +208,8 @@ function ScratchEditor({ todo, today }: { todo: Todo; today: string }) {
 			}
 			header={
 				<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--fg-muted)]">
-					<Link
-						to="/scratch"
-						className="hover:text-[var(--fg)] hover:underline"
-					>
-						Scratch Pad
+					<Link to="/notes" className="hover:text-[var(--fg)] hover:underline">
+						Task Notes
 					</Link>
 					<span aria-hidden>·</span>
 					<Link
@@ -234,7 +231,7 @@ function ScratchEditor({ todo, today }: { todo: Todo; today: string }) {
 				}}
 				editable={!readOnly}
 				autoFocus={!readOnly}
-				label="Scratch Pad"
+				label="Task Notes"
 				placeholder="Write anything. Type / for headings, lists, toggles, tables…"
 				variant="page"
 			/>

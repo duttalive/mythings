@@ -8,7 +8,7 @@ const manager = new MarkdownManager({
 });
 const roundTrip = (md: string) => manager.serialize(manager.parse(md)).trim();
 
-describe("Scratch Pad Markdown", () => {
+describe("Task Notes Markdown", () => {
 	it.each([
 		["plain", "Call the garage before Friday."],
 		["two lines", "First line\nSecond line"],

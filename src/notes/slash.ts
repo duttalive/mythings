@@ -1,4 +1,4 @@
-// The "/" menu: type / in the Scratch Pad to insert a block. The menu itself
+// The "/" menu: type / in Task Notes to insert a block. The menu itself
 // is drawn by NotesEditor from the state this reports.
 
 import { type Editor, Extension, type Range } from "@tiptap/core";

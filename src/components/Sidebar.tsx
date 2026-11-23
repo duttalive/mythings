@@ -23,6 +23,7 @@ import {
 	sidebarTree,
 } from "../../shared/views";
 import { useAuth } from "../auth/AuthGate";
+import { useSaveSettings } from "../auth/useSaveSettings";
 import { useListData } from "../data";
 import { type DragData, useDndRegistry } from "../dnd/DndProvider";
 import { canDrop, type SidebarTarget } from "../dnd/drop";
@@ -554,9 +555,26 @@ export function Sidebar() {
 	const { user } = useAuth();
 	const setCollapsed = useSidebarCollapse();
 	const [addingTag, setAddingTag] = useState(false);
+	const saveSettings = useSaveSettings();
+	const tagsHidden = user.settings.tagsCollapsed === true;
+	const showTags = useCallback(() => {
+		if (tagsHidden) void saveSettings({ tagsCollapsed: false });
+	}, [tagsHidden, saveSettings]);
+	// Visiting a tag opens the Tags section, once per visit, so it can be seen.
+	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const shownFor = useRef<string | null>(null);
+	useEffect(() => {
+		if (!pathname.startsWith("/tag/") || shownFor.current === pathname) return;
+		shownFor.current = pathname;
+		showTags();
+	}, [pathname, showTags]);
 	const counts = useMemo(() => sidebarCounts(data, ctx), [data, ctx]);
 	const tree = useMemo(() => sidebarTree(data), [data]);
 	const tags = useMemo(() => tagTree(data.tags), [data.tags]);
+	const liveTagCount = useMemo(
+		() => data.tags.filter((t) => t.deletedAt === null).length,
+		[data.tags],
+	);
 	const tagDrop = useTagDrop(data.tags);
 
 	const projectLink = (project: Project) => (
@@ -803,29 +821,56 @@ export function Sidebar() {
 				</SortableList>
 
 				<div className="mt-5 flex flex-col gap-px">
-					<div className="flex items-center justify-between pr-1 pb-1 pl-2">
-						<h2 className="text-xs font-semibold text-[var(--fg-muted)]">
+					<div className="flex items-center gap-1 pr-1 pb-1 pl-2">
+						<h2 className="flex-1 text-xs font-semibold text-[var(--fg-muted)]">
 							Tags
 						</h2>
+						{tagsHidden && liveTagCount > 0 && (
+							<HiddenCount count={liveTagCount} what="tag" />
+						)}
 						<button
 							type="button"
-							onClick={() => setAddingTag(true)}
+							onClick={() => {
+								showTags();
+								setAddingTag(true);
+							}}
 							aria-label="New tag"
 							title="New tag"
 							className="rounded p-0.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:-my-2 pointer-coarse:p-3"
 						>
 							<PlusIcon className="size-3.5 pointer-coarse:size-4" />
 						</button>
+						{liveTagCount > 0 && (
+							<button
+								type="button"
+								onClick={() =>
+									void saveSettings({ tagsCollapsed: !tagsHidden })
+								}
+								aria-expanded={!tagsHidden}
+								aria-controls={tagsHidden ? undefined : "sidebar-tags"}
+								aria-label={tagsHidden ? "Show tags" : "Hide tags"}
+								title={tagsHidden ? "Show tags" : "Hide tags"}
+								className="rounded p-0.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:-my-2 pointer-coarse:p-3"
+							>
+								<ChevronIcon
+									className={`size-3.5 pointer-coarse:size-4 transition-transform duration-150 ${tagsHidden ? "" : "rotate-90"}`}
+								/>
+							</button>
+						)}
 					</div>
-					{tags.map((node) => (
-						<TagBranch
-							key={node.tag.id}
-							node={node}
-							depth={0}
-							setCollapsed={setCollapsed}
-							drop={tagDrop}
-						/>
-					))}
+					{!tagsHidden && (
+						<div id="sidebar-tags" className="flex flex-col gap-px">
+							{tags.map((node) => (
+								<TagBranch
+									key={node.tag.id}
+									node={node}
+									depth={0}
+									setCollapsed={setCollapsed}
+									drop={tagDrop}
+								/>
+							))}
+						</div>
+					)}
 					{addingTag && <NewTagField onDone={() => setAddingTag(false)} />}
 				</div>
 			</nav>

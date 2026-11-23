@@ -75,8 +75,8 @@ const LISTS: { title: string; to: string; icon: ReactNode }[] = [
 		icon: <FlagIcon className="size-4 text-overdue" />,
 	},
 	{
-		title: "Scratch Pad",
-		to: "/scratch",
+		title: "Task Notes",
+		to: "/notes",
 		icon: <NotesIcon className="size-4 text-accent" />,
 	},
 	{

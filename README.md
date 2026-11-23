@@ -14,14 +14,16 @@ mythings follows the Things 3 way of working (Inbox → Today → Upcoming → A
 
 ## Features
 
-- **Lists that match how you plan:** Inbox, Today (with This Evening), Upcoming, Anytime, Someday and Logbook, plus Areas, Projects, Headings, checklists and nested tags.
+- **Lists that match how you plan:** Inbox, Today (with This Evening), Upcoming, Anytime, Someday, Overdue and Logbook, plus Life Buckets that group Areas and Projects, Headings, checklists and nested tags.
+- **Task Notes:** Notion-style notes on every to-do (headings, lists, checkboxes, toggles, callouts, tables), stored as Markdown, with a full-page view and a searchable Task Notes page.
+- **End-to-end encryption (optional):** to-do text is encrypted on your devices before it syncs.
 - **Natural scheduling:** type "tomorrow", "next fri" or "in 2 weeks"; deadlines, reminders and repeating to-dos (fixed or after completion).
 - **Keyboard first:** Quick Entry, Quick Find and shortcuts for nearly everything, with multi-select and drag and drop.
 - **Offline and installable:** a PWA for desktop and phone. Changes made offline are queued and synced when the connection returns, even after the tab is closed (Background Sync, where supported).
 - **Real time across devices:** edits stream over a WebSocket.
 - **Reminders:** Web Push notifications, with no third-party service.
 - **Your data stays yours:** export everything as JSON at any time, and import it into any instance.
-- **Comfortable to use:** light and dark themes, adjustable text size, finger-sized targets on phones, and colours chosen for 4.5:1 contrast.
+- **Comfortable to use:** light and dark themes, adjustable text size, an optional full-width layout, finger-sized targets on phones, and colours chosen for 4.5:1 contrast.
 
 ## How it works
 

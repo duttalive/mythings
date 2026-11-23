@@ -5,6 +5,7 @@ import {
 	open,
 	quickEntry,
 	row,
+	signIn,
 	signUp,
 } from "./helpers";
 
@@ -247,4 +248,41 @@ test("tags can be nested, reordered and deleted from the sidebar", async ({
 	await expect(dialog).toContainText("1 tag inside it goes too.");
 	await dialog.getByRole("button", { name: "Delete Tag" }).click();
 	await expect.poll(tagNames).toEqual(["home"]);
+});
+
+test("the whole Tags section hides like a Life Bucket, stays hidden, and opens when a tag is visited", async ({
+	browser,
+}) => {
+	const page = await (await browser.newContext()).newPage();
+	const email = await signUp(page);
+	await open(page, "/inbox");
+	await quickEntry(page, "Buy milk #shop");
+	await quickEntry(page, "Plan week #work");
+	await expectSynced(page);
+	const sidebar = page.getByRole("navigation", { name: "Lists" });
+	const shop = sidebar.getByRole("link", { name: "shop" });
+	await expect(shop).toBeVisible();
+
+	await sidebar.getByRole("button", { name: "Hide tags" }).click();
+	await expect(shop).toBeHidden();
+	await expect(sidebar.getByText("(2 hidden tags)")).toBeAttached();
+
+	// Saved with the account: another device has it hidden too.
+	const other = await (await browser.newContext()).newPage();
+	await signIn(other, email);
+	await open(other, "/inbox");
+	const otherSidebar = other.getByRole("navigation", { name: "Lists" });
+	await expect(
+		otherSidebar.getByRole("button", { name: "Show tags" }),
+	).toBeVisible();
+	await expect(otherSidebar.getByRole("link", { name: "shop" })).toBeHidden();
+
+	// Opening a tag (here from Quick Find) shows the section again.
+	await page.keyboard.type("shop");
+	await page.keyboard.press("Enter");
+	await expect(page).toHaveURL(/\/tag\//);
+	await expect(shop).toBeVisible();
+	await expect(
+		sidebar.getByRole("button", { name: "Hide tags" }),
+	).toBeVisible();
 });

@@ -14,9 +14,9 @@ import { DeadlinesPage } from "./routes/deadlines";
 import { InboxPage } from "./routes/inbox";
 import { LogbookPage } from "./routes/logbook";
 import { NotFound } from "./routes/not-found";
+import { TaskNotePage, TaskNotesPage } from "./routes/notes";
 import { OverduePage } from "./routes/overdue";
 import { ProjectPage } from "./routes/project";
-import { ScratchPadPage, ScratchPage } from "./routes/scratch";
 import { SharePage } from "./routes/share";
 import { SomedayPage } from "./routes/someday";
 import { TagPage } from "./routes/tag";
@@ -57,9 +57,24 @@ const routeTree = rootRoute.addChildren([
 	// Not in the sidebar: reached from Quick Find.
 	page("/deadlines", DeadlinesPage),
 	page("/trash", TrashPage),
-	// Not in the sidebar: the top bar, Quick Find and `g p` open it.
-	page("/scratch", ScratchPadPage),
-	page("/scratch/$todoId", ScratchPage),
+	// Not in the sidebar: the top bar, Quick Find and `g n` open it.
+	page("/notes", TaskNotesPage),
+	page("/notes/$todoId", TaskNotePage),
+	// Task Notes was called Scratch Pad in 2.4.0: keep its old links working.
+	createRoute({
+		getParentRoute: () => rootRoute,
+		path: "/scratch",
+		beforeLoad: () => {
+			throw redirect({ to: "/notes" });
+		},
+	}),
+	createRoute({
+		getParentRoute: () => rootRoute,
+		path: "/scratch/$todoId",
+		beforeLoad: ({ params }) => {
+			throw redirect({ to: "/notes/$todoId", params });
+		},
+	}),
 	page("/project/$projectId", ProjectPage),
 	page("/area/$areaId", AreaPage),
 	page("/bucket/$bucketId", BucketPage),

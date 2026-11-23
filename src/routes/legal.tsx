@@ -6,7 +6,7 @@ import { type ReactNode, useEffect } from "react";
 
 export const LEGAL_CONTACT = "dutta@dynocoder.com";
 /** When the policies last changed. Update it with any change to their text. */
-export const LEGAL_UPDATED = "2026-11-20";
+export const LEGAL_UPDATED = "2026-11-23";
 
 const updated = new Date(`${LEGAL_UPDATED}T12:00:00Z`).toLocaleDateString(
 	undefined,
@@ -110,26 +110,27 @@ export function PrivacyPage() {
 					<strong>Your account:</strong> your email address, your name (if you
 					give one), a one-way hash of a key your device derives from your
 					password (we never receive the password itself), your time zone, your
-					app settings, and when you signed up.
+					app settings (such as theme, layout and which parts of the sidebar are
+					hidden), and when you signed up.
 				</li>
 				<li>
 					<strong>Your to-dos:</strong> everything you put into mythings
-					(to-dos, notes, checklists, projects, areas, Life Buckets, headings,
-					tags, dates, reminders and repeat rules), and items in Trash until
-					they're deleted permanently (after 30 days, or sooner if you empty
-					Trash).
+					(to-dos, Task Notes, checklists, projects, areas, Life Buckets,
+					headings, tags, dates, reminders and repeat rules), and items in Trash
+					until they're deleted permanently (after 30 days, or sooner if you
+					empty Trash).
 				</li>
 				<li>
 					<strong>If you turn on end-to-end encryption:</strong> your to-do
-					titles and notes, checklist items, and the names of your projects,
-					areas, Life Buckets, headings and tags are encrypted on your devices,
-					and we store only the encrypted form, which we can't read. We also
-					store your encryption key, locked with your password and with your
-					recovery key, neither of which we have. Dates, reminder times, repeat
-					rules, whether items are completed or in the Trash, and how they're
-					arranged stay readable to us so that repeats, reminders and the Trash
-					keep working. Because we can't read encrypted content, we can't
-					recover it if you lose both your password and your recovery key.
+					titles and Task Notes, checklist items, and the names of your
+					projects, areas, Life Buckets, headings and tags are encrypted on your
+					devices, and we store only the encrypted form, which we can't read. We
+					also store your encryption key, locked with your password and with
+					your recovery key, neither of which we have. Dates, reminder times,
+					repeat rules, whether items are completed or in the Trash, and how
+					they're arranged stay readable to us so that repeats, reminders and
+					the Trash keep working. Because we can't read encrypted content, we
+					can't recover it if you lose both your password and your recovery key.
 				</li>
 				<li>
 					<strong>Sign-in sessions:</strong> for each device you're signed in
@@ -323,11 +324,11 @@ export function TermsPage() {
 
 			<h2>Your content</h2>
 			<p>
-				What you put into mythings stays yours. You give us only the permission
-				we need to store, sync and show it to you, and to send the reminders you
-				set. We don't look at your to-dos except when you ask us to for support,
-				or when the law requires it (and with end-to-end encryption on, we can't
-				read them at all).
+				What you put into mythings, including your Task Notes, stays yours. You
+				give us only the permission we need to store, sync and show it to you,
+				and to send the reminders you set. We don't look at your to-dos except
+				when you ask us to for support, or when the law requires it (and with
+				end-to-end encryption on, we can't read them at all).
 			</p>
 
 			<h2>Acceptable use</h2>

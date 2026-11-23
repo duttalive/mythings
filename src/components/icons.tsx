@@ -155,6 +155,15 @@ export const SidebarIcon = (p: IconProps) => (
 	</Icon>
 );
 
+/** Full width: arrows pointing out to both sides. */
+export const WidthIcon = (p: IconProps) => (
+	<Icon {...p}>
+		<path d="M2.5 10h15" />
+		<path d="m5.5 7-3 3 3 3" />
+		<path d="m14.5 7 3 3-3 3" />
+	</Icon>
+);
+
 export const ChevronIcon = (p: IconProps) => (
 	<Icon {...p}>
 		<path d="m7.5 5 5 5-5 5" />

@@ -230,7 +230,7 @@ body {
 	white-space: nowrap;
 }
 
-/* The Scratch Pad editor (src/notes): Notion-style blocks in a to-do's notes. */
+/* The Task Notes editor (src/notes): Notion-style blocks in a to-do's notes. */
 .notes-editor {
 	outline: none;
 	font-size: 0.875rem;

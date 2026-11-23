@@ -1,4 +1,4 @@
-// Scratch Pad text without its Markdown, for search results and previews.
+// Task Notes text without its Markdown, for search results and previews.
 
 /** Marks an escaped character while markup is stripped (a private-use character). */
 const KEEP = "\uE000";

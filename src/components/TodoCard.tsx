@@ -460,10 +460,10 @@ export function TodoCard({ todo }: { todo: Todo }) {
 							</IconButton>,
 						)}
 					<Link
-						to="/scratch/$todoId"
+						to="/notes/$todoId"
 						params={{ todoId: todo.id }}
-						aria-label="Open in Scratch Pad"
-						title="Open in Scratch Pad"
+						aria-label="Open in Task Notes"
+						title="Open in Task Notes"
 						className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:p-2.5"
 					>
 						<NotesIcon className="size-4" />

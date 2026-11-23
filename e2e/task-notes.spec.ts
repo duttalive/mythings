@@ -32,7 +32,7 @@ async function writePlan(page: Page) {
 	await expect(notes.locator("[data-toggle]")).toContainText("Van at nine");
 }
 
-test("a to-do's notes are a Scratch Pad: blocks, a full page, and search", async ({
+test("a to-do's notes are Task Notes: blocks, a full page, and search", async ({
 	page,
 }) => {
 	await signUp(page);
@@ -52,11 +52,9 @@ test("a to-do's notes are a Scratch Pad: blocks, a full page, and search", async
 	await expect(page.getByRole("textbox", { name: "Notes" })).toBeHidden();
 	await expectSynced(page);
 
-	// The Scratch Pad tab lists it and searches the notes.
-	await page.getByRole("link", { name: "Scratch Pad" }).click();
-	await expect(
-		page.getByRole("heading", { name: "Scratch Pad" }),
-	).toBeVisible();
+	// The Task Notes page lists it and searches the notes.
+	await page.getByRole("link", { name: "Task Notes" }).click();
+	await expect(page.getByRole("heading", { name: "Task Notes" })).toBeVisible();
 	const search = page.getByRole("searchbox", { name: "Search notes" });
 	await search.fill("van nine");
 	await expect(page.getByRole("link", { name: /Move flat/ })).toBeVisible();
@@ -66,7 +64,7 @@ test("a to-do's notes are a Scratch Pad: blocks, a full page, and search", async
 	await page.getByRole("link", { name: /Move flat/ }).click();
 
 	// Its full page keeps every block after a reload, and edits save.
-	const pad = page.getByRole("textbox", { name: "Scratch Pad" });
+	const pad = page.getByRole("textbox", { name: "Task Notes" });
 	await expect(pad.locator("h1")).toHaveText("Plan");
 	await pad.locator("p", { hasText: "Van at nine" }).click();
 	await page.keyboard.press("End");
@@ -79,19 +77,19 @@ test("a to-do's notes are a Scratch Pad: blocks, a full page, and search", async
 	await expect(pad.locator("[data-toggle]")).toContainText("Van at nine sharp");
 	await expect(pad.locator('ul[data-type="taskList"] li')).toHaveCount(2);
 
-	// Quick Find finds words in notes, too, and opens the Scratch Pad.
+	// Quick Find finds words in notes, too, and opens Task Notes.
 	await open(page, "/today");
 	await page.keyboard.type("sharp");
 	const find = page.getByRole("dialog");
 	await expect(find.getByText("Move flat")).toBeVisible();
 	await expect(find.getByText(/Van at nine sharp/)).toBeVisible();
 	await page.keyboard.press("Escape");
-	await page.keyboard.type("scratch");
+	await page.keyboard.type("task notes");
 	await page.keyboard.press("Enter");
-	await expect(page).toHaveURL(/\/scratch$/);
+	await expect(page).toHaveURL(/\/notes$/);
 });
 
-test("Scratch Pad notes stay readable with encryption on", async ({ page }) => {
+test("Task Notes stay readable with encryption on", async ({ page }) => {
 	await signUp(page);
 	await page.goto("/settings");
 	await page.getByRole("button", { name: "Turn on encryption…" }).click();
@@ -106,6 +104,8 @@ test("Scratch Pad notes stay readable with encryption on", async ({ page }) => {
 	await writePlan(page);
 	await page.keyboard.press("Escape");
 	await page.keyboard.press("Escape");
+	// Saved (encrypting first takes a moment) before leaving the page.
+	await expect(row(page, "Secret plan").getByLabel("Has notes")).toBeVisible();
 	await expectSynced(page);
 
 	// The server only has envelopes.
@@ -114,11 +114,11 @@ test("Scratch Pad notes stay readable with encryption on", async ({ page }) => {
 	expect(body).not.toContain("Van at nine");
 	expect(body).not.toContain("Plan");
 
-	await page.goto("/scratch");
+	await page.goto("/notes");
 	await expectReady(page);
 	await page.getByRole("searchbox", { name: "Search notes" }).fill("nine");
 	await page.getByRole("link", { name: /Secret plan/ }).click();
 	await expect(
-		page.getByRole("textbox", { name: "Scratch Pad" }).locator("h1"),
+		page.getByRole("textbox", { name: "Task Notes" }).locator("h1"),
 	).toHaveText("Plan");
 });

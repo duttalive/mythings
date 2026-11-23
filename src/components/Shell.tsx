@@ -1,5 +1,7 @@
 import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useAuth } from "../auth/AuthGate";
+import { useSaveSettings } from "../auth/useSaveSettings";
 import { ListDataProvider } from "../data";
 import { DndProvider } from "../dnd/DndProvider";
 import { EditingProvider } from "../editing/EditingProvider";
@@ -8,7 +10,13 @@ import { KeyboardProvider, useKeyboard } from "../keyboard/KeyboardProvider";
 import { preloadNotesEditor } from "../notes";
 import { useSyncStatus } from "../sync/hooks";
 import { BulkBarProvider } from "./BulkBar";
-import { CloudOffIcon, NotesIcon, SearchIcon, SidebarIcon } from "./icons";
+import {
+	CloudOffIcon,
+	NotesIcon,
+	SearchIcon,
+	SidebarIcon,
+	WidthIcon,
+} from "./icons";
 import { NewTodoButton } from "./NewTodoButton";
 import { Sidebar } from "./Sidebar";
 import { SidebarResizer, useSidebarWidth } from "./SidebarResizer";
@@ -48,11 +56,15 @@ export function Shell() {
 	const { pathname } = useLocation();
 	const sidebar = useSidebarWidth();
 
-	// Fetch the Scratch Pad editor once things settle, so opening a to-do is instant.
+	// Fetch the Task Notes editor once things settle, so opening a to-do is instant.
 	useEffect(() => {
 		const timer = setTimeout(preloadNotesEditor, 2000);
 		return () => clearTimeout(timer);
 	}, []);
+
+	const { user } = useAuth();
+	const listPage = isListPage(pathname);
+	const wide = listPage && user.settings.fullWidth === true;
 
 	// Navigating from the drawer closes it.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: runs on route change
@@ -128,13 +140,14 @@ export function Shell() {
 												</button>
 												<SearchButton />
 												<Link
-													to="/scratch"
-													aria-label="Scratch Pad"
-													title="Scratch Pad (g then p)"
+													to="/notes"
+													aria-label="Task Notes"
+													title="Task Notes (g then n)"
 													className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-2.5 [&.active]:text-accent"
 												>
 													<NotesIcon className="size-5" />
 												</Link>
+												{listPage && <FullWidthButton />}
 												{offline && (
 													<span
 														className="ml-auto flex items-center gap-1.5 rounded-full bg-[var(--hover)] px-2.5 py-1 text-xs font-medium text-[var(--fg-muted)]"
@@ -149,7 +162,9 @@ export function Shell() {
 											<div
 												// Re-mounted per page, so each list fades in.
 												key={pathname}
-												className="mx-auto w-full max-w-[720px] animate-fade-in px-4 pb-24 pt-4 md:px-10"
+												className={`mx-auto w-full animate-fade-in px-4 pb-24 pt-4 md:px-10 ${
+													wide ? "max-w-none" : "max-w-[720px]"
+												}`}
 											>
 												<Outlet />
 											</div>
@@ -208,6 +223,48 @@ function SearchButton() {
 			className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-2.5"
 		>
 			<SearchIcon className="size-5" />
+		</button>
+	);
+}
+
+/** Pages that hold to-dos or notes, which can use the whole width. */
+const LIST_PAGES = new Set([
+	"inbox",
+	"today",
+	"upcoming",
+	"anytime",
+	"someday",
+	"overdue",
+	"logbook",
+	"deadlines",
+	"project",
+	"area",
+	"bucket",
+	"tag",
+	"notes",
+]);
+
+function isListPage(pathname: string): boolean {
+	return LIST_PAGES.has(pathname.split("/")[1] ?? "");
+}
+
+/** Switches every list between a centered column and the whole width (synced). */
+function FullWidthButton() {
+	const { user } = useAuth();
+	const save = useSaveSettings();
+	const on = user.settings.fullWidth === true;
+	return (
+		<button
+			type="button"
+			onClick={() => void save({ fullWidth: !on })}
+			aria-pressed={on}
+			aria-label="Full width"
+			title={on ? "Use a centered column" : "Use the full width"}
+			className={`hidden rounded-md p-1.5 hover:bg-[var(--hover)] hover:text-[var(--fg)] md:block ${
+				on ? "text-accent" : "text-[var(--fg-muted)]"
+			}`}
+		>
+			<WidthIcon className="size-5" />
 		</button>
 	);
 }

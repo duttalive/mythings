@@ -43,9 +43,9 @@ export const SHORTCUTS: Shortcut[] = [
 		group: "Navigate",
 	},
 	{
-		combos: ["g i", "g t", "g u", "g a", "g s", "g o", "g l", "g p"],
+		combos: ["g i", "g t", "g u", "g a", "g s", "g o", "g l", "g n"],
 		label:
-			"Go to Inbox, Today, Upcoming, Anytime, Someday, Overdue, Logbook, Scratch Pad",
+			"Go to Inbox, Today, Upcoming, Anytime, Someday, Overdue, Logbook, Task Notes",
 		group: "Navigate",
 	},
 	{ combos: ["a…z"], label: "Quick Find (start typing)", group: "Navigate" },
@@ -86,5 +86,5 @@ export const LIST_KEYS: Record<string, string> = {
 	s: "/someday",
 	o: "/overdue",
 	l: "/logbook",
-	p: "/scratch",
+	n: "/notes",
 };

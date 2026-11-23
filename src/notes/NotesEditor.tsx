@@ -1,4 +1,4 @@
-// The Scratch Pad editor: Notion-style writing for a to-do's notes, saved as
+// The Task Notes editor: Notion-style writing for a to-do's notes, saved as
 // Markdown. Loaded on demand (see ./index.tsx) so the list views stay small.
 
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
@@ -13,7 +13,7 @@ export type NotesEditorProps = {
 	placeholder?: string;
 	editable?: boolean;
 	autoFocus?: boolean;
-	/** "card" for the open to-do, "page" for the Scratch Pad's full page. */
+	/** "card" for the open to-do, "page" for the Task Notes' full page. */
 	variant?: "card" | "page";
 };
 

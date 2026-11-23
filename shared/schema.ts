@@ -124,6 +124,10 @@ export const settingsSchema = z
 		logbookTiming: z.enum(["immediately", "daily"]),
 		/** Long to-do titles in lists: wrap onto more lines, or one line ending in "…". */
 		longTitles: z.enum(["wrap", "oneLine"]),
+		/** The sidebar's Tags section is hidden. */
+		tagsCollapsed: z.boolean(),
+		/** Lists use the whole width of the window instead of a centered column. */
+		fullWidth: z.boolean(),
 	})
 	.partial()
 	.strict();

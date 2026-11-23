@@ -1,4 +1,4 @@
-// The Scratch Pad editor, loaded on demand: the first time a to-do opens,
+// The Task Notes editor, loaded on demand: the first time a to-do opens,
 // the editor's code arrives (it's precached, so this works offline too).
 
 import { lazy, Suspense } from "react";
