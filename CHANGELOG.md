@@ -2,6 +2,16 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.4.1 — 2026-11-23
+
+Task Notes, a full-width layout, and a tidier sidebar.
+
+- Scratch Pad is now called Task Notes. Everything works the same; open it from the notes icon at the top of the page, Quick Find, or g then n. Old Scratch Pad links still work.
+- Full width: the new button at the top of every list (and Settings → Appearance → Full width) lets lists and Task Notes use the whole window instead of a centered column. It's off to start with and is saved with your account.
+- The Tags heading in the sidebar now has an arrow, like a Life Bucket, to hide or show all your tags at once. It's saved with your account, and visiting or adding a tag shows them again.
+- The home page now covers Life Buckets, Task Notes and end-to-end encryption.
+- The Privacy Policy and Terms mention Task Notes and that your settings include layout choices.
+
 ## Version 2.4.0 — 2026-11-23
 
 A Scratch Pad for every to-do, and easier ways to organize.
