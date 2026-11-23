@@ -63,8 +63,8 @@ export const SHORTCUTS: Shortcut[] = [
 	{ combos: ["mod+s"], label: "When…", group: "Schedule" },
 	{ combos: ["mod+shift+d"], label: "Deadline…", group: "Schedule" },
 	{
-		combos: ["alt+t", "alt+e", "alt+r", "alt+o"],
-		label: "Today, This Evening, Anytime, Someday",
+		combos: ["alt+t", "alt+r", "alt+o"],
+		label: "Today, Anytime, Someday",
 		group: "Schedule",
 	},
 	{ combos: ["mod+z", "mod+shift+z"], label: "Undo / Redo", group: "Other" },

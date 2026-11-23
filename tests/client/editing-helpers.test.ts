@@ -36,8 +36,9 @@ describe("parseDate", () => {
 describe("parseWhen", () => {
 	it("understands keywords", () => {
 		expect(parseWhen("Today", TODAY)).toEqual({ kind: "today" });
-		expect(parseWhen("tonight", TODAY)).toEqual({ kind: "evening" });
-		expect(parseWhen("this evening", TODAY)).toEqual({ kind: "evening" });
+		// This Evening is gone; these words mean today.
+		expect(parseWhen("tonight", TODAY)).toEqual({ kind: "today" });
+		expect(parseWhen("this evening", TODAY)).toEqual({ kind: "today" });
 		expect(parseWhen("someday", TODAY)).toEqual({ kind: "someday" });
 		expect(parseWhen("anytime", TODAY)).toEqual({ kind: "anytime" });
 	});
@@ -50,6 +51,14 @@ describe("parseWhen", () => {
 			date: "2026-10-26",
 		});
 		expect(parseWhen("blorp", TODAY)).toBeNull();
+	});
+
+	it("marks a day that has gone by as past, so it can't be chosen", () => {
+		expect(parseWhen("yesterday", TODAY)).toEqual({
+			kind: "past",
+			date: "2026-10-24",
+		});
+		expect(parseWhen("2026-10-01", TODAY)).toMatchObject({ kind: "past" });
 	});
 });
 
@@ -160,11 +169,6 @@ describe("whenPatch", () => {
 			when: "scheduled",
 			startDate: TODAY,
 			evening: false,
-		});
-		expect(whenPatch({ kind: "evening" }, TODAY)).toEqual({
-			when: "scheduled",
-			startDate: TODAY,
-			evening: true,
 		});
 		expect(whenPatch({ kind: "date", date: "2026-11-02" }, TODAY)).toEqual({
 			when: "scheduled",

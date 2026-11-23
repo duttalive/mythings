@@ -7,7 +7,7 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import type { LocalDate } from "../../shared/dates";
+import { addDays, type LocalDate } from "../../shared/dates";
 import type { Tag } from "../../shared/schema";
 import { bySortKey, type ViewData } from "../../shared/views";
 import {
@@ -33,7 +33,6 @@ import {
 	CheckIcon,
 	CrossIcon,
 	InboxIcon,
-	MoonIcon,
 	PlusIcon,
 	StarIcon,
 } from "./icons";
@@ -60,11 +59,14 @@ export function WhenPicker({
 	weekStart,
 	onChange,
 	footer,
+	overdue = false,
 }: {
 	value: WhenFields;
 	today: LocalDate;
 	weekStart: number;
 	onChange: (fields: WhenFields) => void;
+	/** Its deadline has passed: it stays in Overdue, so Today isn't offered. */
+	overdue?: boolean;
 	/** Extra options under the list (Reminder, Repeat…). */
 	footer?: ReactNode;
 }) {
@@ -73,23 +75,27 @@ export function WhenPicker({
 	const choose = (choice: WhenChoice) => onChange(whenPatch(choice, today));
 	const isToday = value.when === "scheduled" && value.startDate === today;
 
+	// A typed day that's gone by can't be chosen; nor can today once overdue.
+	const blocked =
+		parsed?.kind === "past" || (overdue && parsed?.kind === "today");
 	const submit = (e: FormEvent) => {
 		e.preventDefault();
-		if (parsed) choose(parsed);
+		if (parsed && parsed.kind !== "past" && !blocked) choose(parsed);
 	};
 
 	const preview = !text.trim()
 		? null
 		: !parsed
 			? "Try “tomorrow”, “next fri” or “dec 3”"
-			: parsed.kind === "date"
-				? dayLabel(parsed.date, today)
-				: {
-						today: "Today",
-						evening: "This Evening",
-						someday: "Someday",
-						anytime: "Anytime",
-					}[parsed.kind];
+			: parsed.kind === "past"
+				? "That date has passed"
+				: blocked
+					? "Change the deadline to plan it for today"
+					: parsed.kind === "date"
+						? dayLabel(parsed.date, today)
+						: { today: "Today", someday: "Someday", anytime: "Anytime" }[
+								parsed.kind
+							];
 
 	return (
 		<div>
@@ -105,26 +111,27 @@ export function WhenPicker({
 				/>
 			</form>
 			<Preview text={preview} />
-			<PopoverOption
-				icon={<StarIcon className="size-4 text-today" />}
-				pressed={isToday && !value.evening}
-				onSelect={() => choose({ kind: "today" })}
-			>
-				Today
-			</PopoverOption>
-			<PopoverOption
-				icon={<MoonIcon className="size-4 text-evening" />}
-				pressed={isToday && value.evening}
-				onSelect={() => choose({ kind: "evening" })}
-			>
-				This Evening
-			</PopoverOption>
+			{overdue ? (
+				<p className="px-2 py-1.5 text-xs text-[var(--fg-muted)]">
+					Its deadline has passed, so it stays in Overdue. Change the deadline
+					to plan it for today.
+				</p>
+			) : (
+				<PopoverOption
+					icon={<StarIcon className="size-4 text-today" />}
+					pressed={isToday}
+					onSelect={() => choose({ kind: "today" })}
+				>
+					Today
+				</PopoverOption>
+			)}
 			<div className="my-1.5 border-y border-[var(--border)] py-1.5">
 				<Calendar
 					value={value.when === "scheduled" ? value.startDate : null}
 					today={today}
 					weekStart={weekStart}
 					disablePast
+					firstDay={overdue ? addDays(today, 1) : undefined}
 					onSelect={(date) => choose({ kind: "date", date })}
 				/>
 			</div>

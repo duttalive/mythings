@@ -1,6 +1,6 @@
-// Overdue: to-dos and projects whose deadline has passed, most overdue first,
-// one section per deadline day. They leave Today once the deadline passes
-// (unless scheduled for today), so this is where they wait to be dealt with.
+// Overdue: to-dos and projects whose deadline passed or whose planned day went
+// by, most overdue first, one section per day they slipped. Today holds only
+// today, so this is where everything that slipped waits to be dealt with.
 
 import { useMemo } from "react";
 import { diffDays } from "../../shared/dates";
@@ -58,7 +58,7 @@ export function OverduePage() {
 						}
 						className={i === 0 ? "" : "mt-6"}
 					>
-						<RowList label={`Due ${dayLabel(group.date, ctx.today)}`}>
+						<RowList label={`Overdue since ${dayLabel(group.date, ctx.today)}`}>
 							{group.entries.map((entry) => (
 								<EntryRow key={entry.item.id} entry={entry} showContainer />
 							))}

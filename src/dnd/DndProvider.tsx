@@ -1,5 +1,5 @@
 // Drag and drop for the whole shell (SPEC §10.7): reorder within a list, move
-// between lists on the same page (e.g. headings, Today ↔ This Evening), and
+// between lists on the same page (e.g. headings in a project), and
 // drop onto sidebar lists. Lists describe themselves through SortableList.
 
 import {

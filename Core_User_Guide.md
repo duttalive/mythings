@@ -195,11 +195,11 @@ On a computer you can drag the sidebar's right edge to make it wider or narrower
 
 ### 2.2 The main pane
 
-- **The top bar:** the sidebar button, the **search** icon, which opens [Quick Find](#12-finding-things-quick-find), the **Task Notes** icon, which opens [Task Notes](#57-task-notes), and on a computer the **Full width** button (↔), which lets every list use the whole window instead of a centered column. Click it again to go back. It's off to start with, and it's the same switch as [Settings → Appearance → Full width](#161-appearance).
+- **The top bar:** the sidebar button, the **search** icon, which opens [Quick Find](#12-finding-things-quick-find), the **Task Notes** icon, which opens [Task Notes](#57-task-notes) (click it again to close Task Notes and go back to where you were), and on a computer the **Full width** button (↔), which lets every list use the whole window instead of a centered column. Click it again to go back. It's off to start with, and it's the same switch as [Settings → Appearance → Full width](#161-appearance).
 - **The title** of the list, with its icon. Titles of projects, areas, Life Buckets and tags can be edited by clicking them; long titles wrap onto more lines.
 - **Header details,** for projects, areas, Life Buckets and tags: notes, the Life Bucket a project or area belongs to, a project's When and deadline, tag chips and a **⋯** menu.
 - **The tag bar:** a row of tag chips for [filtering the list](#410-filtering-a-list-by-tag).
-- **The items,** in sections where the list has them (for example _This Evening_ in Today, or days in Upcoming).
+- **The items,** in sections where the list has them (for example days in Upcoming, or headings in a project).
 - **The floating +** at the bottom right: adds a to-do to the list you're looking at.
 
 ### 2.3 Reading a to-do row
@@ -264,8 +264,8 @@ Tags label to-dos, projects and areas across lists: `errands`, `phone`, `urgent`
 
 These are different on purpose:
 
-- **When** is when you _intend to start_: Today, This Evening, a future date, Anytime, Someday, or not decided yet (Inbox).
-- **Deadline** is when it's _due_. On the day it's due, a to-do shows up in Today even if its When is later, with a red flag. Once that day has passed, it moves to **Overdue** instead (see [Overdue](#46-overdue)).
+- **When** is the day you _plan to do it_: Today, a future date, Anytime, Someday, or not decided yet (Inbox). Today means today: a to-do planned for a day that has gone by doesn't stay in Today; it moves to **Overdue**.
+- **Deadline** is when it's _due_. A deadline alone doesn't put a to-do in Today; plan it for today if you want it there. Once the deadline has passed, it moves to **Overdue** (see [Overdue](#46-overdue)).
 
 For example, "Renew passport" could have a When of next week (when you'll start on the forms) and a deadline at the end of next month (when it must be done).
 
@@ -275,8 +275,8 @@ For example, "Renew passport" could have a When of next week (when you'll start 
 | --------------- | ------------------------------------------------------------- |
 | Not decided     | Inbox                                                         |
 | Today           | Today (and Anytime, with a ★)                                 |
-| This Evening    | Today, in the **This Evening** section                        |
-| A future date   | Upcoming, until that day arrives; then Today                  |
+| A future date   | Upcoming, until that day arrives; then Today, for that day    |
+| A day gone by   | Overdue, marked **Planned** with that day                     |
 | Anytime         | Anytime                                                       |
 | Someday         | Someday                                                       |
 
@@ -284,8 +284,8 @@ And, whatever its When:
 
 | Deadline        | Also shows in                                                 |
 | --------------- | ------------------------------------------------------------- |
-| Today           | Today, with a red flag                                        |
-| Passed          | Overdue (and no longer in Today, unless its When is Today)    |
+| Today           | Its usual lists, with a red flag (Today only if planned today) |
+| Passed          | Overdue, and never in Today                                   |
 | Any             | The hidden [Deadlines](#49-deadlines-hidden-list) list        |
 
 To-dos inside a Someday project (or a project scheduled for later) stay out of Today and Anytime until the project itself is active.
@@ -313,28 +313,28 @@ Reorder by dragging or with ⌘↑ / ⌘↓.
 
 ### 4.2 Today
 
-Everything you plan to do today.
+Everything you plan to do today, and only today.
 
-![Today, with five to-dos, then a "This Evening" section with two more](docs/guide/today.jpg)
+![Today, with the to-dos planned for today](docs/guide/today.jpg)
 
 What's in it:
 
-- To-dos and projects scheduled for today or earlier.
-- Anything whose deadline is today, even if scheduled later (here, _Pay the electricity bill_ with its red **today** flag).
-- A **This Evening** section (☾) for things you've set for this evening. While you drag, it appears even when empty so you can drop items into it.
-- Once a deadline has passed, the item leaves Today and waits in [Overdue](#46-overdue). To work on it today anyway, set its When to **Today** (or This Evening): it then shows in both, with its overdue deadline in red.
+- To-dos and projects planned for **today**.
+- Not things planned for an earlier day that didn't get done: at midnight they move to [Overdue](#46-overdue), marked **Planned** with their day.
+- Not things that are only due today: a deadline doesn't put a to-do in Today by itself. Plan it for today if you want it here.
+- Never anything overdue. A to-do whose deadline has passed stays in Overdue until you complete it or change its deadline.
 
 Details:
 
-- **Order** is your own, separate from each project's order. Drag rows, or use ⌘↑ / ⌘↓. Items that arrive in Today on their own (a scheduled date comes round, a deadline arrives) appear at the top.
+- **Order** is your own, separate from each project's order. Drag rows, or use ⌘↑ / ⌘↓. Items that arrive in Today on their own (a planned date comes round) appear at the top.
 - **Where each item belongs** shows in grey under its title (_Work_, _Move apartments_…).
 - **Group to-dos in Today by project** (Settings → Lists) shows loose items first, then a small heading per project with its to-dos. While grouped, moving a to-do keeps it within its project's group.
 
   ![Today grouped by project: loose items first, then headings for "Move apartments" and "Launch website"](docs/guide/today-grouped.jpg)
 
 - **Tag bar:** offers only the tags that something in Today has. If a filter leaves nothing, it says "Nothing in Today has these tags."
-- **A new day:** at midnight Today moves on. If your computer was asleep at midnight, Today catches up as soon as you come back to the app. Anything scheduled for "This Evening" yesterday comes back as a normal Today item.
-- **The sidebar badges:** the grey number counts open items in Today; the red badge counts those that are due (today, or overdue items you've scheduled for today).
+- **A new day:** at midnight Today moves on. If your computer was asleep at midnight, Today catches up as soon as you come back to the app. Whatever was planned for yesterday and isn't done moves to Overdue.
+- **The sidebar badges:** the grey number counts open items in Today; the red badge counts those that are also due today.
 
 ### 4.3 Upcoming
 
@@ -372,18 +372,17 @@ Someday projects appear as single entries (their to-dos stay inside them), plus 
 
 ### 4.6 Overdue
 
-Everything whose deadline has passed and isn't done yet, so nothing late gets lost in Today. It sits in the sidebar after Someday, with a red count.
+Everything that slipped and isn't done yet: a deadline that passed, or a day you planned it for that went by. Nothing late gets lost, and Today stays about today. It sits in the sidebar after Someday, with a red count.
 
-![Overdue: a group for each past due date, labelled "5 days overdue", "3 days overdue" and "2 days overdue"](docs/guide/overdue.jpg)
+![Overdue: groups for each day something slipped, most overdue first. Three to-dos and a project with passed deadlines (red flags), and "Water the balcony plants" under Yesterday, marked "Planned Nov 22"](docs/guide/overdue.jpg)
 
-- Grouped by the day it was due, **most overdue first**. Each group says how late it is ("3 days overdue"), and each row shows its project or area.
+- Grouped by the day it slipped (its deadline, or the day it was planned for, whichever came first), **most overdue first**. Each group says how late it is ("3 days overdue"), and each row shows its project or area and why it's here: its red deadline flag, or **Planned** with the day it was planned for.
 - Projects with a passed deadline appear here too (here, _Quarterly report_), as do to-dos with any When (Anytime, Someday, a date, or none).
 - Completed items, repeating templates and to-dos inside finished or deleted projects are left out. Tick one off and it leaves Overdue the same way it leaves other lists.
 - To deal with something here:
   - **complete** it;
-  - give it a later **deadline**: it leaves Overdue, and comes back to Today on the new day;
-  - **clear** the deadline;
-  - or set its When to **Today** to keep it in Today as well while it's still overdue.
+  - for a missed day, plan it again (**Today** or a later day) and it leaves Overdue;
+  - for a passed deadline, give it a later **deadline** or **clear** it. While the deadline has passed it can't go into Today: the When popover doesn't offer Today, and Alt+T or dragging it onto Today explains why.
 - The **tag bar** offers only the tags that something overdue has.
 
 Open it from the sidebar, with **g o**, or by typing "Overdue" in Quick Find.
@@ -562,7 +561,7 @@ The Tags button (or chip) on the card, or **⌘⇧T**, opens the tag picker:
 
 **The full page.** Click **Open in Task Notes** (the notes icon at the bottom of an open to-do) to write on a whole page. Its title is the to-do's title (long titles wrap), which you can edit, with a checkbox to complete it. Under it are links back to Task Notes and to the list the to-do is in. Changes save a moment after you stop typing, and when you leave.
 
-**The Task Notes page.** The **Task Notes** icon at the top of every page (or **g n**, or "Task Notes" in Quick Find) lists every to-do that has notes, most recently changed first. Each shows its title, where it is and the start of its notes. The search box finds words anywhere in titles and notes; a match shows the part of the notes it was found in. Click one to open its full page. To-dos in the Trash aren't listed.
+**The Task Notes page.** The **Task Notes** icon at the top of every page (or **g n**, or "Task Notes" in Quick Find) opens it, and clicking the icon again takes you back to the page you came from. It lists every to-do that has notes, most recently changed first. Each shows its title, where it is and the start of its notes. The search box finds words anywhere in titles and notes; a match shows the part of the notes it was found in. Click one to open its full page. To-dos in the Trash aren't listed.
 
 ![The Task Notes page: a "Search notes" box and three to-dos with notes, each with where it is, the start of its notes and the day it changed](docs/guide/task-notes-pad.jpg)
 
@@ -580,20 +579,20 @@ The Tags button (or chip) on the card, or **⌘⇧T**, opens the tag picker:
 
 Open it from a to-do's **When** button or chip, **⌘S**, or by swiping right on a phone.
 
-<img src="docs/guide/when-popover.jpg" alt="The When popover: a text field, Today, This Evening, a calendar, Someday, Add Reminder and Repeat…" width="300">
+<img src="docs/guide/when-popover.jpg" alt="The When popover: a text field, Today, a calendar, Someday, Add Reminder and Repeat…" width="300">
 
 It offers:
 
-- A field where you can **type a date** in plain words: "tomorrow", "tmrw", "next fri", "in 2 weeks", "dec 3", "tonight", "someday". A preview shows what it understood; press Enter to set it.
+- A field where you can **type a date** in plain words: "tomorrow", "tmrw", "next fri", "in 2 weeks", "dec 3", "someday" ("tonight" means today). A preview shows what it understood; press Enter to set it. A day that has already gone by isn't accepted: the preview says "That date has passed".
 
   <img src="docs/guide/when-typed.jpg" alt="The When popover with 'next fri' typed and the preview 'Fri, Nov 27' underneath" width="300">
 
-- **Today** ★ and **This Evening** ☾.
+- **Today** ★. For a to-do whose deadline has passed, Today isn't offered: change the deadline first.
 - A **calendar** for any future date (‹ and › change the month; today is in blue; past days are greyed out).
 - **Someday**, and **Clear** to remove the date (shown when one is set).
 - **Add Reminder** and **Repeat…** (below).
 
-Keyboard shortcuts set When directly, without the popover: **Alt+T** Today, **Alt+E** This Evening, **Alt+R** Anytime, **Alt+O** Someday.
+Keyboard shortcuts set When directly, without the popover: **Alt+T** Today, **Alt+R** Anytime, **Alt+O** Someday.
 
 ### 6.2 Deadlines
 
@@ -604,7 +603,7 @@ Open with the **Deadline** (flag) button or chip, or **⌘⇧D**.
 - Type a date ("friday", "nov 30") or pick it on the calendar.
 - **Clear deadline** removes it (shown when one is set).
 - On a project or card the deadline reads like **Deadline Dec 1 · 12 days left**, and turns red on the day it's due.
-- Items due today appear in Today with a red flag; once the day has passed they move to [Overdue](#46-overdue). Every deadline is collected in the [Deadlines list](#49-deadlines-hidden-list).
+- Items due today show a red flag wherever they are (and are in Today if they're planned for today); once the day has passed they move to [Overdue](#46-overdue). Every deadline is collected in the [Deadlines list](#49-deadlines-hidden-list).
 
 ### 6.3 Reminders
 
@@ -665,7 +664,11 @@ Choose **+ New List** at the bottom of the sidebar, then **New Project** ("Work 
 
 ![The New List menu open above the button, offering New Project, New Area and New Life Bucket, each with a one-line description](docs/guide/new-list.jpg)
 
-The new project opens with its title ready to type. It goes into the Life Bucket you're looking at (or the one holding the area or project you're on), otherwise into your first Life Bucket. A Life Bucket's ⋯ menu also has **New Project in Life Bucket**.
+Next it asks **which Life Bucket** it goes in. If you're on a Life Bucket's page (or one of its areas or projects), that bucket is listed first and already picked, so **Enter** (or one tap) puts it there; choose another to put it there instead. **New Life Bucket…** at the bottom lets you type a name for a new bucket and puts the project in it. With only one Life Bucket, there's nothing to ask and it goes straight in.
+
+![The New List popup asking "New Project in which Life Bucket?", with Work picked first, then Home, Health and Personal, and a "New Life Bucket…" field](docs/guide/new-list-bucket.jpg)
+
+The new project then opens with its title ready to type. You can move it to another Life Bucket later (**Move to Life Bucket…** in its ⋯ menu). A Life Bucket's page also has **+ New Project**, which adds one right there.
 
 ### 7.2 A project's page
 
@@ -749,7 +752,7 @@ The **+** button and Space add to-dos to the project.
 
 ### 8.2 Areas
 
-- **Create:** **+ New List → New Area** ("To-dos for work that keeps going, like Health or Home. No deadline."), or **New Area in Life Bucket** in a Life Bucket's ⋯ menu. It goes into the Life Bucket you're looking at, otherwise your first one.
+- **Create:** **+ New List → New Area** ("To-dos for work that keeps going, like Health or Home. No deadline."), then pick its Life Bucket, just like a [new project](#71-creating-a-project). On a Life Bucket's page, **+ New Area** (or **New Area in Life Bucket** in its ⋯ menu) adds one right there.
 - **The area's page:** its to-dos, then **Show N logged items** for finished ones. Areas have no deadline. A link under the title goes to its Life Bucket.
 
   ![The Household area in the Home Life Bucket: four to-dos, the first in Today with an "urgent" tag and a deadline of today, and "Show 1 logged item"](docs/guide/area.jpg)
@@ -851,8 +854,8 @@ Its buttons, from left to right: **When**, **Move**, **Tags**, **Deadline**, **C
 
 ### 10.3 Drag and drop
 
-- **Reorder** by dragging rows in the Inbox, Today and This Evening, a project's loose to-dos and each heading, an area's to-dos, a Life Bucket's areas and projects, and the sidebar's Life Buckets, areas, projects and tags.
-- **Between sections on one page:** heading ↔ loose to-dos in a project; Today ↔ This Evening (scheduling for today when needed).
+- **Reorder** by dragging rows in the Inbox, Today, a project's loose to-dos and each heading, an area's to-dos, a Life Bucket's areas and projects, and the sidebar's Life Buckets, areas, projects and tags.
+- **Between sections on one page:** heading ↔ loose to-dos in a project.
 - **Onto the sidebar:**
   - **Inbox**, **Anytime**, **Someday**: sets that When.
   - **Today**: schedules for today and puts it at the top of Today.
@@ -939,7 +942,7 @@ Press **?** to see the list in the app:
 | Complete / Cancel                        | ⌘K / ⌘⌥K                               |
 | When…                                    | ⌘S                                     |
 | Deadline…                                | ⌘⇧D                                    |
-| Today / This Evening / Anytime / Someday | Alt+T / Alt+E / Alt+R / Alt+O          |
+| Today / Anytime / Someday                | Alt+T / Alt+R / Alt+O                  |
 | Move to list…                            | ⌘⇧M                                    |
 | Tags…                                    | ⌘⇧T                                    |
 | Delete                                   | Backspace or Delete                    |
@@ -1203,9 +1206,9 @@ These work without signing in:
 
 **My areas and projects look rearranged.** Since Life Buckets arrived, areas no longer hold projects; your lists were moved once, without losing anything. See [After updating to Life Buckets](#83-after-updating-to-life-buckets).
 
-**A to-do with a later date is in Today.** Its deadline is today; deadlines bring items into Today on the day they're due.
+**A to-do due today isn't in Today.** Today holds only what's planned for today. Set its When to Today to see it there.
 
-**A to-do disappeared from Today.** Its deadline has passed, so it moved to **Overdue**. Set its When to Today to keep it in Today too, or give it a new deadline.
+**A to-do disappeared from Today.** It was planned for an earlier day and didn't get done, or its deadline passed: it's in **Overdue**. Plan it again, or give it a new deadline.
 
 **A to-do scheduled for today isn't in Today.** Check its project: to-dos inside a Someday project, or a project scheduled for later, wait until the project is active.
 

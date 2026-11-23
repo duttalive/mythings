@@ -1,7 +1,7 @@
 // What dropping a dragged item onto a sidebar list does (SPEC §10.7).
 
 import type { ViewContext, ViewData } from "../../shared/views";
-import { today } from "../../shared/views";
+import { isOverdue, today } from "../../shared/views";
 import type { ListChoice } from "../editing/listOptions";
 import { insertAt, type Placed, placeMutations } from "../editing/reorder";
 import { keyAfter, maxKey } from "../lib/order";
@@ -70,6 +70,17 @@ export function sidebarDropMutations(
 ): Mutation[] | null {
 	if (target.type === "trash")
 		return [{ type: "delete", entity: kind === "bucket" ? "area" : kind, id }];
+
+	// Overdue items stay in Overdue: they can't be dropped into Today.
+	if (target.type === "today") {
+		const item =
+			kind === "todo"
+				? data.todos.find((t) => t.id === id)
+				: kind === "project"
+					? data.projects.find((p) => p.id === id)
+					: undefined;
+		if (item && isOverdue(item, ctx.today)) return null;
+	}
 
 	if (kind === "area" && target.type === "bucket") {
 		const siblings = live(data.areas).filter(

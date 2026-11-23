@@ -8,11 +8,10 @@ import {
 	today,
 } from "../../shared/views";
 import { useAuth } from "../auth/AuthGate";
-import { MoonIcon, StarIcon } from "../components/icons";
-import { Empty, ListPage, Section } from "../components/ListPage";
+import { StarIcon } from "../components/icons";
+import { Empty, ListPage } from "../components/ListPage";
 import { EntryRow, ProgressRing, RowList } from "../components/rows";
 import { useFilteredContext, useListData, useTagFilter } from "../data";
-import { useDndRegistry } from "../dnd/DndProvider";
 import { SortableList } from "../dnd/sortable";
 import type { Placed } from "../editing/reorder";
 
@@ -29,15 +28,14 @@ export function TodayPage() {
 	// The tag bar offers the tags of what's in Today, filtered or not.
 	const filterTags = useMemo(() => {
 		const all = today(data, ctx);
-		return tagsInUse(data, [...all.main, ...all.evening]);
+		return tagsInUse(data, all.main);
 	}, [data, ctx]);
 	const grouped = useAuth().user.settings.groupTodayByProject ?? false;
 	const groups = grouped ? groupByProject(view.main, projects) : null;
 	// Grouped, the rows (and the order dragging works in) follow the groups.
 	const main = groups ? groups.flatMap((g) => g.entries) : view.main;
 	const filtering = useTagFilter().length > 0;
-	const dragging = useDndRegistry().activeKind !== null;
-	const empty = view.main.length === 0 && view.evening.length === 0;
+	const empty = view.main.length === 0;
 	// Grouped, a to-do moves only among its own group's rows: it can't leave
 	// its project's group, and moving it past the group would change the
 	// ungrouped order without anything changing on screen.
@@ -73,6 +71,7 @@ export function TodayPage() {
 						accepts: ["todo", "project"],
 						keyField: "todaySortKey",
 						items: placedEntries(main),
+						// Clears the evening mark items had before This Evening was retired.
 						moveInPatch: () => ({ evening: false }),
 						together,
 					}}
@@ -117,40 +116,6 @@ export function TodayPage() {
 						</RowList>
 					)}
 				</SortableList>
-			)}
-			{/* While dragging, show This Evening even when empty so items can be dropped there. */}
-			{(view.evening.length > 0 || (dragging && !empty)) && (
-				<Section
-					title={
-						<>
-							<MoonIcon className="size-4 text-evening" />
-							This Evening
-						</>
-					}
-				>
-					<SortableList
-						disabled={filtering}
-						className="min-h-10"
-						list={{
-							id: "evening",
-							accepts: ["todo", "project"],
-							keyField: "todaySortKey",
-							items: placedEntries(view.evening),
-							// Evening needs a start date of today (an item may be here only for its deadline).
-							moveInPatch: () => ({
-								when: "scheduled",
-								startDate: ctx.today,
-								evening: true,
-							}),
-						}}
-					>
-						<RowList>
-							{view.evening.map((entry) => (
-								<EntryRow key={entry.item.id} entry={entry} showContainer />
-							))}
-						</RowList>
-					</SortableList>
-				</Section>
 			)}
 		</ListPage>
 	);

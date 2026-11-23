@@ -3,10 +3,9 @@
 import { type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
 import type { LocalDate } from "../../shared/dates";
 import type { Project, Todo } from "../../shared/schema";
-import { isEvening } from "../../shared/views";
 import { useSavedField } from "../editing/useSavedField";
 import { dayLabel } from "../lib/format";
-import { BoxIcon, CalendarIcon, MoonIcon, StarIcon } from "./icons";
+import { BoxIcon, CalendarIcon, StarIcon } from "./icons";
 
 /** Grows a textarea to fit its content, including when its width changes. */
 export function useAutoGrow(
@@ -40,8 +39,8 @@ function fitHeight(el: HTMLTextAreaElement) {
 
 export function whenText(todo: Todo | Project, today: LocalDate): string {
 	if (todo.when === "someday") return "Someday";
-	if (isEvening(todo, today)) return "This Evening";
-	if (todo.startDate && todo.startDate <= today) return "Today";
+	// Only today is "Today"; a day that went by shows its date.
+	if (todo.startDate === today) return "Today";
 	return todo.startDate ? dayLabel(todo.startDate, today) : "";
 }
 
@@ -54,9 +53,7 @@ export function WhenIcon({
 }) {
 	if (todo.when === "someday")
 		return <BoxIcon className="size-3.5 text-amber-700" />;
-	if (isEvening(todo, today))
-		return <MoonIcon className="size-3.5 text-evening" />;
-	if (todo.startDate && todo.startDate <= today)
+	if (todo.startDate === today)
 		return <StarIcon className="size-3.5 text-today" />;
 	return <CalendarIcon className="size-3.5" />;
 }

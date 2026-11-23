@@ -1,5 +1,5 @@
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { Outlet, useLocation, useRouter } from "@tanstack/react-router";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useAuth } from "../auth/AuthGate";
 import { useSaveSettings } from "../auth/useSaveSettings";
 import { ListDataProvider } from "../data";
@@ -139,14 +139,7 @@ export function Shell() {
 													<SidebarIcon className="size-5" />
 												</button>
 												<SearchButton />
-												<Link
-													to="/notes"
-													aria-label="Task Notes"
-													title="Task Notes (g then n)"
-													className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-2.5 [&.active]:text-accent"
-												>
-													<NotesIcon className="size-5" />
-												</Link>
+												<TaskNotesButton />
 												{listPage && <FullWidthButton />}
 												{offline && (
 													<span
@@ -265,6 +258,38 @@ function FullWidthButton() {
 			}`}
 		>
 			<WidthIcon className="size-5" />
+		</button>
+	);
+}
+
+/**
+ * Opens Task Notes; while Task Notes is open, the same button closes it and
+ * goes back to the page you came from (Today if there isn't one).
+ */
+function TaskNotesButton() {
+	const { pathname, searchStr } = useLocation();
+	const router = useRouter();
+	const open = pathname === "/notes" || pathname.startsWith("/notes/");
+	const cameFrom = useRef("/today");
+	useEffect(() => {
+		if (!open) cameFrom.current = `${pathname}${searchStr ?? ""}`;
+	}, [open, pathname, searchStr]);
+	return (
+		<button
+			type="button"
+			onClick={() =>
+				open
+					? router.history.push(cameFrom.current)
+					: void router.navigate({ to: "/notes" })
+			}
+			aria-pressed={open}
+			aria-label="Task Notes"
+			title={open ? "Close Task Notes" : "Task Notes (g then n)"}
+			className={`rounded-md p-1.5 hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-2.5 ${
+				open ? "text-accent" : "text-[var(--fg-muted)]"
+			}`}
+		>
+			<NotesIcon className="size-5" />
 		</button>
 	);
 }

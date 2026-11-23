@@ -16,7 +16,6 @@ import {
 	InboxIcon,
 	LayersIcon,
 	LogbookIcon,
-	MoonIcon,
 	NotesIcon,
 	RepeatIcon,
 	SearchIcon,
@@ -313,7 +312,6 @@ type PreviewTodo = {
 	title: string;
 	detail?: ReactNode;
 	done?: boolean;
-	evening?: boolean;
 };
 
 const PREVIEW_TODOS: PreviewTodo[] = [
@@ -331,8 +329,8 @@ const PREVIEW_TODOS: PreviewTodo[] = [
 		),
 	},
 	{ title: "Pick up dry cleaning", detail: <Chip>errands</Chip> },
-	{ title: "Call Mum", evening: true },
-	{ title: "Read 20 pages", evening: true },
+	{ title: "Call Mum" },
+	{ title: "Read 20 pages" },
 ];
 
 function Chip({ children }: { children: ReactNode }) {
@@ -422,15 +420,7 @@ function TodayPreview() {
 						<h2 className="flex items-center gap-2.5 text-2xl font-bold">
 							<StarIcon className="size-6 text-today" /> Today
 						</h2>
-						<ul className="mt-4">
-							{PREVIEW_TODOS.map((t, i) => (t.evening ? null : row(t, i)))}
-						</ul>
-						<h3 className="mt-5 flex items-center gap-2 border-b border-[var(--border)] pb-1.5 text-sm font-semibold text-evening">
-							<MoonIcon className="size-4" /> This Evening
-						</h3>
-						<ul className="mt-1">
-							{PREVIEW_TODOS.map((t, i) => (t.evening ? row(t, i) : null))}
-						</ul>
+						<ul className="mt-4">{PREVIEW_TODOS.map((t, i) => row(t, i))}</ul>
 					</div>
 				</div>
 			</div>

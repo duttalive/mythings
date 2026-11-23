@@ -7,6 +7,7 @@ import type { Project, Status, Tag, Todo } from "../../shared/schema";
 import {
 	type Entry,
 	isInToday,
+	isMissed,
 	type Progress,
 	projectProgress,
 } from "../../shared/views";
@@ -163,6 +164,23 @@ function Deadline({ deadline, open }: { deadline: LocalDate; open: boolean }) {
 		>
 			<FlagIcon className="size-3.5" />
 			{deadlineLabel(deadline, ctx.today)}
+		</span>
+	);
+}
+
+/** A planned day that went by without it being done: why it's in Overdue. */
+function MissedDay({ item }: { item: Todo | Project }) {
+	const { ctx } = useListData();
+	if (item.status !== "open" || !isMissed(item, ctx.today) || !item.startDate)
+		return null;
+	const day = shortDate(item.startDate, ctx.today);
+	return (
+		<span
+			className="flex items-center gap-1 font-medium text-overdue"
+			title={`Planned for ${day}`}
+		>
+			<CalendarIcon className="size-3.5" />
+			Planned {day}
 		</span>
 	);
 }
@@ -481,6 +499,7 @@ export function TodoRow({
 							{formatTime(reminderTime(todo.reminderAt, ctx.tz))}
 						</span>
 					)}
+					<MissedDay item={todo} />
 					{todo.deadline && <Deadline deadline={todo.deadline} open={open} />}
 					{(todo.repeat || todo.repeatTemplateId) && (
 						<RepeatIcon
@@ -539,6 +558,7 @@ export function ProjectRow({
 			indicators={
 				<>
 					<TagChips tagIds={project.tagIds} />
+					<MissedDay item={project} />
 					{project.deadline && (
 						<Deadline deadline={project.deadline} open={open} />
 					)}

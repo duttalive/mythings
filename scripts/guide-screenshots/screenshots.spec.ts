@@ -407,6 +407,15 @@ test("guide screenshots", async ({ page, browser }) => {
 		await open(page, "/today");
 		await page.getByRole("button", { name: "New List" }).click();
 		await shot(page, "new-list");
+		await page.keyboard.press("Escape");
+		// From inside Work, it asks which Life Bucket, with Work picked.
+		await sidebar(page).getByRole("link", { name: /^Work/ }).first().click();
+		await page.getByRole("button", { name: "New List" }).click();
+		const popover = page.locator("[data-popover-content]");
+		await popover.getByRole("button", { name: /^New Project/ }).click();
+		await expect(popover.getByText(/in which Life Bucket/)).toBeVisible();
+		await shot(page, "new-list-bucket", popover);
+		await page.keyboard.press("Escape");
 	});
 
 	await step(page, "life bucket page", async () => {

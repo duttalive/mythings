@@ -131,7 +131,7 @@ export function KeyboardProvider({ children }: { children: ReactNode }) {
 
 			const ids = s.selection.selectedIds();
 			const one = ids.length === 1 ? ids[0] : undefined;
-			const schedule = (kind: "today" | "evening" | "anytime" | "someday") => {
+			const schedule = (kind: "today" | "anytime" | "someday") => {
 				if (ids.length) s.bulk.schedule(ids, whenPatch({ kind }, s.ctx.today));
 			};
 
@@ -227,7 +227,6 @@ export function KeyboardProvider({ children }: { children: ReactNode }) {
 					);
 					return;
 				case "alt+t":
-				case "alt+e":
 				case "alt+r":
 				case "alt+o":
 					if (!ids.length) return;
@@ -236,7 +235,6 @@ export function KeyboardProvider({ children }: { children: ReactNode }) {
 						(
 							{
 								"alt+t": "today",
-								"alt+e": "evening",
 								"alt+r": "anytime",
 								"alt+o": "someday",
 							} as const

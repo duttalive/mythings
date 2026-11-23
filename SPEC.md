@@ -539,6 +539,14 @@ A to-do's `notes` is its Task Notes: a Notion-style editor (TipTap 3, `src/notes
 - Project notes stay a Markdown textarea.
 - `/scratch` and `/scratch/$todoId` (2.4.0 links) redirect to `/notes`.
 
+### 10.12 Today means today (2.5.0)
+
+- `isInToday`: scheduled with `startDate === today` and not overdue. A deadline alone doesn't put an item in Today; nothing overdue is ever in Today.
+- `isMissed` (planned for an earlier day) and `isOverdue` (deadline passed) together are `isLate`; Overdue lists both, grouped by `lateness().date` (the earlier slip). Rows show "Planned <day>" for a missed day.
+- The When picker hides Today for overdue items and greys out today on its calendar; Alt+T, bulk When and dropping onto Today skip them with a message. Typed past dates (`parseWhen` → `past`) are refused in the When field and Quick Entry.
+- This Evening is retired: `evening` stays in the schema for old data and is ignored; "tonight" means today.
+- New List asks which Life Bucket for a project or area (the one on screen first and picked; skipped with one bucket; "New Life Bucket…" creates one). The Task Notes button toggles back to the page you came from.
+
 ### 10.11 Layout settings (2.4.1)
 
 - **Full width** (setting `fullWidth`, synced, default off): list pages (`LIST_PAGES` in `Shell.tsx`: the lists, project, area, Life Bucket, tag and Task Notes pages) drop the 720px column. Toggled from the top bar (desktop only) and Settings → Appearance.

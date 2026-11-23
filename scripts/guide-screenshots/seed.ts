@@ -272,10 +272,10 @@ export function seedFile() {
 		headingId: content,
 	});
 	todo("Go for a 5 km run", {
-		...onDay(0, { evening: true }),
+		...onDay(0),
 		areaId: healthArea,
 	});
-	todo("Call Mum", { ...onDay(0, { evening: true }), tagIds: [phone] });
+	todo("Call Mum", { ...onDay(0), tagIds: [phone] });
 
 	// Overdue
 	todo("Submit expense report", {
@@ -288,6 +288,8 @@ export function seedFile() {
 		deadline: day(-5),
 		tagIds: [errands],
 	});
+	// Planned for a day that went by: Overdue, marked "Planned".
+	todo("Water the balcony plants", { ...onDay(-1), areaId: homeArea });
 
 	// Upcoming
 	todo("Dentist appointment", {

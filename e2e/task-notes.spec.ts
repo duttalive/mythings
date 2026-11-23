@@ -52,9 +52,16 @@ test("a to-do's notes are Task Notes: blocks, a full page, and search", async ({
 	await expect(page.getByRole("textbox", { name: "Notes" })).toBeHidden();
 	await expectSynced(page);
 
-	// The Task Notes page lists it and searches the notes.
-	await page.getByRole("link", { name: "Task Notes" }).click();
+	// The Task Notes button opens it, and closes it again back to the Inbox.
+	const notesButton = page.getByRole("button", { name: "Task Notes" });
+	await notesButton.click();
 	await expect(page.getByRole("heading", { name: "Task Notes" })).toBeVisible();
+	await expect(notesButton).toHaveAttribute("aria-pressed", "true");
+	await notesButton.click();
+	await expect(page).toHaveURL(/\/inbox$/);
+	await notesButton.click();
+	await expect(page.getByRole("heading", { name: "Task Notes" })).toBeVisible();
+	// It lists the to-do and searches the notes.
 	const search = page.getByRole("searchbox", { name: "Search notes" });
 	await search.fill("van nine");
 	await expect(page.getByRole("link", { name: /Move flat/ })).toBeVisible();

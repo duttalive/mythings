@@ -118,6 +118,33 @@ export function isOverdue(item: Item, today: LocalDate): boolean {
 	return item.deadline !== null && item.deadline < today;
 }
 
+/** It was planned for an earlier day (and isn't done, where it's listed). */
+export function isMissed(item: Item, today: LocalDate): boolean {
+	return (
+		item.when === "scheduled" &&
+		item.startDate !== null &&
+		item.startDate < today
+	);
+}
+
+/** Its deadline passed or its planned day went by: it belongs in Overdue. */
+export function isLate(item: Item, today: LocalDate): boolean {
+	return isOverdue(item, today) || isMissed(item, today);
+}
+
+/** Why an item is in Overdue, and the day it slipped (the earlier one, if both). */
+export function lateness(
+	item: Item,
+	today: LocalDate,
+): { date: LocalDate; reason: "deadline" | "planned" } | null {
+	const deadline = isOverdue(item, today) ? item.deadline : null;
+	const planned = isMissed(item, today) ? item.startDate : null;
+	if (deadline && (!planned || deadline <= planned))
+		return { date: deadline, reason: "deadline" };
+	if (planned) return { date: planned, reason: "planned" };
+	return null;
+}
+
 /** A project whose to-dos can show in Today and Anytime. */
 function isActiveProject(project: Project, today: LocalDate): boolean {
 	return (
@@ -127,18 +154,16 @@ function isActiveProject(project: Project, today: LocalDate): boolean {
 
 /**
  * Whether the item belongs in Today (ignoring its parent project); drives the ★
- * in other lists. Started or due today; once the deadline has passed it moves
- * to Overdue, and stays in Today only if it's scheduled for today itself.
+ * in other lists. Today means today: scheduled for this very day. A planned
+ * day that went by, or a deadline that passed, sends it to Overdue instead,
+ * and being due today alone doesn't put it here.
  */
 export function isInToday(item: Item, today: LocalDate): boolean {
-	if (isOverdue(item, today))
-		return item.when === "scheduled" && item.startDate === today;
-	return startedBy(item, today) || dueBy(item, today);
-}
-
-/** Evening only applies on the day the item is scheduled for. */
-export function isEvening(item: Item, today: LocalDate): boolean {
-	return item.evening && item.when === "scheduled" && item.startDate === today;
+	return (
+		item.when === "scheduled" &&
+		item.startDate === today &&
+		!isOverdue(item, today)
+	);
 }
 
 /** Days until the deadline: 0 = due today, negative = overdue by that many days. */
@@ -355,7 +380,7 @@ export function inbox(data: ViewData, ctx: ViewContext): Todo[] {
 export type Entry =
 	| { kind: "todo"; item: Todo }
 	| { kind: "project"; item: Project };
-export type TodayView = { main: Entry[]; evening: Entry[] };
+export type TodayView = { main: Entry[] };
 
 export function today(data: ViewData, ctx: ViewContext): TodayView {
 	const { idx, todos, projects } = prepare(data, ctx);
@@ -373,8 +398,7 @@ export function today(data: ViewData, ctx: ViewContext): TodayView {
 	].sort((a, b) => byTodayOrder(a.item, b.item));
 
 	return {
-		main: entries.filter((e) => !isEvening(e.item, ctx.today)),
-		evening: entries.filter((e) => isEvening(e.item, ctx.today)),
+		main: entries,
 	};
 }
 
@@ -693,14 +717,14 @@ export function deadlines(
 export type OverdueGroup = { date: LocalDate; entries: Entry[] };
 
 /**
- * To-dos and projects whose deadline has passed, most overdue first, one group
- * per deadline day. Items ticked off today stay until they move to the Logbook,
- * like in the other lists.
+ * To-dos and projects whose deadline passed or whose planned day went by, most
+ * overdue first, one group per day they slipped (see `lateness`). Items ticked
+ * off today stay until they move to the Logbook, like in the other lists.
  */
 export function overdue(data: ViewData, ctx: ViewContext): OverdueGroup[] {
 	const { idx, todos, projects } = prepare(data, ctx);
-	const late = (item: Item) =>
-		isListed(item, ctx) && isOverdue(item, ctx.today);
+	const late = (item: Item) => isListed(item, ctx) && isLate(item, ctx.today);
+	const slipped = (item: Item) => lateness(item, ctx.today)?.date ?? ctx.today;
 	const entries: Entry[] = [
 		...projects
 			.filter(late)
@@ -715,14 +739,14 @@ export function overdue(data: ViewData, ctx: ViewContext): OverdueGroup[] {
 			.map((item) => ({ kind: "todo" as const, item })),
 	].sort(
 		(a, b) =>
-			compareStrings(a.item.deadline ?? "", b.item.deadline ?? "") ||
+			compareStrings(slipped(a.item), slipped(b.item)) ||
 			a.item.createdAt - b.item.createdAt ||
 			compareStrings(a.item.id, b.item.id),
 	);
 
 	const groups: OverdueGroup[] = [];
 	for (const entry of entries) {
-		const date = entry.item.deadline as LocalDate;
+		const date = slipped(entry.item);
 		const last = groups.at(-1);
 		if (last?.date === date) last.entries.push(entry);
 		else groups.push({ date, entries: [entry] });
@@ -1001,16 +1025,14 @@ export type SidebarCounts = {
 	today: number;
 	/** Open Today items whose deadline is today or past (shown as a red badge). */
 	due: number;
-	/** Open to-dos and projects whose deadline has passed (red badge on Overdue). */
+	/** Open to-dos and projects whose deadline or planned day has passed (red badge on Overdue). */
 	overdue: number;
 };
 
 export function sidebarCounts(data: ViewData, ctx: ViewContext): SidebarCounts {
 	const base = { ...ctx, tagIds: undefined };
-	const { main, evening } = today(data, base);
-	const todayItems = [...main, ...evening].filter(
-		(e) => e.item.status === "open",
-	);
+	const { main } = today(data, base);
+	const todayItems = main.filter((e) => e.item.status === "open");
 	return {
 		inbox: inbox(data, base).filter((t) => t.status === "open").length,
 		today: todayItems.length,

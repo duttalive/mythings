@@ -38,12 +38,15 @@ export function Calendar({
 	weekStart,
 	onSelect,
 	disablePast = false,
+	firstDay,
 }: {
 	value: LocalDate | null;
 	today: LocalDate;
 	weekStart: number;
 	onSelect: (date: LocalDate) => void;
 	disablePast?: boolean;
+	/** The first day that can be picked (earlier ones are greyed out). */
+	firstDay?: LocalDate;
 }) {
 	const [focused, setFocused] = useState<LocalDate>(value ?? today);
 	const [month, setMonth] = useState(monthOf(value ?? today));
@@ -145,7 +148,8 @@ export function Calendar({
 			>
 				{days.map((date) => {
 					const inMonth = monthOf(date) === month;
-					const past = disablePast && date < today;
+					const past =
+						(disablePast && date < today) || (!!firstDay && date < firstDay);
 					const selected = date === value;
 					return (
 						<button

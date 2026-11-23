@@ -119,14 +119,27 @@ test("Deadlines opens from Quick Find and can be searched", async ({
 	await expect.poll(() => rowTitles(page)).toEqual(["Pay rent", "File taxes"]);
 });
 
-test("Overdue items leave Today and wait in Overdue", async ({ page }) => {
+test("Today holds only today; Overdue keeps what slipped, and it can't go back to Today", async ({
+	page,
+}) => {
 	await signUp(page);
 	// From Anytime, so Quick Entry doesn't also schedule them for today.
 	await open(page, "/anytime");
 	await quickEntry(page, "Pay rent !yesterday");
 	await quickEntry(page, "Call the bank !today");
+	await quickEntry(page, "Plan the week @today");
+	// A day that has passed isn't accepted as a When.
+	await page.keyboard.press("Alt+Space");
+	const entry = page.getByRole("dialog", { name: "Quick Entry" });
+	await entry
+		.getByLabel("Title", { exact: true })
+		.fill("Water plants @yesterday");
+	await expect(entry.getByText(/has passed/)).toBeVisible();
+	await page.keyboard.press("Escape");
+
+	// Due today alone isn't enough for Today.
 	await open(page, "/today");
-	await expect.poll(() => rowTitles(page)).toEqual(["Call the bank"]);
+	await expect.poll(() => rowTitles(page)).toEqual(["Plan the week"]);
 
 	const overdueLink = page
 		.getByRole("navigation", { name: "Lists" })
@@ -141,4 +154,11 @@ test("Overdue items leave Today and wait in Overdue", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: /Yesterday/ })).toContainText(
 		"1 day overdue",
 	);
+
+	// Alt+T on an overdue to-do explains why it stays.
+	await row(page, "Pay rent").click();
+	await page.keyboard.press("Escape");
+	await page.keyboard.press("Alt+t");
+	await expect(page.getByText(/stay in Overdue/)).toBeVisible();
+	await expect.poll(() => rowTitles(page)).toEqual(["Pay rent"]);
 });

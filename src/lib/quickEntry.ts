@@ -27,6 +27,8 @@ export type QuickEntryToken =
 export type ParsedQuickEntry = {
 	title: string;
 	tokens: QuickEntryToken[];
+	/** Something typed that can't be used, e.g. a When date that has passed. */
+	warning?: string;
 };
 
 export type QuickEntryContext = {
@@ -49,6 +51,7 @@ export function parseQuickEntry(
 
 	const titleParts = [text.slice(0, starts[0]).trim()];
 	const tokens: QuickEntryToken[] = [];
+	let warning: string | undefined;
 	const liveTags = ctx.tags.filter((t) => t.deletedAt === null);
 	const liveProjects = ctx.projects.filter(
 		(p) => p.deletedAt === null && p.status === "open",
@@ -77,16 +80,16 @@ export function parseQuickEntry(
 		}
 		if (marker === "@") {
 			const parsed = parseWhen(value, ctx.today);
-			if (parsed) {
+			if (parsed?.kind === "past") {
+				// Stays in the title, so nothing is planned for a day gone by.
+				warning = `${raw} has passed: pick today or a later day.`;
+			} else if (parsed) {
 				const label =
 					parsed.kind === "date"
 						? parsed.date
-						: {
-								today: "Today",
-								evening: "This Evening",
-								someday: "Someday",
-								anytime: "Anytime",
-							}[parsed.kind];
+						: { today: "Today", someday: "Someday", anytime: "Anytime" }[
+								parsed.kind
+							];
 				tokens.push({
 					kind: "when",
 					raw,
@@ -122,5 +125,9 @@ export function parseQuickEntry(
 		titleParts.push(raw);
 	});
 
-	return { title: titleParts.filter(Boolean).join(" ").trim(), tokens };
+	return {
+		title: titleParts.filter(Boolean).join(" ").trim(),
+		tokens,
+		...(warning ? { warning } : {}),
+	};
 }

@@ -3,19 +3,22 @@
 import { useMemo } from "react";
 import type { LocalDate } from "../../shared/dates";
 import type { Todo } from "../../shared/schema";
+import { isOverdue } from "../../shared/views";
 import { useConfirmDelete } from "../components/ConfirmDelete";
+import { useToast } from "../components/Toast";
 import { useListData } from "../data";
 import { moveTodoMutations } from "../dnd/drop";
 import type { Mutation } from "../sync/engine";
 import { useOps } from "../sync/hooks";
 import { todosRequest } from "./deleteRequests";
 import type { ListChoice } from "./listOptions";
-import type { WhenFields } from "./schedule";
+import { OVERDUE_STAYS, type WhenFields } from "./schedule";
 
 export function useBulkActions() {
 	const ops = useOps();
 	const { data, ctx } = useListData();
 	const confirmDelete = useConfirmDelete();
+	const toast = useToast();
 
 	return useMemo(() => {
 		const todosFor = (ids: string[]) =>
@@ -45,8 +48,20 @@ export function useBulkActions() {
 				patchAll(ids, () => ({ status: allDone ? "open" : "completed" }));
 			},
 			cancel: (ids: string[]) => patchAll(ids, () => ({ status: "canceled" })),
-			schedule: (ids: string[], fields: WhenFields) =>
-				patchAll(ids, () => fields),
+			/** Plans them; overdue ones stay in Overdue rather than going to Today. */
+			schedule: (ids: string[], fields: WhenFields) => {
+				const toToday =
+					fields.when === "scheduled" && fields.startDate === ctx.today;
+				const skipped = toToday
+					? todosFor(ids).filter((t) => isOverdue(t, ctx.today))
+					: [];
+				if (skipped.length) toast.show(OVERDUE_STAYS);
+				const skip = new Set(skipped.map((t) => t.id));
+				patchAll(
+					ids.filter((id) => !skip.has(id)),
+					() => fields,
+				);
+			},
 			setDeadline: (ids: string[], deadline: LocalDate | null) =>
 				patchAll(ids, () => ({ deadline })),
 			/** Adds the tag to all of them, or removes it if they all have it. */
@@ -77,5 +92,5 @@ export function useBulkActions() {
 				return true;
 			},
 		};
-	}, [ops, data, ctx, confirmDelete]);
+	}, [ops, data, ctx, confirmDelete, toast]);
 }

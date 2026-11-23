@@ -10,18 +10,20 @@ import {
 
 export type ParsedWhen =
 	| { kind: "today" }
-	| { kind: "evening" }
 	| { kind: "someday" }
 	| { kind: "anytime" }
-	| { kind: "date"; date: LocalDate };
+	| { kind: "date"; date: LocalDate }
+	/** A day that has already gone by: nothing can be planned for it. */
+	| { kind: "past"; date: LocalDate };
 
 const KEYWORDS: Record<string, ParsedWhen["kind"]> = {
 	today: "today",
 	tod: "today",
 	now: "today",
-	tonight: "evening",
-	evening: "evening",
-	"this evening": "evening",
+	// This Evening is gone (2.5.0); these words still mean today.
+	tonight: "today",
+	evening: "today",
+	"this evening": "today",
 	someday: "someday",
 	later: "someday",
 	anytime: "anytime",
@@ -58,15 +60,11 @@ export function parseDate(text: string, today: LocalDate): LocalDate | null {
 export function parseWhen(text: string, today: LocalDate): ParsedWhen | null {
 	const phrase = text.trim().toLowerCase();
 	const keyword = KEYWORDS[phrase];
-	if (
-		keyword === "today" ||
-		keyword === "evening" ||
-		keyword === "someday" ||
-		keyword === "anytime"
-	) {
+	if (keyword === "today" || keyword === "someday" || keyword === "anytime") {
 		return { kind: keyword };
 	}
 	const date = parseDate(phrase, today);
 	if (!date) return null;
+	if (date < today) return { kind: "past", date };
 	return date === today ? { kind: "today" } : { kind: "date", date };
 }

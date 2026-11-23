@@ -5,6 +5,7 @@ import { type ReactNode, useMemo, useState } from "react";
 import { addDays, type LocalDate } from "../../shared/dates";
 import { previewOccurrences } from "../../shared/repeat";
 import type { Project, Todo } from "../../shared/schema";
+import { isOverdue } from "../../shared/views";
 import { useAuth } from "../auth/AuthGate";
 import { useListData } from "../data";
 import {
@@ -110,6 +111,7 @@ export function SchedulePanel({
 		<WhenPicker
 			value={item}
 			today={ctx.today}
+			overdue={isOverdue(item, ctx.today)}
 			weekStart={weekStart}
 			footer={footer}
 			onChange={(fields) => {

@@ -151,9 +151,7 @@ export function QuickEntry({
 			? "When"
 			: fields.when === "scheduled" && fields.startDate
 				? fields.startDate === ctx.today
-					? fields.evening
-						? "This Evening"
-						: "Today"
+					? "Today"
 					: dayLabel(fields.startDate, ctx.today)
 				: WHEN_LABELS[fields.when as keyof typeof WHEN_LABELS];
 	const tagTitles = [
@@ -192,6 +190,11 @@ export function QuickEntry({
 					aria-describedby="quick-entry-hint"
 					className="w-full bg-transparent text-base font-medium outline-none placeholder:text-[var(--fg-muted)]"
 				/>
+				{parsed.warning && (
+					<p role="status" className="mt-1 text-xs text-overdue">
+						{parsed.warning}
+					</p>
+				)}
 				<textarea
 					value={notes}
 					onChange={(e) => setNotes(e.target.value)}

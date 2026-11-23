@@ -13,6 +13,15 @@ import { newAreaFields, newBucketFields, newProjectFields } from "./projects";
  * (its own page, or one of its areas or projects), else the first one.
  */
 export function bucketForPath(pathname: string, data: ViewData): string | null {
+	return (
+		bucketOnPage(pathname, data) ??
+		data.buckets.filter((b) => b.deletedAt === null).sort(bySortKey)[0]?.id ??
+		null
+	);
+}
+
+/** The Life Bucket open on screen: its own page, or one of its areas or projects. */
+export function bucketOnPage(pathname: string, data: ViewData): string | null {
 	const location = locationFromPath(pathname);
 	const live = (id: string | null | undefined) =>
 		data.buckets.find((b) => b.id === id && b.deletedAt === null)?.id;
@@ -24,11 +33,7 @@ export function bucketForPath(pathname: string, data: ViewData): string | null {
 				: location.list === "project"
 					? live(data.projects.find((p) => p.id === location.projectId)?.areaId)
 					: undefined;
-	return (
-		fromPage ??
-		data.buckets.filter((b) => b.deletedAt === null).sort(bySortKey)[0]?.id ??
-		null
-	);
+	return fromPage ?? null;
 }
 
 /** Creates a project, area or Life Bucket, opens it, and puts the cursor in its title. */
@@ -70,5 +75,12 @@ export function useCreateList() {
 		await navigate({ to: "/bucket/$bucketId", params: { bucketId: id } });
 	}, [ops, navigate, data.buckets, requestTitleFocus]);
 
-	return { createProject, createArea, createBucket };
+	/** A Life Bucket with this name, without opening it (for a list going into it). */
+	const addBucket = useCallback(
+		(title: string) =>
+			ops.create("area", { ...newBucketFields(data.buckets), title }),
+		[ops, data.buckets],
+	);
+
+	return { createProject, createArea, createBucket, addBucket };
 }

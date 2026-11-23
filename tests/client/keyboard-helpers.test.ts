@@ -187,12 +187,19 @@ describe("parseQuickEntry", () => {
 		expect(parsed.tokens.map((t) => t.kind)).toEqual(["when", "tag"]);
 	});
 
+	it("keeps a When date that has passed in the title, with a warning", () => {
+		const parsed = parseQuickEntry("Pay rent @yesterday", ctx);
+		expect(parsed.tokens).toEqual([]);
+		expect(parsed.title).toBe("Pay rent @yesterday");
+		expect(parsed.warning).toContain("has passed");
+	});
+
 	it("handles keywords and areas", () => {
 		const parsed = parseQuickEntry("Water plants @tonight /home", ctx);
 		expect(parsed.tokens).toMatchObject([
 			{
 				kind: "when",
-				fields: { when: "scheduled", startDate: "2026-10-25", evening: true },
+				fields: { when: "scheduled", startDate: "2026-10-25", evening: false },
 			},
 			{ kind: "list", projectId: null, areaId: home.id },
 		]);

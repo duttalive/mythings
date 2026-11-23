@@ -10,6 +10,13 @@ async function newList(
 		.locator("[data-popover-content]")
 		.getByRole("button", { name: new RegExp(`^${kind}`) })
 		.click();
+	// With more than one Life Bucket it asks which; Enter takes the first
+	// (the one on screen, if any).
+	if (kind !== "New Life Bucket") {
+		const step = page.getByText(/in which Life Bucket\?$/);
+		if (await step.isVisible().catch(() => false))
+			await page.keyboard.press("Enter");
+	}
 }
 
 /** Types into the field that just took focus (a new list's or heading's title). */
@@ -354,4 +361,48 @@ test("a Life Bucket's page adds areas and projects, and an open to-do moves to a
 	await expectSynced(page);
 	await sidebar.getByRole("link", { name: "Admin" }).click();
 	await expect(row(page, "Write copy")).toBeVisible();
+});
+
+test("New List asks which Life Bucket, picks the one you're in, and can start a new one", async ({
+	page,
+}) => {
+	await signUp(page);
+	const sidebar = page.getByRole("navigation", { name: "Lists" });
+	const popover = page.locator("[data-popover-content]");
+	await newList(page, "New Life Bucket");
+	await typeTitle(page, "New Life Bucket", "Work");
+	await newList(page, "New Life Bucket");
+	await typeTitle(page, "New Life Bucket", "Home");
+
+	await expect(sidebar.getByRole("link", { name: "Home" })).toBeVisible();
+	await expectSynced(page);
+
+	// From the Inbox it asks, with nothing picked.
+	await sidebar.getByRole("link", { name: /^Inbox/ }).click();
+	await page.getByRole("button", { name: "New List" }).click();
+	await popover.getByRole("button", { name: /^New Project/ }).click();
+	await expect(
+		popover.getByText("New Project in which Life Bucket?"),
+	).toBeVisible();
+	await popover.getByRole("button", { name: "Home", exact: true }).click();
+	await typeTitle(page, "New Project", "Paint the hall");
+	await expect(page.getByRole("link", { name: "Home" }).first()).toBeVisible();
+
+	// Inside Work, Work comes first and is picked.
+	await sidebar.getByRole("link", { name: "Work" }).click();
+	await page.getByRole("button", { name: "New List" }).click();
+	await popover.getByRole("button", { name: /^New Area/ }).click();
+	const options = popover.getByRole("button", { name: /^(Work|Home)$/ });
+	await expect(options.first()).toHaveText("Work");
+	await expect(options.first()).toHaveAttribute("aria-pressed", "true");
+	await page.keyboard.press("Escape");
+
+	// A new Life Bucket, named right there, with the area inside it.
+	await page.getByRole("button", { name: "New List" }).click();
+	await popover.getByRole("button", { name: /^New Area/ }).click();
+	await popover.getByLabel("New Life Bucket name").fill("Family");
+	await popover.getByLabel("New Life Bucket name").press("Enter");
+	await typeTitle(page, "New Area", "Birthdays");
+	await expect(sidebar.getByRole("link", { name: "Family" })).toBeVisible();
+	await expect(sidebar.getByRole("link", { name: "Birthdays" })).toBeVisible();
 });

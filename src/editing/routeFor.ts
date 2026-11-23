@@ -1,7 +1,7 @@
 // Where a to-do shows up, to open it there.
 
 import type { Todo } from "../../shared/schema";
-import { isInToday, isOverdue } from "../../shared/views";
+import { isInToday, isLate } from "../../shared/views";
 
 /** The list a to-do shows up in, to open it there. */
 export function routeFor(
@@ -16,7 +16,7 @@ export function routeFor(
 		return { to: "/area/$areaId", params: { areaId: todo.areaId } };
 	if (todo.when === "inbox") return { to: "/inbox" };
 	if (isInToday(todo, today)) return { to: "/today" };
-	if (isOverdue(todo, today)) return { to: "/overdue" };
+	if (isLate(todo, today)) return { to: "/overdue" };
 	if (todo.when === "scheduled") return { to: "/upcoming" };
 	if (todo.when === "someday") return { to: "/someday" };
 	return { to: "/anytime" };

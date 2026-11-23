@@ -10,9 +10,9 @@ import {
 	type GroupedList,
 	groupByProject,
 	inbox,
-	isEvening,
 	isInToday,
 	type LogbookCursor,
+	lateness,
 	logbook,
 	overdue,
 	projectProgress,
@@ -86,54 +86,42 @@ describe("inbox", () => {
 });
 
 describe("today", () => {
-	it("includes items started today or earlier", () => {
+	it("holds only what's scheduled for today itself", () => {
 		const startsToday = todo(scheduled(TODAY));
-		const rolledOver = todo(scheduled("2026-10-20"));
+		const earlierDay = todo(scheduled("2026-10-20"));
 		const tomorrow = todo(scheduled("2026-10-26"));
+		const anytime = todo();
 		const view = today(
-			data({ todos: [startsToday, rolledOver, tomorrow] }),
+			data({ todos: [startsToday, earlierDay, tomorrow, anytime] }),
 			ctx,
 		);
-		expect(entryIds(view.main).sort()).toEqual(
-			[startsToday.id, rolledOver.id].sort(),
-		);
+		expect(entryIds(view.main)).toEqual([startsToday.id]);
 	});
 
-	it("includes items due today, whatever their When", () => {
+	it("doesn't take items just because they're due today", () => {
 		const dueToday = todo({ deadline: TODAY });
 		const somedayDue = todo({ when: "someday", deadline: TODAY });
-		const inboxDue = todo({ when: "inbox", deadline: TODAY });
-		const dueLater = todo({ deadline: "2026-10-26" });
+		const plannedAndDue = todo({ ...scheduled(TODAY), deadline: TODAY });
 		const view = today(
-			data({ todos: [dueToday, somedayDue, inboxDue, dueLater] }),
+			data({ todos: [dueToday, somedayDue, plannedAndDue] }),
 			ctx,
 		);
-		expect(entryIds(view.main).sort()).toEqual(
-			[dueToday.id, somedayDue.id, inboxDue.id].sort(),
-		);
+		expect(entryIds(view.main)).toEqual([plannedAndDue.id]);
 	});
 
-	it("leaves out overdue items unless they're scheduled for today", () => {
+	it("never holds overdue items, even ones scheduled for today", () => {
 		const overdue = todo({ when: "someday", deadline: "2026-10-20" });
-		const rolledOver = todo({
-			...scheduled("2026-10-20"),
-			deadline: "2026-10-22",
-		});
 		const plannedToday = todo({ ...scheduled(TODAY), deadline: "2026-10-22" });
 		const overdueProject = project({
-			...scheduled("2026-10-01"),
+			...scheduled(TODAY),
 			deadline: "2026-10-20",
 		});
 		const view = today(
-			data({
-				todos: [overdue, rolledOver, plannedToday],
-				projects: [overdueProject],
-			}),
+			data({ todos: [overdue, plannedToday], projects: [overdueProject] }),
 			ctx,
 		);
-		expect(entryIds(view.main)).toEqual([plannedToday.id]);
-		expect(isInToday(overdue, TODAY)).toBe(false);
-		expect(isInToday(plannedToday, TODAY)).toBe(true);
+		expect(view.main).toEqual([]);
+		expect(isInToday(plannedToday, TODAY)).toBe(false);
 	});
 
 	it("excludes to-dos whose project is someday, finished, deleted or not started", () => {
@@ -163,21 +151,19 @@ describe("today", () => {
 		expect(entryIds(todoEntries).sort()).toEqual(ids(visible).sort());
 	});
 
-	it("includes projects that are started or due", () => {
+	it("includes projects scheduled for today, and nothing else", () => {
 		const p = project(scheduled(TODAY));
 		const due = project({ deadline: TODAY });
+		const earlier = project(scheduled("2026-10-20"));
 		const later = project(scheduled("2026-10-30"));
-		const view = today(data({ projects: [p, due, later] }), ctx);
-		expect(view.main.map((e) => e.kind)).toEqual(["project", "project"]);
-		expect(entryIds(view.main).sort()).toEqual([p.id, due.id].sort());
+		const view = today(data({ projects: [p, due, earlier, later] }), ctx);
+		expect(entryIds(view.main)).toEqual([p.id]);
 	});
 
-	it("splits This Evening, but only for items scheduled for today", () => {
+	it("keeps items once planned for the evening in the one list", () => {
 		const evening = todo({ ...scheduled(TODAY), evening: true });
-		const staleEvening = todo({ ...scheduled("2026-10-24"), evening: true });
-		const view = today(data({ todos: [evening, staleEvening] }), ctx);
-		expect(entryIds(view.evening)).toEqual([evening.id]);
-		expect(entryIds(view.main)).toEqual([staleEvening.id]);
+		const view = today(data({ todos: [evening] }), ctx);
+		expect(entryIds(view.main)).toEqual([evening.id]);
 	});
 
 	it("orders unplaced items first (oldest first), then by todaySortKey", () => {
@@ -896,6 +882,16 @@ describe("overdue", () => {
 		]);
 	});
 
+	it("also holds items whose planned day went by, grouped by the earlier slip", () => {
+		const missed = todo({ title: "Missed", ...scheduled("2026-10-22") });
+		const both = todo({ ...scheduled("2026-10-24"), deadline: "2026-10-22" });
+		const plannedToday = todo(scheduled(TODAY));
+		const groups = overdue(data({ todos: [missed, both, plannedToday] }), ctx);
+		expect(groups.map((g) => [g.date, entryIds(g.entries).sort()])).toEqual([
+			["2026-10-22", [missed.id, both.id].sort()],
+		]);
+	});
+
 	it("keeps items ticked off today while the Logbook moves daily", () => {
 		const ticked = todo({ deadline: "2026-10-20", ...done() });
 		expect(overdue(data({ todos: [ticked] }), daily)).toHaveLength(1);
@@ -999,15 +995,22 @@ describe("sidebarCounts", () => {
 });
 
 describe("helpers", () => {
-	it("isInToday, isEvening and daysUntilDeadline", () => {
-		expect(isInToday(todo({ deadline: TODAY }), TODAY)).toBe(true);
+	it("isInToday, lateness and daysUntilDeadline", () => {
+		expect(isInToday(todo(scheduled(TODAY)), TODAY)).toBe(true);
+		expect(isInToday(todo({ deadline: TODAY }), TODAY)).toBe(false);
+		expect(isInToday(todo(scheduled("2026-10-24")), TODAY)).toBe(false);
 		expect(isInToday(todo(scheduled("2026-10-26")), TODAY)).toBe(false);
-		expect(isEvening(todo({ ...scheduled(TODAY), evening: true }), TODAY)).toBe(
-			true,
-		);
+		expect(lateness(todo(scheduled("2026-10-24")), TODAY)).toEqual({
+			date: "2026-10-24",
+			reason: "planned",
+		});
 		expect(
-			isEvening(todo({ ...scheduled("2026-10-24"), evening: true }), TODAY),
-		).toBe(false);
+			lateness(
+				todo({ ...scheduled("2026-10-24"), deadline: "2026-10-22" }),
+				TODAY,
+			),
+		).toEqual({ date: "2026-10-22", reason: "deadline" });
+		expect(lateness(todo(scheduled(TODAY)), TODAY)).toBeNull();
 		expect(daysUntilDeadline(todo({ deadline: "2026-10-22" }), TODAY)).toBe(-3);
 		expect(daysUntilDeadline(todo({ deadline: TODAY }), TODAY)).toBe(0);
 		expect(daysUntilDeadline(todo(), TODAY)).toBeNull();
