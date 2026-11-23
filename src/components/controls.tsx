@@ -8,7 +8,7 @@ import { useSavedField } from "../editing/useSavedField";
 import { dayLabel } from "../lib/format";
 import { BoxIcon, CalendarIcon, MoonIcon, StarIcon } from "./icons";
 
-/** Grows a textarea to fit its content. */
+/** Grows a textarea to fit its content, including when its width changes. */
 export function useAutoGrow(
 	ref: React.RefObject<HTMLTextAreaElement | null>,
 	value: string,
@@ -16,10 +16,26 @@ export function useAutoGrow(
 	// biome-ignore lint/correctness/useExhaustiveDependencies: re-measure whenever the text changes
 	useLayoutEffect(() => {
 		const el = ref.current;
-		if (!el) return;
-		el.style.height = "auto";
-		el.style.height = `${el.scrollHeight}px`;
+		if (el) fitHeight(el);
 	}, [ref, value]);
+	useEffect(() => {
+		const el = ref.current;
+		if (!el || typeof ResizeObserver === "undefined") return;
+		let width = el.clientWidth;
+		const observer = new ResizeObserver(() => {
+			// Only a new width changes how the text wraps.
+			if (el.clientWidth === width) return;
+			width = el.clientWidth;
+			fitHeight(el);
+		});
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [ref]);
+}
+
+function fitHeight(el: HTMLTextAreaElement) {
+	el.style.height = "auto";
+	el.style.height = `${el.scrollHeight}px`;
 }
 
 export function whenText(todo: Todo | Project, today: LocalDate): string {
@@ -104,7 +120,7 @@ export function IconButton({
 	);
 }
 
-/** A borderless text input for list and heading titles; saves as you type. */
+/** A borderless title for lists, headings and to-dos that wraps onto more lines; saves as you type. */
 export function EditableTitle({
 	value,
 	onSave,
@@ -121,15 +137,18 @@ export function EditableTitle({
 	className?: string;
 }) {
 	const field = useSavedField(value, onSave);
-	const input = useRef<HTMLInputElement>(null);
+	const input = useRef<HTMLTextAreaElement>(null);
+	useAutoGrow(input, field.value);
 	useEffect(() => {
 		if (autoFocus) input.current?.select();
 	}, [autoFocus]);
 	return (
-		<input
+		<textarea
 			ref={input}
+			rows={1}
 			value={field.value}
-			onChange={(e) => field.onChange(e.target.value)}
+			// A title is one line that wraps; pasted line breaks become spaces.
+			onChange={(e) => field.onChange(e.target.value.replace(/\s*\n\s*/g, " "))}
 			onBlur={field.flush}
 			onKeyDown={(e) => {
 				if (e.key === "Enter" || e.key === "Escape") {
@@ -140,7 +159,7 @@ export function EditableTitle({
 			}}
 			placeholder={placeholder}
 			aria-label={label}
-			className={`min-w-0 flex-1 rounded bg-transparent outline-none placeholder:text-[var(--fg-muted)] focus-visible:ring-2 focus-visible:ring-accent/30 ${className}`}
+			className={`block min-w-0 flex-1 resize-none overflow-hidden rounded bg-transparent break-words outline-none placeholder:text-[var(--fg-muted)] focus-visible:ring-2 focus-visible:ring-accent/30 ${className}`}
 		/>
 	);
 }

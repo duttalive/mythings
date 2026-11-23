@@ -123,8 +123,18 @@ body {
 	/* iOS zooms the page into any field under 16px when it gets focus. */
 	input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 	textarea,
-	select {
+	select,
+	.notes-editor {
 		font-size: max(16px, 1em);
+	}
+	/* The toggle arrow in Task Notes: a finger-sized target without moving the text. */
+	.notes-editor .toggle-button {
+		position: relative;
+	}
+	.notes-editor .toggle-button::after {
+		content: "";
+		position: absolute;
+		inset: -0.6rem;
 	}
 }
 
@@ -245,10 +255,19 @@ body {
 .notes-editor > * + * {
 	margin-top: 0.35em;
 }
-.notes-editor p.is-empty::before {
+/* The hint on an empty line takes no room and never wraps, so it can't overlap
+   what's below it or push a list's number out of line. */
+.notes-editor .is-empty {
+	position: relative;
+}
+.notes-editor .is-empty::before {
 	content: attr(data-placeholder);
-	float: left;
-	height: 0;
+	position: absolute;
+	inset-inline: 0;
+	top: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
 	pointer-events: none;
 	color: var(--fg-muted);
 }

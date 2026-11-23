@@ -1,12 +1,14 @@
 import { MarkdownManager } from "@tiptap/markdown";
 import { describe, expect, it } from "vitest";
 import { documentExtensions } from "../../src/notes/extensions";
+import { repairMarkdown, tidyMarkdown } from "../../src/notes/markdown";
 
 const manager = new MarkdownManager({
 	extensions: documentExtensions(),
 	indentation: { style: "space", size: 2 },
 });
-const roundTrip = (md: string) => manager.serialize(manager.parse(md)).trim();
+const roundTrip = (md: string) =>
+	tidyMarkdown(manager.serialize(manager.parse(md)));
 
 describe("Task Notes Markdown", () => {
 	it.each([
@@ -37,5 +39,46 @@ describe("Task Notes Markdown", () => {
 		expect(roundTrip(":::toggle\nOpen one\n:::")).toBe(
 			":::toggle\n\nOpen one\n\n:::",
 		);
+	});
+
+	it("keeps an empty list item and blank lines as they are", () => {
+		const doc = {
+			type: "doc",
+			content: [
+				{ type: "paragraph", content: [{ type: "text", text: "Link" }] },
+				{ type: "paragraph" },
+				{
+					type: "orderedList",
+					content: [
+						{
+							type: "listItem",
+							content: [
+								{
+									type: "paragraph",
+									content: [{ type: "text", text: "Squats" }],
+								},
+							],
+						},
+						{ type: "listItem", content: [{ type: "paragraph" }] },
+					],
+				},
+			],
+		};
+		const saved = tidyMarkdown(manager.serialize(doc));
+		const list = manager
+			.parse(saved)
+			.content?.find((n) => n.type === "orderedList");
+		expect(list?.content).toHaveLength(2);
+		// The empty item didn't turn into text in the one before it.
+		expect(JSON.stringify(list?.content?.[0])).not.toContain("2.");
+	});
+
+	it("repairs an empty list item saved without its space", () => {
+		const list = manager
+			.parse(repairMarkdown("Link\n\n1. Squats\n2."))
+			.content?.find((n) => n.type === "orderedList");
+		expect(list?.content).toHaveLength(2);
+		expect(repairMarkdown("Total\n2.")).toBe("Total\n2.");
+		expect(repairMarkdown("- a\n-")).toBe("- a\n- ");
 	});
 });

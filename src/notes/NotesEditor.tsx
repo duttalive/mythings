@@ -4,6 +4,7 @@
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { editorExtensions } from "./extensions";
+import { repairMarkdown, tidyMarkdown } from "./markdown";
 import { SlashCommands, type SlashHandlers, type SlashState } from "./slash";
 
 export type NotesEditorProps = {
@@ -21,7 +22,7 @@ export default function NotesEditor({
 	value,
 	onChange,
 	label = "Notes",
-	placeholder = "Notes, or type / for headings, lists, toggles…",
+	placeholder = "Notes, or type / for blocks",
 	editable = true,
 	autoFocus = false,
 	variant = "card",
@@ -81,7 +82,7 @@ export default function NotesEditor({
 			...editorExtensions(placeholder),
 			SlashCommands.configure({ handlers }),
 		],
-		content: value,
+		content: repairMarkdown(value),
 		contentType: "markdown",
 		editable,
 		autofocus: autoFocus ? "end" : false,
@@ -95,7 +96,7 @@ export default function NotesEditor({
 			},
 		},
 		onUpdate: ({ editor }) => {
-			const markdown = editor.isEmpty ? "" : editor.getMarkdown().trim();
+			const markdown = editor.isEmpty ? "" : tidyMarkdown(editor.getMarkdown());
 			if (markdown === current.current) return;
 			current.current = markdown;
 			onChangeRef.current(markdown);
@@ -106,7 +107,7 @@ export default function NotesEditor({
 	useEffect(() => {
 		if (!editor || value === current.current || editor.isFocused) return;
 		current.current = value;
-		editor.commands.setContent(value, {
+		editor.commands.setContent(repairMarkdown(value), {
 			contentType: "markdown",
 			emitUpdate: false,
 		});
@@ -179,7 +180,11 @@ export default function NotesEditor({
 					data-popover-content
 					className="absolute z-40 max-h-72 w-64 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--card)] p-1 text-sm shadow-[var(--card-shadow)]"
 					style={{
-						left: Math.max(0, slash.rect.left - origin.left),
+						// Stays inside the editor, even near the right edge of a phone.
+						left: Math.max(
+							0,
+							Math.min(slash.rect.left - origin.left, origin.width - 256),
+						),
 						top: slash.rect.bottom - origin.top + 4,
 					}}
 				>

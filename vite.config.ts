@@ -68,7 +68,9 @@ export default defineConfig({
 				scope: "/",
 				display: "standalone",
 				background_color: "#1c1c1e",
-				theme_color: "#2f63e6",
+				// Android paints the installed app's system bars with this, so it
+				// matches the dark background rather than the accent.
+				theme_color: "#1c1c1e",
 				icons: [
 					{ src: "pwa-64x64.png", sizes: "64x64", type: "image/png" },
 					{ src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },

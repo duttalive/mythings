@@ -232,7 +232,7 @@ function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 				editable={!readOnly}
 				autoFocus={!readOnly}
 				label="Task Notes"
-				placeholder="Write anything. Type / for headings, lists, toggles, tables…"
+				placeholder="Write anything, or type / for blocks"
 				variant="page"
 			/>
 		</ListPage>

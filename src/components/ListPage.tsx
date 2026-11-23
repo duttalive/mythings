@@ -37,9 +37,14 @@ export function ListPage({
 			<header className="mb-6">
 				<h1
 					id="list-title"
-					className="flex items-center gap-2.5 text-[1.625rem] font-bold leading-tight"
+					className="flex items-start gap-2.5 text-[1.625rem] font-bold leading-tight"
 				>
-					{icon}
+					{/* Lines up with the first line of a title that wraps. */}
+					{icon && (
+						<span className="flex h-[1.25em] shrink-0 items-center">
+							{icon}
+						</span>
+					)}
 					{titleNode ? (
 						<>
 							{/* Keeps the heading's accessible name; inputs don't provide one. */}

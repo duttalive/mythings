@@ -196,7 +196,7 @@ On a computer you can drag the sidebar's right edge to make it wider or narrower
 ### 2.2 The main pane
 
 - **The top bar:** the sidebar button, the **search** icon, which opens [Quick Find](#12-finding-things-quick-find), the **Task Notes** icon, which opens [Task Notes](#57-task-notes), and on a computer the **Full width** button (↔), which lets every list use the whole window instead of a centered column. Click it again to go back. It's off to start with, and it's the same switch as [Settings → Appearance → Full width](#161-appearance).
-- **The title** of the list, with its icon. Titles of projects, areas, Life Buckets and tags can be edited by clicking them.
+- **The title** of the list, with its icon. Titles of projects, areas, Life Buckets and tags can be edited by clicking them; long titles wrap onto more lines.
 - **Header details,** for projects, areas, Life Buckets and tags: notes, the Life Bucket a project or area belongs to, a project's When and deadline, tag chips and a **⋯** menu.
 - **The tag bar:** a row of tag chips for [filtering the list](#410-filtering-a-list-by-tag).
 - **The items,** in sections where the list has them (for example _This Evening_ in Today, or days in Upcoming).
@@ -536,7 +536,7 @@ The Tags button (or chip) on the card, or **⌘⇧T**, opens the tag picker:
 
 **Task Notes** are every to-do's notes: a place to explore and write as much as you need, Notion-style. Write in the open to-do, or open it as a full page.
 
-**Writing.** Type **/** anywhere to insert a block, then keep typing to narrow the list, use ↑ / ↓ and **Enter**, or click one. Escape closes the menu.
+**Writing.** An empty line shows a hint, **Type / for blocks**. Type **/** anywhere to insert a block, then keep typing to narrow the list, use ↑ / ↓ and **Enter**, or click one. Escape closes the menu.
 
 ![The / menu open under a callout, listing Text, Heading 1, Heading 2, Heading 3, Bulleted list, Numbered list and To-do list, each with a short description](docs/guide/task-notes-slash.jpg)
 
@@ -560,7 +560,7 @@ The Tags button (or chip) on the card, or **⌘⇧T**, opens the tag picker:
 
 ![The Task Notes page for "Book a van for moving day": a heading "Van options", three checkboxes (one ticked), a callout about a parking permit, and an open toggle "Quotes" holding a table of two van companies, with the table buttons below](docs/guide/task-notes-page.jpg)
 
-**The full page.** Click **Open in Task Notes** (the notes icon at the bottom of an open to-do) to write on a whole page. Its title is the to-do's title, which you can edit, with a checkbox to complete it. Under it are links back to Task Notes and to the list the to-do is in. Changes save a moment after you stop typing, and when you leave.
+**The full page.** Click **Open in Task Notes** (the notes icon at the bottom of an open to-do) to write on a whole page. Its title is the to-do's title (long titles wrap), which you can edit, with a checkbox to complete it. Under it are links back to Task Notes and to the list the to-do is in. Changes save a moment after you stop typing, and when you leave.
 
 **The Task Notes page.** The **Task Notes** icon at the top of every page (or **g n**, or "Task Notes" in Quick Find) lists every to-do that has notes, most recently changed first. Each shows its title, where it is and the start of its notes. The search box finds words anywhere in titles and notes; a match shows the part of the notes it was found in. Click one to open its full page. To-dos in the Trash aren't listed.
 

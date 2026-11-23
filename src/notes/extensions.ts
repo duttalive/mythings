@@ -148,8 +148,13 @@ export function editorExtensions(placeholder: string): AnyExtension[] {
 	return [
 		...documentExtensions(),
 		Placeholder.configure({
-			placeholder: ({ node }) =>
-				node.type.name === "heading" ? "Heading" : placeholder,
+			// The full hint while the note is empty; a short one on other empty lines.
+			placeholder: ({ editor, node }) =>
+				node.type.name === "heading"
+					? "Heading"
+					: editor.isEmpty
+						? placeholder
+						: "Type / for blocks",
 			showOnlyCurrent: true,
 		}),
 	];
