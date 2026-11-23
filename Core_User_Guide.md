@@ -15,7 +15,7 @@ This guide walks through every feature and flow, end to end, with a screenshot o
 2. [The screen at a glance](#2-the-screen-at-a-glance)
 3. [Core ideas](#3-core-ideas)
 4. [The lists](#4-the-lists): [Inbox](#41-inbox) · [Today](#42-today) · [Upcoming](#43-upcoming) · [Anytime](#44-anytime) · [Someday](#45-someday) · [Overdue](#46-overdue) · [Logbook](#47-logbook) · [Trash](#48-trash) · [Deadlines](#49-deadlines-hidden-list) · [filtering by tag](#410-filtering-a-list-by-tag)
-5. [Working with to-dos](#5-working-with-to-dos)
+5. [Working with to-dos](#5-working-with-to-dos): [the to-do card](#52-the-to-do-card) · [moving](#55-moving-a-to-do) · [Scratch Pad](#57-the-scratch-pad)
 6. [Scheduling: When, deadlines, reminders and repeats](#6-scheduling-when-deadlines-reminders-and-repeats)
 7. [Projects and headings](#7-projects-and-headings)
 8. [Life Buckets and Areas](#8-life-buckets-and-areas)
@@ -195,7 +195,7 @@ On a computer you can drag the sidebar's right edge to make it wider or narrower
 
 ### 2.2 The main pane
 
-- **The top bar:** the sidebar button and the **search** icon, which opens [Quick Find](#12-finding-things-quick-find).
+- **The top bar:** the sidebar button, the **search** icon, which opens [Quick Find](#12-finding-things-quick-find), and the **Scratch Pad** icon, which opens [the Scratch Pad](#57-the-scratch-pad).
 - **The title** of the list, with its icon. Titles of projects, areas, Life Buckets and tags can be edited by clicking them.
 - **Header details,** for projects, areas, Life Buckets and tags: notes, the Life Bucket a project or area belongs to, a project's When and deadline, tag chips and a **⋯** menu.
 - **The tag bar:** a row of tag chips for [filtering the list](#410-filtering-a-list-by-tag).
@@ -221,7 +221,7 @@ Each to-do is a row. From left to right it can show:
 A to-do has:
 
 - a **title**;
-- optional **notes** (Markdown is fine);
+- optional **notes**: a [Scratch Pad](#57-the-scratch-pad) for headings, lists, checkboxes, toggles, tables and more;
 - an optional **checklist** of small steps;
 - **tags**;
 - a **When**: when you plan to work on it;
@@ -463,18 +463,18 @@ A new to-do you close while it's still completely empty is discarded.
 
 Click a to-do (or select it and press **Enter**) to open it in place as a card:
 
-![An open to-do card for "Buy groceries": title, notes, a five-item checklist with two items ticked, and footer buttons for When, Tags, Deadline and More](docs/guide/todo-card.jpg)
+![An open to-do card for "Buy groceries": title, notes, a five-item checklist with two items ticked, chips for Today and its tags, and buttons for Move, Deadline, Open in Scratch Pad and More](docs/guide/todo-card.jpg)
 
 - **Title** at the top; a long title wraps onto more lines. Return closes the card.
-- **Notes** below, in Markdown; the box grows as you type.
+- **Notes** below: the to-do's [Scratch Pad](#57-the-scratch-pad). Write freely, or type **/** for headings, lists, checkboxes, toggles, callouts, tables and more.
 - **Checklist:**
   - **Add checklist** (in the footer) starts one; Return adds an item below the current one.
   - Backspace on an empty item removes it.
   - Long items wrap onto more lines as you type, so you can read every step in full.
   - Tick items off as you go (they're struck through). The collapsed row shows progress like `2/5`.
 - **The footer** shows what's set and offers what isn't:
-  - Set values appear as chips on the left: the **When** (★ Today here), a **reminder** time, the **tags** (_errands, shop_) and the **deadline**. Click a chip to change it.
-  - Icons on the right add what's missing: **When** (calendar), **Tags**, **Add checklist**, **Deadline** (flag) and **⋯ More actions**.
+  - Set values appear as chips on the left: the **When** (★ Today here), the **list** it's in (a project, a heading in one, or an area), a **reminder** time, the **tags** (_errands, shop_) and the **deadline**. Click a chip to change it.
+  - Icons on the right add what's missing: **When** (calendar), **Move** (for a to-do that isn't in a project or area yet), **Tags**, **Add checklist**, **Deadline** (flag), **Open in Scratch Pad** and **⋯ More actions**.
 - Changes save automatically a moment after you stop typing, and when the card closes.
 - Close it with Return in the title, **Escape**, **⌘Return**, or by clicking outside.
 
@@ -515,7 +515,11 @@ A repeating to-do's template shows **Repeats · next …** instead of its When; 
 
 ### 5.5 Moving a to-do
 
-- **Move to list** (⌘⇧M, or **Move** in the bar that appears for selected to-dos) opens a list picker: type to find the Inbox, a project (and a heading in it) or an area, and choose it.
+- **From the open to-do:** click the chip with the list it's in (or the **Move** icon, for a to-do in the Inbox or no list yet). A message confirms where it went ("Moved to Admin").
+- **Move to list** (⌘⇧M, or **Move** in the bar that appears for selected to-dos) opens the same picker for everything selected.
+- **The picker** lists the Inbox, then each Life Bucket with its areas and projects under it, and each project's headings under the project. The list a to-do is in now is shown in bold. Type to search them all; each result shows where it is (_Work › Launch website_). It goes to the end of the list you choose.
+
+  ![The Move picker open from a to-do: a "Move to…" search box, the Inbox, then the Work Life Bucket with the Admin area, the Launch website project and its headings Design and Content, Quarterly report, and the Home Life Bucket with Household](docs/guide/move-picker.jpg)
 - **Drag** it onto a list in the sidebar; see [Drag and drop](#103-drag-and-drop).
 
 ### 5.6 Tags on a to-do
@@ -527,6 +531,46 @@ The Tags button (or chip) on the card, or **⌘⇧T**, opens the tag picker:
 - **Type** to find a tag; if none matches, you can create it from there.
 - **Click** a tag to add or remove it. Nested tags are indented under their parent.
 - A tag's **shortcut key** (shown on the right, like `e` for _errands_) toggles it while the search box is empty (Shift types the letter instead). Set shortcuts on the [tag's page](#94-a-tags-page).
+
+### 5.7 The Scratch Pad
+
+Every to-do's notes are its **Scratch Pad**: a place to explore and write as much as you need, Notion-style. Write in the open to-do, or open it as a full page.
+
+**Writing.** Type **/** anywhere to insert a block, then keep typing to narrow the list, use ↑ / ↓ and **Enter**, or click one. Escape closes the menu.
+
+![The / menu open under a callout, listing Text, Heading 1, Heading 2, Heading 3, Bulleted list, Numbered list and To-do list, each with a short description](docs/guide/scratch-slash.jpg)
+
+| Block          | What it's for                                     | Shortcut while typing |
+| -------------- | ------------------------------------------------- | --------------------- |
+| Heading 1–3    | Sections                                          | `# `, `## `, `### `   |
+| Bulleted list  | A simple list                                     | `- `                  |
+| Numbered list  | Steps in order                                    | `1. `                 |
+| To-do list     | Checkboxes to tick off                            | `[ ] `                |
+| Toggle         | A line you can open to show more under it         |                       |
+| Callout        | A highlighted box for something to notice         |                       |
+| Quote          | A quotation                                       | `> `                  |
+| Code           | A block of code                                   | ` ``` `               |
+| Table          | Rows and columns                                  |                       |
+| Divider        | A line between sections                           | `---`                 |
+
+- **Bold**, _italic_, ~~strike~~ and `code`: ⌘B, ⌘I, ⌘⇧S and ⌘E, or type them with `**`, `*`, `~~` and backticks. Web addresses become links as you type or paste them.
+- **Toggles:** the first line is always shown; click the arrow to show or hide the rest. Whether it's open is saved.
+- **Tables:** while the cursor is in a table, buttons below it add or delete rows and columns, or delete the table. Tab moves to the next cell (and adds a row at the end).
+- **Checkboxes** in the Scratch Pad are part of your notes. They're separate from the to-do's [checklist](#52-the-to-do-card), which shows progress on the row.
+
+![The Scratch Pad page for "Book a van for moving day": a heading "Van options", three checkboxes (one ticked), a callout about a parking permit, and an open toggle "Quotes" holding a table of two van companies, with the table buttons below](docs/guide/scratch-page.jpg)
+
+**The full page.** Click **Open in Scratch Pad** (the notes icon at the bottom of an open to-do) to write on a whole page. Its title is the to-do's title, which you can edit, with a checkbox to complete it. Under it are links back to the Scratch Pad and to the list the to-do is in. Changes save a moment after you stop typing, and when you leave.
+
+**The Scratch Pad tab.** The **Scratch Pad** icon at the top of every page (or **g p**, or "Scratch Pad" in Quick Find) lists every to-do that has notes, most recently changed first. Each shows its title, where it is and the start of its notes. The search box finds words anywhere in titles and notes; a match shows the part of the notes it was found in. Click one to open its full page. To-dos in the Trash aren't listed.
+
+![The Scratch Pad tab: a "Search notes" box and three to-dos with notes, each with where it is, the start of its notes and the day it changed](docs/guide/scratch-pad.jpg)
+
+**Good to know:**
+
+- Notes from before the Scratch Pad open just as they were, including Markdown you typed.
+- With [encryption](#171-end-to-end-encryption) on, the Scratch Pad is encrypted like every other note, and searching it happens on your device.
+- Notes stay with their to-do: they're copied when a to-do [repeats](#64-repeating-to-dos-and-projects), go to the Logbook and Trash with it, and are included when you [export](#18-your-data).
 
 ---
 
@@ -688,9 +732,9 @@ The **+** button and Space add to-dos to the project.
 ### 8.1 Life Buckets
 
 - **Create:** **+ New List → New Life Bucket** ("A big part of life, like Work or Family, holding its areas and projects"). Your first area or project, if you don't have a Life Bucket yet, goes into a new **Personal** one; rename it any time.
-- **The Life Bucket's page:** its **Areas** (with how many open to-dos each has), then its **Projects** (with progress rings and deadlines), then **Show N logged items** for its finished projects.
+- **The Life Bucket's page:** its **Areas** (with how many open to-dos each has), then its **Projects** (with progress rings and deadlines), then **Show N logged items** for its finished projects. **+ New Area** under the areas and **+ New Project** under the projects add one right there, in this Life Bucket.
 
-  ![The Home Life Bucket: its tag "home", the Household area with 4 open to-dos, and the "Move apartments" project with 12 days left](docs/guide/bucket.jpg)
+  ![The Home Life Bucket: its tag "home", the Household area with 4 open to-dos and a New Area button, then the "Move apartments" project with 12 days left and a New Project button](docs/guide/bucket.jpg)
 
 - **Rename** by clicking the title. **Tags** on a Life Bucket apply to everything inside it.
 - **The Life Bucket's ⋯ menu:**
@@ -865,11 +909,12 @@ It searches, as you type:
 
 - Lists (Inbox, Today, Upcoming, Anytime, Someday, Overdue, **Deadlines**, Logbook, Trash).
 - Life Buckets, projects and areas (with their Life Bucket), and tags.
-- To-dos, by title and notes, with the project or area they're in.
+- To-dos, by title and notes, with the project or area they're in. When only the notes match, the result shows the words around the match instead.
+- The **Scratch Pad**.
 
 Use ↑ / ↓ and **Enter** to open a result, or click it. Opening a to-do takes you to the list it's in and opens it there. Lists and projects rank above to-dos when they match about as well. Escape closes it. With encryption on, search still works: it happens on your device.
 
-The **g** shortcuts navigate without searching: **g i** Inbox, **g t** Today, **g u** Upcoming, **g a** Anytime, **g s** Someday, **g o** Overdue, **g l** Logbook. After **g**, the app waits a moment; any other letter opens Quick Find with both letters.
+The **g** shortcuts navigate without searching: **g i** Inbox, **g t** Today, **g u** Upcoming, **g a** Anytime, **g s** Someday, **g o** Overdue, **g l** Logbook, **g p** Scratch Pad. After **g**, the app waits a moment; any other letter opens Quick Find with both letters.
 
 ---
 
@@ -899,6 +944,7 @@ Press **?** to see the list in the app:
 | Delete                                   | Backspace or Delete                    |
 | Go to Inbox … Logbook                    | ⌘1 … ⌘6, or g i / t / u / a / s / l    |
 | Go to Overdue                            | g o                                    |
+| Go to the Scratch Pad                    | g p                                    |
 | Settings                                 | ⌘,                                     |
 | Undo / Redo                              | ⌘Z / ⌘⇧Z                               |
 | Shortcut help                            | ?                                      |
@@ -910,6 +956,7 @@ Inside an open to-do card:
 | Close the card                           | Return (in the title), Esc or ⌘Return  |
 | New checklist item below                 | Return (in a checklist item)           |
 | Remove an empty checklist item           | Backspace                              |
+| Insert a block in the notes              | / (then Enter); Esc closes the menu    |
 
 Some browsers keep a few combinations for themselves in a normal tab (such as Chrome's ⌘1…⌘8); they work in the installed app, and the **g** shortcuts work everywhere.
 

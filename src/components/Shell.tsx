@@ -1,13 +1,14 @@
-import { Outlet, useLocation } from "@tanstack/react-router";
+import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { ListDataProvider } from "../data";
 import { DndProvider } from "../dnd/DndProvider";
 import { EditingProvider } from "../editing/EditingProvider";
 import { SelectionProvider } from "../editing/SelectionProvider";
 import { KeyboardProvider, useKeyboard } from "../keyboard/KeyboardProvider";
+import { preloadNotesEditor } from "../notes";
 import { useSyncStatus } from "../sync/hooks";
 import { BulkBarProvider } from "./BulkBar";
-import { CloudOffIcon, SearchIcon, SidebarIcon } from "./icons";
+import { CloudOffIcon, NotesIcon, SearchIcon, SidebarIcon } from "./icons";
 import { NewTodoButton } from "./NewTodoButton";
 import { Sidebar } from "./Sidebar";
 import { SidebarResizer, useSidebarWidth } from "./SidebarResizer";
@@ -46,6 +47,12 @@ export function Shell() {
 	const desktop = useMediaQuery(DESKTOP);
 	const { pathname } = useLocation();
 	const sidebar = useSidebarWidth();
+
+	// Fetch the Scratch Pad editor once things settle, so opening a to-do is instant.
+	useEffect(() => {
+		const timer = setTimeout(preloadNotesEditor, 2000);
+		return () => clearTimeout(timer);
+	}, []);
 
 	// Navigating from the drawer closes it.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: runs on route change
@@ -120,6 +127,14 @@ export function Shell() {
 													<SidebarIcon className="size-5" />
 												</button>
 												<SearchButton />
+												<Link
+													to="/scratch"
+													aria-label="Scratch Pad"
+													title="Scratch Pad (g then p)"
+													className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-2.5 [&.active]:text-accent"
+												>
+													<NotesIcon className="size-5" />
+												</Link>
 												{offline && (
 													<span
 														className="ml-auto flex items-center gap-1.5 rounded-full bg-[var(--hover)] px-2.5 py-1 text-xs font-medium text-[var(--fg-muted)]"

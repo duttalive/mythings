@@ -16,6 +16,7 @@ import { LogbookPage } from "./routes/logbook";
 import { NotFound } from "./routes/not-found";
 import { OverduePage } from "./routes/overdue";
 import { ProjectPage } from "./routes/project";
+import { ScratchPadPage, ScratchPage } from "./routes/scratch";
 import { SharePage } from "./routes/share";
 import { SomedayPage } from "./routes/someday";
 import { TagPage } from "./routes/tag";
@@ -56,6 +57,9 @@ const routeTree = rootRoute.addChildren([
 	// Not in the sidebar: reached from Quick Find.
 	page("/deadlines", DeadlinesPage),
 	page("/trash", TrashPage),
+	// Not in the sidebar: the top bar, Quick Find and `g p` open it.
+	page("/scratch", ScratchPadPage),
+	page("/scratch/$todoId", ScratchPage),
 	page("/project/$projectId", ProjectPage),
 	page("/area/$areaId", AreaPage),
 	page("/bucket/$bucketId", BucketPage),

@@ -231,11 +231,57 @@ test("guide screenshots", async ({ page, browser }) => {
 	await step(page, "todo card", async () => {
 		await open(page, "/today");
 		await row(page, "Buy groceries").click();
-		const card = main(page).getByLabel("Notes");
+		const card = main(page).getByRole("textbox", { name: "Notes" });
 		await expect(card).toBeVisible();
 		await shot(page, "todo-card");
 		await page.getByRole("button", { name: "More actions" }).click();
 		await shot(page, "todo-more-actions");
+	});
+
+	await step(page, "move picker", async () => {
+		await open(page, "/today");
+		await row(page, "Book a van for moving day").click();
+		await main(page)
+			.getByRole("button", { name: "Move apartments › Moving day" })
+			.click();
+		const picker = page.getByRole("dialog", { name: "Move" });
+		await expect(picker.getByText("Home", { exact: true })).toBeVisible();
+		await shot(
+			page,
+			"move-picker",
+			picker,
+			main(page).getByRole("textbox", { name: "Notes" }),
+		);
+		await page.keyboard.press("Escape");
+	});
+
+	await step(page, "scratch pad", async () => {
+		await open(page, "/today");
+		await row(page, "Book a van for moving day").click();
+		await page.getByRole("link", { name: "Open in Scratch Pad" }).click();
+		const pad = page.getByRole("textbox", { name: "Scratch Pad" });
+		await expect(pad.locator("table")).toBeVisible();
+		await page.getByRole("textbox", { name: "To-do title" }).blur();
+		await shot(page, "scratch-page");
+		// The / menu, on a new line at the end (undone afterwards).
+		await pad.locator("p", { hasText: "parking permit" }).click();
+		await page.keyboard.press("End");
+		await page.keyboard.press("Enter");
+		await page.keyboard.type("/");
+		const menu = page.getByRole("listbox", { name: "Insert a block" });
+		await expect(menu).toBeVisible();
+		await shot(page, "scratch-slash", menu, pad.locator("[data-callout]"));
+		await page.keyboard.press("Escape");
+		await page.keyboard.press("ControlOrMeta+z");
+		await page.keyboard.press("ControlOrMeta+z");
+		await page
+			.getByRole("link", { name: "Scratch Pad", exact: true })
+			.first()
+			.click();
+		await expect(
+			page.getByRole("heading", { name: "Scratch Pad" }),
+		).toBeVisible();
+		await shot(page, "scratch-pad");
 	});
 
 	await step(page, "when popover", async () => {

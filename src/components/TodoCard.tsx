@@ -1,6 +1,7 @@
 // A to-do expanded inline into an editable card (SPEC §10.2): title, notes,
 // checklist, and a footer for When, Tags, Checklist and Deadline.
 
+import { Link } from "@tanstack/react-router";
 import {
 	type KeyboardEvent,
 	type ReactNode,
@@ -22,6 +23,7 @@ import { comboFromEvent } from "../keyboard/keys";
 import { deadlineLabel, shortDate } from "../lib/format";
 import { keyAfter, keyBetween } from "../lib/order";
 import { formatTime, reminderTime } from "../lib/reminders";
+import { NotesEditor } from "../notes";
 import { useChecklist, useOps } from "../sync/hooks";
 import { useConfirmDelete } from "./ConfirmDelete";
 import {
@@ -39,6 +41,7 @@ import {
 	FlagIcon,
 	LayersIcon,
 	MoreIcon,
+	NotesIcon,
 	RepeatIcon,
 	RestoreIcon,
 	TagIcon,
@@ -80,8 +83,6 @@ export function TodoCard({ todo }: { todo: Todo }) {
 
 	const card = useRef<HTMLDivElement>(null);
 	const titleRef = useRef<HTMLTextAreaElement>(null);
-	const notesRef = useRef<HTMLTextAreaElement>(null);
-	useAutoGrow(notesRef, notes);
 	useAutoGrow(titleRef, title);
 
 	// Title and notes save shortly after typing stops, and whenever the card closes.
@@ -117,7 +118,10 @@ export function TodoCard({ todo }: { todo: Todo }) {
 				!latest.current.notes.trim() &&
 				(itemsRef.current?.length ?? 0) === 0,
 		});
+		// Closing or reloading the page saves what's typed, too.
+		window.addEventListener("pagehide", flush);
 		return () => {
+			window.removeEventListener("pagehide", flush);
 			flush();
 			registerCard(todo.id, null);
 		};
@@ -331,18 +335,16 @@ export function TodoCard({ todo }: { todo: Todo }) {
 				/>
 			</div>
 
-			<textarea
-				ref={notesRef}
-				value={notes}
-				onChange={(e) => {
-					setNotes(e.target.value);
-					scheduleSave();
-				}}
-				rows={1}
-				placeholder="Notes"
-				aria-label="Notes"
-				className="mt-1 block w-full resize-none overflow-hidden bg-transparent pl-[38px] pr-2 text-sm leading-relaxed text-[var(--fg)] outline-none placeholder:text-[var(--fg-muted)]"
-			/>
+			<div className="mt-1 pl-[38px] pr-2">
+				<NotesEditor
+					value={notes}
+					onChange={(markdown) => {
+						setNotes(markdown);
+						scheduleSave();
+					}}
+					label="Notes"
+				/>
+			</div>
 
 			{items && items.length > 0 && (
 				<ul
@@ -457,6 +459,15 @@ export function TodoCard({ todo }: { todo: Todo }) {
 								{<FlagIcon className="size-4" />}
 							</IconButton>,
 						)}
+					<Link
+						to="/scratch/$todoId"
+						params={{ todoId: todo.id }}
+						aria-label="Open in Scratch Pad"
+						title="Open in Scratch Pad"
+						className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:p-2.5"
+					>
+						<NotesIcon className="size-4" />
+					</Link>
 					<Popover
 						label="More"
 						open={popover === "more"}

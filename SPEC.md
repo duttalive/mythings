@@ -427,7 +427,7 @@ Implementation notes (milestone 12):
 ### 10.2 To-do row
 
 - Collapsed: checkbox, title, then right-aligned indicators — tags, checklist progress (2/5), notes icon, deadline flag (red when overdue), ★ when in Today (in non-Today lists), ↻ when repeating.
-- Click/Enter → **expands inline** (not a modal) into a card: title, notes (markdown, auto-growing textarea), checklist, and a footer with buttons: When (calendar icon), Tags, Checklist, Deadline. Click outside or press Esc → collapse.
+- Click/Enter → **expands inline** (not a modal) into a card: title, notes (the Scratch Pad editor, §10.10), checklist, and a footer with buttons: When (calendar icon), Move (or a chip naming its list), Tags, Checklist, Deadline, Open in Scratch Pad, More. Click outside or press Esc → collapse.
 - Completing: the checkbox animates; the item stays in place (struck through) for ~1.5s, then leaves Today/Anytime. In Projects it stays visible until the day ends.
 
 ### 10.3 "When" popover
@@ -526,7 +526,17 @@ _Implementation notes (milestone 14):_
 - Swipes (touch only): right opens When for the row, left moves it to the Trash with an Undo toast. Decided after 10px; mostly vertical moves scroll, long presses still drag.
 - Animations: cards, popovers, dialogs, toasts and page changes fade or slide in over 150–180ms; `prefers-reduced-motion` turns all motion off.
 - Accessibility: checked with axe-core on every list, the settings page, dialogs, popovers, the mobile drawer and the login page in both themes (no violations). Selected rows use `aria-current` (buttons can't be `aria-selected`).
-- Vendor libraries are split into their own chunks (`vite.config.ts`), so no chunk is over 250 kB.
+- Vendor libraries are split into their own chunks (`vite.config.ts`), so no chunk is much over 250 kB. The Scratch Pad editor (`prosemirror`, `tiptap`, `markdown` chunks) loads on demand and is fetched 2 s after start-up.
+
+### 10.10 Scratch Pad (2.4.0)
+
+A to-do's `notes` is its Scratch Pad: a Notion-style editor (TipTap 3, `src/notes/`) whose document is stored as **Markdown**, so the data model, sync, encryption (notes are an encrypted field), export, import and repeats are unchanged.
+
+- Blocks: paragraphs, headings 1–3, bulleted/numbered lists, task lists (`- [ ]`), quotes, code blocks, dividers, GFM tables, and two Pandoc-style blocks: `:::toggle` (first child is the summary; `{open="false"}` when collapsed) and `:::callout`. Marks: bold, italic, strike, code, links (autolinked).
+- Insert with Markdown input rules or the "/" menu (`src/notes/slash.ts`, `@tiptap/suggestion`). Tables get a row/column bar while the cursor is in one.
+- The editor only writes back when the user edits, so existing notes aren't rewritten by opening them. Saving: 400 ms after typing stops, when the card closes or the page unmounts, and on `pagehide`.
+- `/scratch` lists to-dos with notes (not in Trash), newest `updatedAt` first, with a search over title + plain text of the notes (`src/notes/plain.ts`, client-side so it works with encryption). `/scratch/$todoId` shows one to-do's notes full-page. Opened from the top bar, Quick Find ("Scratch Pad"; notes-only matches show a snippet) and `g p`; not in the sidebar.
+- Project notes stay a Markdown textarea.
 
 ---
 

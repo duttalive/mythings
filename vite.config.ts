@@ -11,6 +11,13 @@ const vendorChunks: [name: string, test: RegExp][] = [
 	["ui", /node_modules[\\/](@radix-ui|@floating-ui|@dnd-kit)[\\/]/],
 	["dates", /node_modules[\\/]chrono-node[\\/]/],
 	["data", /node_modules[\\/](dexie|zod|fractional-indexing|ulid)[\\/]/],
+	// The Scratch Pad editor's libraries: loaded only once a to-do is opened.
+	[
+		"prosemirror",
+		/node_modules[\\/](prosemirror-[\w-]+|orderedmap|rope-sequence|w3c-keyname)[\\/]/,
+	],
+	["tiptap", /node_modules[\\/]@tiptap[\\/]/],
+	["markdown", /node_modules[\\/](marked|linkifyjs)[\\/]/],
 ];
 
 export default defineConfig({
