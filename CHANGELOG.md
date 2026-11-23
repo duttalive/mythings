@@ -2,6 +2,13 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.6.0 — 2026-11-23
+
+Checklists you can rearrange, and checklists in Task Notes.
+
+- Rearrange a to-do's checklist by dragging an item by the handle that appears on its left (always shown on phones and tablets). While typing in an item, ⌘↑ / ⌘↓ moves it up or down.
+- A to-do's page in Task Notes now shows its checklist at the top, apart from the notes, with how many items are done. Tick, edit, reorder or add items right there; it's the same checklist as in the open to-do.
+
 ## Version 2.5.0 — 2026-11-23
 
 Today now means today.
