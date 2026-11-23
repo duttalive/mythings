@@ -129,3 +129,106 @@ test("Task Notes stay readable with encryption on", async ({ page }) => {
 		page.getByRole("textbox", { name: "Task Notes" }).locator("h1"),
 	).toHaveText("Plan");
 });
+
+/** The open checklist's item texts, in order. */
+function checklistTitles(page: Page) {
+	return page
+		.getByRole("list", { name: "Checklist" })
+		.getByRole("textbox", { name: "Checklist item" });
+}
+
+/** Checks the checklist on screen reads `titles`, in order. */
+async function expectItems(page: Page, titles: string[]) {
+	await expect
+		.poll(() =>
+			checklistTitles(page).evaluateAll((els) =>
+				els.map((el) => (el as HTMLTextAreaElement).value),
+			),
+		)
+		.toEqual(titles);
+}
+
+/** Drags a checklist item by its handle onto another item's place. */
+async function dragItem(page: Page, from: string, onto: string) {
+	const handle = page.getByRole("button", { name: `Move: ${from}` });
+	const target = page
+		.getByRole("list", { name: "Checklist" })
+		.getByRole("listitem")
+		.filter({ has: page.getByRole("button", { name: `Move: ${onto}` }) });
+	await handle.hover();
+	const a = await handle.boundingBox();
+	const b = await target.boundingBox();
+	if (!a || !b) throw new Error("not on screen");
+	await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+	await page.mouse.down();
+	const y = b.y + b.height / 2;
+	for (let i = 1; i <= 8; i++)
+		await page.mouse.move(a.x + a.width / 2, a.y + ((y - a.y) * i) / 8);
+	await page.mouse.up();
+	// dnd-kit ignores clicks for a moment after a drop; people never click that fast.
+	await page.waitForTimeout(100);
+}
+
+test("checklist items reorder, and Task Notes shows them above the notes", async ({
+	page,
+}) => {
+	await signUp(page);
+	await open(page, "/inbox");
+	await quickEntry(page, "Pack");
+	await row(page, "Pack").click();
+	await page.getByRole("button", { name: "Add checklist" }).click();
+	for (const [i, item] of ["Books", "Plates", "Lamps"].entries()) {
+		if (i > 0) await page.keyboard.press("Enter");
+		await expect(checklistTitles(page).nth(i)).toBeFocused();
+		await page.keyboard.type(item);
+	}
+	const items = checklistTitles(page);
+	await expectItems(page, ["Books", "Plates", "Lamps"]);
+
+	// Dragging by the handle.
+	await dragItem(page, "Lamps", "Books");
+	await expectItems(page, ["Lamps", "Books", "Plates"]);
+	// ⌘↓ / Ctrl+↓ while typing in an item.
+	await items.nth(0).click();
+	await page.keyboard.press("ControlOrMeta+ArrowDown");
+	await expectItems(page, ["Books", "Lamps", "Plates"]);
+	await expect(items.nth(1)).toBeFocused();
+	await page.keyboard.press("Escape");
+	await expectSynced(page);
+
+	// The order is kept after a reload.
+	await page.reload();
+	await expectReady(page);
+	await row(page, "Pack").click();
+	await expectItems(page, ["Books", "Lamps", "Plates"]);
+	await items.nth(0).click();
+	await page.getByRole("link", { name: "Open in Task Notes" }).click();
+
+	// Task Notes: the checklist sits above the notes, apart from them.
+	const section = page.getByRole("region", { name: /Checklist/ });
+	await expect(section).toContainText("0 of 3");
+	await expectItems(page, ["Books", "Lamps", "Plates"]);
+	const pad = page.getByRole("textbox", { name: "Task Notes" });
+	const listBox = await section.boundingBox();
+	const padBox = await pad.boundingBox();
+	expect(listBox && padBox && listBox.y < padBox.y).toBe(true);
+	await expect(pad).not.toContainText("Books");
+
+	const books = page.getByRole("checkbox", { name: "Done: Books" });
+	await books.click();
+	await expect(books).toBeChecked();
+	await expect(section).toContainText("1 of 3");
+	await dragItem(page, "Plates", "Books");
+	await expectItems(page, ["Plates", "Books", "Lamps"]);
+	await page.getByRole("button", { name: "+ Add item" }).click();
+	await expect(items.nth(3)).toBeFocused();
+	await page.keyboard.type("Rugs");
+	await page.keyboard.press("Tab");
+	await expectItems(page, ["Plates", "Books", "Lamps", "Rugs"]);
+	await expectSynced(page);
+
+	// Back in the list, the card has the same checklist.
+	await open(page, "/inbox");
+	await row(page, "Pack").click();
+	await expectItems(page, ["Plates", "Books", "Lamps", "Rugs"]);
+});

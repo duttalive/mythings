@@ -438,7 +438,7 @@ Implementation notes (milestone 8):
 - The **+** button adds a to-do inline to the current list and opens it (Inbox, Today, Upcoming → tomorrow, Anytime, Someday, a project, area or tag; tags selected in the tag bar are applied). Quick Entry (§10.4) is separate.
 - A new to-do closed while still blank (no title, notes or checklist) is discarded, as in Things.
 - Return in the title closes the card; Escape or ⌘↵ anywhere in it does too. Title and notes save 400ms after typing stops and when the card closes.
-- Checklist: Return adds an item below, Backspace on an empty item removes it.
+- Checklist: Return adds an item below, Backspace on an empty item removes it; items reorder by dragging a grip handle (its own dnd-kit context, `src/components/Checklist.tsx`; pointer + keyboard sensors) or ⌘↑/⌘↓ inside an item, writing only the moved item's `sortKey`.
 - Completing from a row or card waits 1.5s before saving (unchecking in that window cancels it); reopening from the Logbook is immediate. Pending completions are saved if the page is hidden.
 - The When popover's "Add Reminder" and "Repeat…" footer arrive with milestone 12 (reminders and the repeat editor).
 - Trash rows have Restore; "Empty Trash" asks for inline confirmation and purges the top-level entries.
@@ -535,7 +535,7 @@ A to-do's `notes` is its Task Notes: a Notion-style editor (TipTap 3, `src/notes
 - Blocks: paragraphs, headings 1–3, bulleted/numbered lists, task lists (`- [ ]`), quotes, code blocks, dividers, GFM tables, and two Pandoc-style blocks: `:::toggle` (first child is the summary; `{open="false"}` when collapsed) and `:::callout`. Marks: bold, italic, strike, code, links (autolinked).
 - Insert with Markdown input rules or the "/" menu (`src/notes/slash.ts`, `@tiptap/suggestion`). Tables get a row/column bar while the cursor is in one.
 - The editor only writes back when the user edits, so existing notes aren't rewritten by opening them. Saving: 400 ms after typing stops, when the card closes or the page unmounts, and on `pagehide`.
-- `/notes` lists to-dos with notes (not in Trash), newest `updatedAt` first, with a search over title + plain text of the notes (`src/notes/plain.ts`, client-side so it works with encryption). `/notes/$todoId` shows one to-do's notes full-page. Opened from the top bar, Quick Find ("Task Notes"; notes-only matches show a snippet) and `g n`; not in the sidebar.
+- `/notes` lists to-dos with notes (not in Trash), newest `updatedAt` first, with a search over title + plain text of the notes (`src/notes/plain.ts`, client-side so it works with encryption). `/notes/$todoId` shows one to-do's notes full-page, with its checklist above them as a separate section (same component as the card; "N of M" done, "+ Add item", or "Add checklist" when empty). Opened from the top bar, Quick Find ("Task Notes"; notes-only matches show a snippet) and `g n`; not in the sidebar.
 - Project notes stay a Markdown textarea.
 - `/scratch` and `/scratch/$todoId` (2.4.0 links) redirect to `/notes`.
 

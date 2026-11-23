@@ -136,6 +136,18 @@ export const ChecklistIcon = (p: IconProps) => (
 	</Icon>
 );
 
+/** Six dots: a handle for dragging. */
+export const GripIcon = (p: IconProps) => (
+	<Icon fill="currentColor" stroke="none" {...p}>
+		<circle cx="7.5" cy="5" r="1.3" />
+		<circle cx="12.5" cy="5" r="1.3" />
+		<circle cx="7.5" cy="10" r="1.3" />
+		<circle cx="12.5" cy="10" r="1.3" />
+		<circle cx="7.5" cy="15" r="1.3" />
+		<circle cx="12.5" cy="15" r="1.3" />
+	</Icon>
+);
+
 export const CheckIcon = (p: IconProps) => (
 	<Icon strokeWidth={2.4} {...p}>
 		<path d="m5 10.5 3.2 3L15 6.5" />

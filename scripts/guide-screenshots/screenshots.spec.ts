@@ -233,6 +233,11 @@ test("guide screenshots", async ({ page, browser }) => {
 		await row(page, "Buy groceries").click();
 		const card = main(page).getByRole("textbox", { name: "Notes" });
 		await expect(card).toBeVisible();
+		// Hovering an item shows its drag handle.
+		await main(page)
+			.getByRole("textbox", { name: "Checklist item" })
+			.nth(2)
+			.hover();
 		await shot(page, "todo-card");
 		await page.getByRole("button", { name: "More actions" }).click();
 		await shot(page, "todo-more-actions");

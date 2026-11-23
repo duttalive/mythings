@@ -462,7 +462,7 @@ A new to-do you close while it's still completely empty is discarded.
 
 Click a to-do (or select it and press **Enter**) to open it in place as a card:
 
-![An open to-do card for "Buy groceries": title, notes, a five-item checklist with two items ticked, chips for Today and its tags, and buttons for Move, Deadline, Open in Task Notes and More](docs/guide/todo-card.jpg)
+![An open to-do card for "Buy groceries": title, notes, a five-item checklist with two items ticked and a drag handle showing beside "Bread", chips for Today and its tags, and buttons for Move, Deadline, Open in Task Notes and More](docs/guide/todo-card.jpg)
 
 - **Title** at the top; a long title wraps onto more lines. Return closes the card.
 - **Notes** below, in [Task Notes](#57-task-notes). Write freely, or type **/** for headings, lists, checkboxes, toggles, callouts, tables and more.
@@ -470,6 +470,7 @@ Click a to-do (or select it and press **Enter**) to open it in place as a card:
   - **Add checklist** (in the footer) starts one; Return adds an item below the current one.
   - Backspace on an empty item removes it.
   - Long items wrap onto more lines as you type, so you can read every step in full.
+  - **Reorder** items by dragging the handle (⠿) that appears to the left of an item when you point at it (always shown on phones and tablets). Or press **⌘↑ / ⌘↓** while typing in an item to move it up or down.
   - Tick items off as you go (they're struck through). The collapsed row shows progress like `2/5`.
 - **The footer** shows what's set and offers what isn't:
   - Set values appear as chips on the left: the **When** (★ Today here), the **list** it's in (a project, a heading in one, or an area), a **reminder** time, the **tags** (_errands, shop_) and the **deadline**. Click a chip to change it.
@@ -557,9 +558,13 @@ The Tags button (or chip) on the card, or **⌘⇧T**, opens the tag picker:
 - **Tables:** while the cursor is in a table, buttons below it add or delete rows and columns, or delete the table. Tab moves to the next cell (and adds a row at the end).
 - **Checkboxes** in Task Notes are part of your notes. They're separate from the to-do's [checklist](#52-the-to-do-card), which shows progress on the row.
 
-![The Task Notes page for "Book a van for moving day": a heading "Van options", three checkboxes (one ticked), a callout about a parking permit, and an open toggle "Quotes" holding a table of two van companies, with the table buttons below](docs/guide/task-notes-page.jpg)
+![The Task Notes page for "Book a van for moving day": its Checklist at the top (1 of 3 done: Measure the hallway, Pack the kitchen, Label every box), then the notes with a heading "Van options", three checkboxes (one ticked), a callout about a parking permit, and an open toggle "Quotes" holding a table of two van companies, with the table buttons below](docs/guide/task-notes-page.jpg)
 
-**The full page.** Click **Open in Task Notes** (the notes icon at the bottom of an open to-do) to write on a whole page. Its title is the to-do's title (long titles wrap), which you can edit, with a checkbox to complete it. Under it are links back to Task Notes and to the list the to-do is in. Changes save a moment after you stop typing, and when you leave.
+**The full page.** Click **Open in Task Notes** (the notes icon at the bottom of an open to-do) to write on a whole page. Its title is the to-do's title (long titles wrap), which you can edit, with a checkbox to complete it. Under it are links back to Task Notes and to the list the to-do is in.
+
+**The checklist on the full page.** A to-do's [checklist](#52-the-to-do-card) appears at the top of its full page, apart from the notes, with how many items are done (like **1 of 3**). Tick items, edit them, drag them into a new order, or add one with **+ Add item**; it's the same checklist as in the open to-do, so changes show up in both. A to-do without a checklist shows **Add checklist** there instead.
+
+Changes save a moment after you stop typing, and when you leave.
 
 **The Task Notes page.** The **Task Notes** icon at the top of every page (or **g n**, or "Task Notes" in Quick Find) opens it, and clicking the icon again takes you back to the page you came from. It lists every to-do that has notes, most recently changed first. Each shows its title, where it is and the start of its notes. The search box finds words anywhere in titles and notes; a match shows the part of the notes it was found in. Click one to open its full page. To-dos in the Trash aren't listed.
 
@@ -865,12 +870,13 @@ Its buttons, from left to right: **When**, **Move**, **Tags**, **Deadline**, **C
   - A **Life Bucket**: moves a project or area there (to the end).
   - **Tags** in the sidebar: drag a tag onto another to nest it, or onto its top or bottom edge to reorder (see [Tags](#9-tags)), or onto Trash to delete it.
   - Upcoming isn't a drop target; projects can't be dropped onto the Logbook (complete them from their ring, so you're asked about remaining to-dos).
+- **Checklist items** in an open to-do, or on its [Task Notes](#57-task-notes) page, are dragged by their handle (⠿).
 - With the mouse, a drag starts after a small movement; on touch screens, press and hold.
 - Rows in Anytime, Someday, Upcoming and tag pages can be dragged to the sidebar but not reordered there.
 
 ### 10.4 Keyboard reordering
 
-**⌘↑ / ⌘↓** move the selected item up or down in its list (in Today grouped by project, within its group).
+**⌘↑ / ⌘↓** move the selected item up or down in its list (in Today grouped by project, within its group). While typing in a checklist item, they move that item instead.
 
 ---
 
@@ -960,6 +966,7 @@ Inside an open to-do card:
 | Close the card                           | Return (in the title), Esc or ⌘Return  |
 | New checklist item below                 | Return (in a checklist item)           |
 | Remove an empty checklist item           | Backspace                              |
+| Move a checklist item up / down          | ⌘↑ / ⌘↓ (in a checklist item)          |
 | Insert a block in the notes              | / (then Enter); Esc closes the menu    |
 
 Some browsers keep a few combinations for themselves in a normal tab (such as Chrome's ⌘1…⌘8); they work in the installed app, and the **g** shortcuts work everywhere.
@@ -988,6 +995,7 @@ mythings works just as well on a phone. Install it to your home screen for the b
 - **Tap** a row to open it.
 - **Swipe right** on a row to open When. **Swipe left** to delete it (it asks first, and offers Undo).
 - **Press and hold** a row to drag it; mostly vertical movements scroll as usual.
+- **Checklist items** move by dragging their handle (⠿) on the left; no need to hold first.
 - Popovers (When, Tags, Deadline…) open as **sheets** from the bottom of the screen.
 - Buttons and rows are finger-sized, and text fields are large enough that your phone doesn't zoom in.
 - **Text size** (Settings → Appearance) can be set separately on each device.

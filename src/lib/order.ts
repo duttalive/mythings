@@ -43,3 +43,17 @@ export function maxKey(
 	for (const key of keys) if (key && (max === null || key > max)) max = key;
 	return max;
 }
+
+/**
+ * The new key for the item at `from` once it's moved to index `to` of the
+ * same list (keys in display order). Null when it doesn't move.
+ */
+export function keyForMove(
+	keys: readonly string[],
+	from: number,
+	to: number,
+): string | null {
+	if (from === to || from < 0 || to < 0 || to >= keys.length) return null;
+	const rest = keys.filter((_, i) => i !== from);
+	return keyBetween(rest[to - 1], rest[to]);
+}

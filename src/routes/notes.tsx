@@ -7,8 +7,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UNREADABLE } from "../../shared/crypto/fields";
 import { localDateOf } from "../../shared/dates";
 import type { Todo } from "../../shared/schema";
+import { Checklist, useAddChecklistItem } from "../components/Checklist";
 import { EditableTitle } from "../components/controls";
-import { NotesIcon, SearchIcon } from "../components/icons";
+import { ChecklistIcon, NotesIcon, SearchIcon } from "../components/icons";
 import { Empty, ListPage } from "../components/ListPage";
 import { Checkbox } from "../components/rows";
 import { useListData } from "../data";
@@ -17,7 +18,7 @@ import { routeFor } from "../editing/routeFor";
 import { shortDate } from "../lib/format";
 import { NotesEditor } from "../notes";
 import { matchesNotes, plainText, snippet } from "../notes/plain";
-import { useOps } from "../sync/hooks";
+import { useChecklist, useOps } from "../sync/hooks";
 import { Missing } from "./not-found";
 
 const SAVE_DELAY_MS = 400;
@@ -222,6 +223,7 @@ function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 				</div>
 			}
 		>
+			<TaskChecklist todoId={todo.id} readOnly={readOnly} />
 			<NotesEditor
 				value={notes}
 				onChange={(markdown) => {
@@ -236,5 +238,67 @@ function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 				variant="page"
 			/>
 		</ListPage>
+	);
+}
+
+/** The to-do's checklist, above its notes and apart from them. */
+function TaskChecklist({
+	todoId,
+	readOnly,
+}: {
+	todoId: string;
+	readOnly: boolean;
+}) {
+	const items = useChecklist(todoId);
+	const addItem = useAddChecklistItem(todoId, items);
+	const [focusId, setFocusId] = useState<string | null>(null);
+	if (!items) return null;
+	const add = async (after?: (typeof items)[number]) =>
+		setFocusId(await addItem(after));
+	const done = items.filter((i) => i.done).length;
+
+	if (items.length === 0) {
+		if (readOnly) return null;
+		return (
+			<button
+				type="button"
+				onClick={() => void add()}
+				className="mb-4 flex items-center gap-2 rounded-md px-1.5 py-1 text-sm text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:py-2.5"
+			>
+				<ChecklistIcon className="size-4" />
+				Add checklist
+			</button>
+		);
+	}
+	return (
+		<section aria-labelledby="task-checklist" className="mb-6">
+			<h2
+				id="task-checklist"
+				className="mb-1 flex items-center gap-2 text-sm font-semibold text-[var(--fg-muted)]"
+			>
+				<ChecklistIcon className="size-4" />
+				Checklist
+				<span className="font-normal">
+					{done} of {items.length}
+				</span>
+			</h2>
+			<Checklist
+				items={items}
+				focusId={focusId}
+				onFocusId={setFocusId}
+				onAdd={(after) => void add(after)}
+				readOnly={readOnly}
+				className="pl-5"
+			/>
+			{!readOnly && (
+				<button
+					type="button"
+					onClick={() => void add()}
+					className="mt-1 ml-3.5 rounded-md px-1.5 py-1 text-sm text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:py-2.5"
+				>
+					+ Add item
+				</button>
+			)}
+		</section>
 	);
 }

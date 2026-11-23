@@ -21,10 +21,10 @@ import { useBulkActions } from "../editing/useBulkActions";
 import { useCreateTag } from "../editing/useCreateTag";
 import { comboFromEvent } from "../keyboard/keys";
 import { deadlineLabel, shortDate } from "../lib/format";
-import { keyAfter, keyBetween } from "../lib/order";
 import { formatTime, reminderTime } from "../lib/reminders";
 import { NotesEditor } from "../notes";
 import { useChecklist, useOps } from "../sync/hooks";
+import { Checklist, useAddChecklistItem } from "./Checklist";
 import { useConfirmDelete } from "./ConfirmDelete";
 import {
 	ChipButton,
@@ -184,22 +184,9 @@ export function TodoCard({ todo }: { todo: Todo }) {
 		void ops.update("todo", todo.id, patch).catch(console.error);
 	};
 
-	const addChecklistItem = async (after?: ChecklistItem) => {
-		const list = items ?? [];
-		const index = after
-			? list.findIndex((i) => i.id === after.id)
-			: list.length - 1;
-		const before = index >= 0 ? list[index] : undefined;
-		const next = index >= 0 ? list[index + 1] : undefined;
-		const id = await ops.create("checklist", {
-			todoId: todo.id,
-			title: "",
-			sortKey: next
-				? keyBetween(before?.sortKey, next.sortKey)
-				: keyAfter(before?.sortKey),
-		});
-		setFocusItemId(id);
-	};
+	const addItem = useAddChecklistItem(todo.id, items);
+	const addChecklistItem = async (after?: ChecklistItem) =>
+		setFocusItemId(await addItem(after));
 
 	const close = () => setPopover(null);
 	const { moveTo } = useBulkActions();
@@ -347,25 +334,14 @@ export function TodoCard({ todo }: { todo: Todo }) {
 			</div>
 
 			{items && items.length > 0 && (
-				<ul
-					aria-label="Checklist"
-					className="mt-2 ml-[38px] mr-1 border-t border-[var(--border)]"
-				>
-					{items.map((item, index) => (
-						<ChecklistRow
-							key={item.id}
-							item={item}
-							autoFocus={item.id === focusItemId}
-							onEnter={() => addChecklistItem(item)}
-							onRemove={() => {
-								const previous = items[index - 1];
-								void ops.purge("checklist", item.id).catch(console.error);
-								if (previous) setFocusItemId(previous.id);
-								else titleRef.current?.focus();
-							}}
-						/>
-					))}
-				</ul>
+				<Checklist
+					items={items}
+					focusId={focusItemId}
+					onFocusId={setFocusItemId}
+					onAdd={addChecklistItem}
+					onLeaveTop={() => titleRef.current?.focus()}
+					className="mt-2 ml-[38px] mr-1"
+				/>
 			)}
 
 			<div className="mt-2 flex flex-wrap items-center gap-1.5 pl-[34px]">
@@ -513,78 +489,5 @@ export function TodoCard({ todo }: { todo: Todo }) {
 				</div>
 			</div>
 		</div>
-	);
-}
-
-function ChecklistRow({
-	item,
-	autoFocus,
-	onEnter,
-	onRemove,
-}: {
-	item: ChecklistItem;
-	autoFocus: boolean;
-	onEnter: () => void;
-	onRemove: () => void;
-}) {
-	const ops = useOps();
-	const [title, setTitle] = useState(item.title);
-	const input = useRef<HTMLTextAreaElement>(null);
-	const saved = useRef(item.title);
-	useAutoGrow(input, title);
-
-	useEffect(() => {
-		if (autoFocus) input.current?.focus();
-	}, [autoFocus]);
-
-	const latest = useRef(title);
-	latest.current = title;
-	const save = useCallback(() => {
-		if (latest.current === saved.current) return;
-		saved.current = latest.current;
-		void ops
-			.update("checklist", item.id, { title: latest.current })
-			.catch(console.error);
-	}, [ops, item.id]);
-	// Inputs don't blur when they unmount, so save on the way out too.
-	useEffect(() => save, [save]);
-
-	return (
-		<li className="flex items-start gap-2 border-b border-[var(--border)] py-1">
-			<input
-				type="checkbox"
-				checked={item.done}
-				aria-label={`Done: ${title || "checklist item"}`}
-				onChange={() =>
-					void ops
-						.update("checklist", item.id, { done: !item.done })
-						.catch(console.error)
-				}
-				className="mt-[0.2rem] size-3.5 shrink-0 cursor-pointer appearance-none rounded-full border border-[var(--checkbox)] checked:border-accent checked:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-			/>
-			{/* One line that wraps onto more as it grows, like the title. */}
-			<textarea
-				ref={input}
-				value={title}
-				rows={1}
-				onChange={(e) => setTitle(e.target.value.replace(/\s*\n\s*/g, " "))}
-				onBlur={save}
-				onKeyDown={(e) => {
-					if (e.key === "Enter") {
-						e.preventDefault();
-						save();
-						onEnter();
-					} else if (e.key === "Backspace" && title === "") {
-						e.preventDefault();
-						onRemove();
-					}
-				}}
-				placeholder="Checklist item"
-				aria-label="Checklist item"
-				className={`min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-sm break-words outline-none placeholder:text-[var(--fg-muted)] ${
-					item.done ? "text-[var(--fg-muted)] line-through" : ""
-				}`}
-			/>
-		</li>
 	);
 }
