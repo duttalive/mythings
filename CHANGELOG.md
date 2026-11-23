@@ -2,6 +2,18 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.5.0 — 2026-11-23
+
+Today now means today.
+
+- Today shows only what you've planned for today. Anything planned for an earlier day that didn't get done moves to Overdue instead of piling up in Today, marked "Planned" with its day.
+- A deadline no longer puts a to-do in Today by itself: plan it for today to see it there. It still shows its red flag everywhere else.
+- Overdue to-dos stay in Overdue until you complete them or change the deadline; Today isn't offered for them, and Alt+T or dragging one onto Today explains why.
+- Dates that have already passed can't be typed into When or Quick Entry; you'll see "That date has passed".
+- This Evening has been removed. To-dos you had set for the evening are simply in Today, and typing "tonight" means today.
+- New List now asks which Life Bucket a new project or area goes in. The one you're in comes first and is already picked, and you can start a new Life Bucket right there. With only one Life Bucket, it doesn't ask.
+- Clicking the Task Notes button again closes Task Notes and takes you back to where you were.
+
 ## Version 2.4.2 — 2026-11-23
 
 Fixes for Task Notes and titles, especially on phones.
