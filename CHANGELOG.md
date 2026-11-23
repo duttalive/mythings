@@ -2,6 +2,17 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.4.2 — 2026-11-23
+
+Fixes for Task Notes and titles, especially on phones.
+
+- Long titles now wrap onto more lines on a to-do's Task Notes page and on project, area, Life Bucket and tag pages, instead of being cut off.
+- The hint on an empty line in Task Notes is shorter ("Type / for blocks") and no longer overlaps the text or list below it, and list numbers stay lined up.
+- An empty item at the end of a numbered or bulleted list is no longer saved as stray text (like "2.") in the item above it. Notes affected by this open correctly again.
+- Tapping into Task Notes on an iPhone no longer zooms the page.
+- The arrow on a toggle is easier to tap, and the / menu stays on screen near the right edge.
+- The installed app on Android no longer shows a blue bar at the bottom of the screen.
+
 ## Version 2.4.1 — 2026-11-23
 
 Task Notes, a full-width layout, and a tidier sidebar.
