@@ -2,6 +2,16 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.7.0 — 2026-11-26
+
+Focus Mode, and tidier to-dos on phones.
+
+- Focus Mode: open a to-do and press Focus (or ⌥F), or use Focus on its Task Notes page, to put it on the whole screen with a timer, its checklist and its notes. Normal counts up; Pomodoro runs 25-minute focus rounds with short breaks and a longer break after every fourth round (lengths are adjustable). A chime plays when a round or break ends, and with notifications on you're told even if the app is closed. Minimize it to a small timer pill to keep using the app, and finish with "Complete to-do and end focus". The timer stays on the device you start it on.
+- On phones, a to-do with tags, a checklist or dates now shows them on a line under its title, so long titles are no longer squeezed into a narrow column.
+- The open to-do is now just its title, checklist and buttons. Notes are read and written on the to-do's Task Notes page (the notes icon at the bottom of the open to-do).
+- Long tag names on a row are shortened with "…".
+- The Privacy Policy now describes Focus Mode alerts.
+
 ## Version 2.6.0 — 2026-11-23
 
 Checklists you can rearrange, and checklists in Task Notes.
