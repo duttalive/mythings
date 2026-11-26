@@ -2,6 +2,14 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.8.0 — 2026-11-26
+
+Tabs on desktop, and a simpler Focus Mode.
+
+- Tabs on desktop: keep several pages open at once in a tab strip above the page, like a browser's. Open a new tab with + or ⌥⌘T (Ctrl+Alt+T); ⌘T works too where your browser allows it. ⌘-click or middle-click a list or link, middle-click a to-do or project, or choose Open in New Tab in an open to-do's ⋯ menu to open it in a new tab. Close tabs with × or ⌥⌘W, and switch with ⌥⌘← / ⌥⌘→. Tabs are remembered on this device.
+- Focus Mode is now one countdown with a set end time. Pick 15, 25, 45, 60 or 90 minutes, or type your own, then start. Add 5 minutes while it runs. When time's up you'll hear a chime and get a notification, then choose to complete the to-do, add 5 minutes, start again or end focus. Normal and Pomodoro modes have been removed.
+- The Privacy Policy mentions that open tabs are kept on your device.
+
 ## Version 2.7.0 — 2026-11-26
 
 Focus Mode, and tidier to-dos on phones.
