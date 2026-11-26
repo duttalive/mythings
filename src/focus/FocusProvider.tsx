@@ -1,8 +1,8 @@
-// Focus Mode (SPEC §10.13): one focus session per device, on one to-do.
+// Focus Mode (SPEC §10.13): one focus countdown per device, on one to-do.
 // The session lives in localStorage (per account), so it survives reloads and
-// is shared by this device's tabs; it's never synced. When a Pomodoro phase
-// ends the app chimes, and the server pings this device's notifications
-// (only the end time is sent, never the to-do).
+// is shared by this device's browser tabs; it's never synced. When the
+// countdown reaches zero the app chimes, and the server pings this device's
+// notifications (only the end time is sent, never the to-do).
 
 import {
 	createContext,
@@ -18,22 +18,23 @@ import { useAuth } from "../auth/AuthGate";
 import { clearFocusAlert, setFocusAlert } from "../push/notifications";
 import { playChime, primeChime } from "./chime";
 import {
-	type FocusMode,
+	clampMinutes,
+	endsAt,
+	extend,
 	type FocusSession,
-	type FocusSettings,
+	finish,
 	focusedMs,
-	isPhaseOver,
-	nextPhase,
+	isOver,
+	newSession,
 	pause,
-	phaseMs,
+	readMinutes,
 	readSession,
-	readSettings,
-	resume,
-	startSession,
+	restart,
+	setMinutes,
+	start,
 } from "./timer";
 
-const SETTINGS_KEY = "mythings:focus-settings";
-const MODE_KEY = "mythings:focus-mode";
+const MINUTES_KEY = "mythings:focus-minutes";
 const sessionKey = (userId: string) => `mythings:focus:${userId}`;
 
 function load<T>(key: string, read: (raw: unknown) => T): T {
@@ -54,26 +55,23 @@ function save(key: string, value: unknown) {
 	}
 }
 
-/** What just ended, shown on the focus screen until the next phase starts. */
-export type FocusNotice = "focus" | "break" | null;
-
 type FocusContextValue = {
 	session: FocusSession | null;
-	settings: FocusSettings;
-	/** The current time, ticking while a session runs. */
+	/** The current time, ticking while the countdown runs. */
 	now: number;
-	notice: FocusNotice;
-	/** Starts focusing on a to-do (replacing any other session) in the last mode used. */
-	start: (todoId: string, mode?: FocusMode) => void;
-	/** Switches mode, starting the timer again. */
-	setMode: (mode: FocusMode) => void;
+	/** Opens Focus Mode on a to-do (replacing any other session), set to the last length used. */
+	open: (todoId: string) => void;
+	/** Sets the length before starting (and remembers it for next time). */
+	setLength: (minutes: number) => void;
+	/** Start, pause or resume. */
 	toggleRunning: () => void;
-	/** Ends the current Pomodoro phase now. */
-	skip: () => void;
+	/** +5 min (and runs again if it had finished). */
+	addTime: () => void;
+	/** The same length again, from the top. */
+	startAgain: () => void;
 	/** Ends the session; returns how long you focused. */
 	end: () => number;
 	setMinimized: (minimized: boolean) => void;
-	updateSettings: (settings: FocusSettings) => void;
 };
 
 const FocusContext = createContext<FocusContextValue | null>(null);
@@ -90,16 +88,10 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 	const [session, setSessionState] = useState<FocusSession | null>(() =>
 		load(key, readSession),
 	);
-	const [settings, setSettings] = useState<FocusSettings>(() =>
-		load(SETTINGS_KEY, readSettings),
-	);
 	const [now, setNow] = useState(() => Date.now());
-	const [notice, setNotice] = useState<FocusNotice>(null);
 
 	const sessionRef = useRef(session);
 	sessionRef.current = session;
-	const settingsRef = useRef(settings);
-	settingsRef.current = settings;
 
 	const setSession = useCallback(
 		(next: FocusSession | null) => {
@@ -110,22 +102,19 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 		[key],
 	);
 
-	// Other tabs on this device share the session.
+	// Other browser tabs on this device share the session.
 	useEffect(() => {
 		const onStorage = (e: StorageEvent) => {
-			if (e.key === key) {
-				const next = load(key, readSession);
-				sessionRef.current = next;
-				setSessionState(next);
-			} else if (e.key === SETTINGS_KEY) {
-				setSettings(load(SETTINGS_KEY, readSettings));
-			}
+			if (e.key !== key) return;
+			const next = load(key, readSession);
+			sessionRef.current = next;
+			setSessionState(next);
 		};
 		window.addEventListener("storage", onStorage);
 		return () => window.removeEventListener("storage", onStorage);
 	}, [key]);
 
-	// Tick while running; move on when a Pomodoro phase runs out.
+	// Tick while running; stop at zero.
 	const running = session?.runningSince != null;
 	useEffect(() => {
 		if (!running) return;
@@ -133,9 +122,8 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 			const t = Date.now();
 			setNow(t);
 			const s = sessionRef.current;
-			if (!s || !isPhaseOver(s, settingsRef.current, t)) return;
-			setNotice(s.phase === "focus" ? "focus" : "break");
-			setSession(nextPhase(s, settingsRef.current, t));
+			if (!s || !isOver(s, t)) return;
+			setSession(finish(s));
 			// A hidden tab is told by the notification instead (and other tabs would chime too).
 			if (document.visibilityState === "visible") playChime();
 		};
@@ -144,84 +132,57 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 		return () => clearInterval(id);
 	}, [running, setSession]);
 
-	// Ask the server to ping this device when the running phase ends.
-	const alert =
-		session && session.mode === "pomodoro" && session.runningSince !== null
-			? {
-					at:
-						session.runningSince +
-						(phaseMs(session, settings) ?? 0) -
-						session.elapsed,
-					kind:
-						session.phase === "focus" ? ("focus" as const) : ("break" as const),
-				}
-			: null;
-	const alertKey = alert ? `${alert.at}|${alert.kind}` : "";
+	// Ask the server to ping this device when the countdown reaches zero.
+	const alertAt = session ? endsAt(session) : null;
 	const alertSet = useRef(false);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: alertKey stands for alert
 	useEffect(() => {
-		if (alert) {
+		if (alertAt !== null) {
 			alertSet.current = true;
-			void setFocusAlert(alert.at, alert.kind).catch(() => {});
+			void setFocusAlert(alertAt, "focus").catch(() => {});
 		} else if (alertSet.current) {
 			alertSet.current = false;
 			void clearFocusAlert().catch(() => {});
 		}
-	}, [alertKey]);
+	}, [alertAt]);
 
 	const value = useMemo<FocusContextValue>(() => {
-		const update = (fn: (s: FocusSession) => FocusSession) => {
+		const update = (fn: (s: FocusSession, t: number) => FocusSession) => {
 			const s = sessionRef.current;
-			if (s) setSession(fn(s));
+			if (!s) return;
+			const t = Date.now();
+			setNow(t);
+			setSession(fn(s, t));
 		};
 		return {
 			session,
-			settings,
 			now,
-			notice,
-			start: (todoId, mode) => {
+			open: (todoId) => {
 				primeChime();
-				const chosen =
-					mode ??
-					load(MODE_KEY, (raw) => (raw === "pomodoro" ? "pomodoro" : "normal"));
-				save(MODE_KEY, chosen);
-				setNotice(null);
 				setNow(Date.now());
-				setSession(startSession(todoId, chosen, Date.now()));
+				setSession(newSession(todoId, load(MINUTES_KEY, readMinutes)));
 			},
-			setMode: (mode) => {
-				save(MODE_KEY, mode);
-				setNotice(null);
-				update((s) => ({
-					...startSession(s.todoId, mode, Date.now()),
-					focused: focusedMs(s, Date.now()),
-				}));
+			setLength: (minutes) => {
+				save(MINUTES_KEY, clampMinutes(minutes));
+				update((s) => setMinutes(s, minutes));
 			},
 			toggleRunning: () => {
 				primeChime();
-				setNotice(null);
-				const t = Date.now();
-				setNow(t);
-				update((s) => (s.runningSince === null ? resume(s, t) : pause(s, t)));
+				update((s, t) => (s.runningSince === null ? start(s, t) : pause(s, t)));
 			},
-			skip: () => {
-				setNotice(null);
-				update((s) => nextPhase(s, settingsRef.current, Date.now()));
+			addTime: () => update((s, t) => extend(s, t)),
+			startAgain: () => {
+				primeChime();
+				update((s, t) => restart(s, t));
 			},
 			end: () => {
 				const s = sessionRef.current;
 				const total = s ? focusedMs(s, Date.now()) : 0;
-				setNotice(null);
 				setSession(null);
 				return total;
 			},
 			setMinimized: (minimized) => update((s) => ({ ...s, minimized })),
-			updateSettings: (next) => {
-				setSettings(next);
-				save(SETTINGS_KEY, next);
-			},
 		};
-	}, [session, settings, now, notice, setSession]);
+	}, [session, now, setSession]);
 
 	return <FocusContext value={value}>{children}</FocusContext>;
 }

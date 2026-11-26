@@ -52,6 +52,8 @@ export function formatCombo(combo: string, apple = isApple): string {
 		shift: ["⇧", "Shift+"],
 		up: ["↑", "↑"],
 		down: ["↓", "↓"],
+		left: ["←", "←"],
+		right: ["→", "→"],
 		enter: ["↩", "Enter"],
 		escape: ["Esc", "Esc"],
 		space: ["Space", "Space"],

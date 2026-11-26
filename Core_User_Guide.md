@@ -12,7 +12,7 @@ This guide walks through every feature and flow, end to end, with a screenshot o
 ## Contents
 
 1. [Getting started](#1-getting-started): [home page](#11-the-home-page) · [creating an account](#12-creating-an-account) · [signing in and out](#13-signing-in-and-out) · [forgot your password](#14-forgot-your-password) · [installing](#15-installing-the-app) · [updates](#16-updates) · [your first five minutes](#17-your-first-five-minutes)
-2. [The screen at a glance](#2-the-screen-at-a-glance)
+2. [The screen at a glance](#2-the-screen-at-a-glance): [tabs](#23-tabs-desktop)
 3. [Core ideas](#3-core-ideas)
 4. [The lists](#4-the-lists): [Inbox](#41-inbox) · [Today](#42-today) · [Upcoming](#43-upcoming) · [Anytime](#44-anytime) · [Someday](#45-someday) · [Overdue](#46-overdue) · [Logbook](#47-logbook) · [Trash](#48-trash) · [Deadlines](#49-deadlines-hidden-list) · [filtering by tag](#410-filtering-a-list-by-tag)
 5. [Working with to-dos](#5-working-with-to-dos): [the to-do card](#52-the-to-do-card) · [moving](#55-moving-a-to-do) · [Task Notes](#57-task-notes) · [Focus Mode](#58-focus-mode)
@@ -202,7 +202,20 @@ On a computer you can drag the sidebar's right edge to make it wider or narrower
 - **The items,** in sections where the list has them (for example days in Upcoming, or headings in a project).
 - **The floating +** at the bottom right: adds a to-do to the list you're looking at.
 
-### 2.3 Reading a to-do row
+### 2.3 Tabs (desktop)
+
+On a computer (a window at least 1024 pixels wide), a **tab strip** above the page lets you keep several pages of the app open at once, like a browser's tabs: a list, a project, an area, a Life Bucket, a tag, or a to-do's Task Notes page.
+
+![The tab strip above the page with three tabs, Inbox, Today and Book a van for moving day (active), and a + button; the to-do's Task Notes page below](docs/guide/tabs.jpg)
+
+- **New tab:** the **+** button, **⌘T** / **Ctrl+T** (where your browser lets the app use it; in a normal browser tab it usually opens a browser tab instead), or **⌥⌘T** / **Ctrl+Alt+T**, which always works. A new tab opens Today.
+- **Open something in a new tab:** **⌘-click** / **Ctrl-click** (or middle-click) a list in the sidebar or any link in the app, **middle-click** a to-do (its Task Notes page) or a project, or choose **Open in New Tab** in an open to-do's **⋯** menu. (⌘-click on a to-do still selects it.)
+- **Switch:** click a tab, or **⌥⌘←** / **⌥⌘→** (**Ctrl+Alt+←/→**).
+- **Close:** the **×** on a tab (it shows when you point at a tab), a middle-click on the tab, or **⌥⌘W** / **Ctrl+Alt+W**. The last tab can't be closed.
+- Going to another page changes only the tab you're in. Each tab is named after what it shows.
+- Up to 12 tabs. They're remembered on this device, so they're back after a reload, but they aren't synced to your other devices. Phones and tablets don't show tabs.
+
+### 2.4 Reading a to-do row
 
 Each to-do is a row. From left to right it can show:
 
@@ -578,26 +591,26 @@ Changes save a moment after you stop typing, and when you leave.
 
 ### 5.8 Focus Mode
 
-**Focus Mode** puts one to-do on the whole screen with a timer, so you can work on just that. Start it from an open to-do with **Focus** (the target icon in the footer, or **⌥F**), or with **Focus** under the title of the to-do's Task Notes page.
+**Focus Mode** puts one to-do on the whole screen with a countdown, so you can work on just that until the time is up. Start it from an open to-do with **Focus** (the target icon in the footer, or **⌥F**), or with **Focus** under the title of the to-do's Task Notes page.
 
-![Focus Mode in Pomodoro on "Book a van for moving day": Minimize, the Normal / Pomodoro switch and End focus at the top; "Focus · round 1", the title, a 24:59 countdown with a progress bar, a link to turn on notifications, Pause, Skip and settings buttons; then the to-do's checklist and notes, and "Complete to-do and end focus" at the bottom](docs/guide/focus-mode.jpg)
+![Focus Mode on "Book a van for moving day" before starting: Minimize and End focus at the top; the title, 25:00, lengths of 15, 25, 45, 60 and 90 minutes (25 picked) and a box for any number of minutes, Start focus, a link to turn on notifications, then the to-do's checklist and notes](docs/guide/focus-mode.jpg)
 
-- **Normal** counts up from 0:00, for as long as you like.
-- **Pomodoro** counts down a **focus round** (25 minutes), then a **short break** (5 minutes); every fourth break is a **long break** (15 minutes). When a round or break ends, a chime plays and the next one waits for you: press **Start short break** (or **Start focus**). **Skip** ends the current round or break early. The ⚙ button sets the lengths, and how many rounds come before a long break; they're saved on this device.
-- Switch between **Normal** and **Pomodoro** at the top; the timer starts again in the new mode. The app remembers the mode you used last.
-- **Pause** / **Resume** (or **Space**) stops and restarts the clock.
+- **Set the time first.** Pick **15, 25, 45, 60 or 90 min**, or type any length from 1 to 240 minutes in the **min** box. Focus Mode remembers the length you used last on this device. Then press **Start focus**.
+- The clock counts **down** to 0:00; there's always an end time. **Pause** / **Resume** (or **Space**) stops and restarts it, and **+5 min** adds time while it runs.
+- **When time's up**, a chime plays and the clock stops at 0:00 with how long you focused. Choose what's next: **Complete to-do**, **+5 min** (keeps going), **Start again** (the same length from the top) or **End focus**.
 - The to-do's **checklist** is below the timer: tick, edit, reorder or add items as you go. Its **notes** are shown too, with **Edit in Task Notes** to change them.
-- **Complete to-do and end focus** ticks the to-do off and tells you how long you focused. **End focus** stops without completing it.
-- **Minimize** (or **Escape**) shrinks Focus Mode to a small pill at the bottom of the screen with the time, so you can use the rest of the app. Tap the pill's ▶ / ⏸ to pause or resume, or the time to open Focus Mode again. While you focus, the browser tab shows the time too.
+- **Complete to-do and end focus** (at the bottom) finishes early and ticks the to-do off. **End focus** (top right) stops without completing it. Either way you see how long you focused.
+- **Minimize** (or **Escape**) shrinks Focus Mode to a small pill at the bottom of the screen with the time left, so you can use the rest of the app. Tap the pill's ▶ / ⏸ to pause or resume, or the time to open Focus Mode again. While it runs, the browser tab shows the time left too.
 
 ![The focus pill at the bottom of the Today list, showing a pause button, 24:59 and "Book a van for moving day"](docs/guide/focus-pill.jpg)
 
-**Notifications.** With [notifications](#63-reminders) on, you're also notified when a Pomodoro round or break ends, even if the app is closed or your phone is locked. Focus Mode offers to turn them on (**Notify me when a round ends…**) if they aren't yet.
+**Notifications.** With [notifications](#63-reminders) on, you're also notified when time's up, even if the app is closed or your phone is locked. Focus Mode offers to turn them on (**Notify me when time's up…**) if they aren't yet.
 
 **Good to know:**
 
 - Focus Mode belongs to the device you start it on: the timer keeps going if you reload or close the app, but it isn't synced to your other devices, and the time you spend focusing isn't saved.
 - Focusing on another to-do ends the current session. Deleting the to-do ends it too.
+- Pomodoro (focus rounds with breaks), added in 2.7.0, was replaced by this single countdown in 2.8.0.
 
 ---
 
@@ -978,6 +991,9 @@ Press **?** to see the list in the app:
 | Go to Inbox … Logbook                    | ⌘1 … ⌘6, or g i / t / u / a / s / l    |
 | Go to Overdue                            | g o                                    |
 | Go to Task Notes                         | g n                                    |
+| New tab (desktop)                        | ⌘T where allowed, or ⌥⌘T               |
+| Close tab                                | ⌥⌘W                                    |
+| Previous / next tab                      | ⌥⌘← / ⌥⌘→                              |
 | Settings                                 | ⌘,                                     |
 | Undo / Redo                              | ⌘Z / ⌘⇧Z                               |
 | Shortcut help                            | ?                                      |
@@ -997,7 +1013,7 @@ In Focus Mode:
 
 | Action                                   | Keys                                   |
 | ---------------------------------------- | -------------------------------------- |
-| Pause / resume the timer                 | Space                                  |
+| Start / pause / resume the timer         | Space                                  |
 | Minimize to the pill                     | Esc                                    |
 
 Some browsers keep a few combinations for themselves in a normal tab (such as Chrome's ⌘1…⌘8); they work in the installed app, and the **g** shortcuts work everywhere.
@@ -1246,6 +1262,8 @@ These work without signing in:
 **Something I completed is still showing.** If Settings → Lists → Move completed to-dos to the Logbook is set to **Daily**, completed items stay (ticked) until the end of the day.
 
 **My areas and projects look rearranged.** Since Life Buckets arrived, areas no longer hold projects; your lists were moved once, without losing anything. See [After updating to Life Buckets](#83-after-updating-to-life-buckets).
+
+**⌘T opens a browser tab instead of an app tab.** Browsers keep ⌘T / Ctrl+T for themselves in a normal browser tab. Use **⌥⌘T** (Ctrl+Alt+T) or the **+** in the tab strip; in the installed app, ⌘T may work too. See [Tabs](#23-tabs-desktop).
 
 **Where are a to-do's notes?** The open to-do keeps to its title and checklist. Click **Open in Task Notes** (the notes icon at the bottom of the open to-do) to read and write its notes on their own page; a row with notes shows a small notes icon. See [Task Notes](#57-task-notes).
 

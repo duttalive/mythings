@@ -25,6 +25,7 @@ import { comboFromEvent } from "../keyboard/keys";
 import { deadlineLabel, shortDate } from "../lib/format";
 import { formatTime, reminderTime } from "../lib/reminders";
 import { useChecklist, useOps } from "../sync/hooks";
+import { useTabs } from "../tabs/TabsProvider";
 import { Checklist, useAddChecklistItem } from "./Checklist";
 import { useConfirmDelete } from "./ConfirmDelete";
 import {
@@ -77,10 +78,11 @@ export function TodoCard({ todo }: { todo: Todo }) {
 	const items = useChecklist(todo.id);
 	const createTag = useCreateTag();
 	const focus = useFocus();
+	const tabs = useTabs();
 	const startFocus = () => {
 		flush();
 		collapse();
-		focus.start(todo.id);
+		focus.open(todo.id);
 	};
 
 	const [title, setTitle] = useState(todo.title);
@@ -477,6 +479,18 @@ export function TodoCard({ todo }: { todo: Todo }) {
 								}}
 							>
 								Reopen
+							</PopoverOption>
+						)}
+						{tabs.enabled && (
+							<PopoverOption
+								icon={<NotesIcon className="size-4" />}
+								onSelect={() => {
+									close();
+									flush();
+									tabs.openInNewTab(`/notes/${todo.id}`);
+								}}
+							>
+								Open in New Tab
 							</PopoverOption>
 						)}
 						<PopoverOption

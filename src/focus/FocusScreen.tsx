@@ -11,14 +11,12 @@ import {
 	ChecklistIcon,
 	CrossIcon,
 	FocusIcon,
-	GearIcon,
 	MinimizeIcon,
 	NotesIcon,
 	PauseIcon,
 	PlayIcon,
-	SkipIcon,
+	RestoreIcon,
 } from "../components/icons";
-import { Popover } from "../components/Popover";
 import { useToast } from "../components/Toast";
 import { useListData } from "../data";
 import { useEditing } from "../editing/EditingProvider";
@@ -29,22 +27,19 @@ import { useFocus } from "./FocusProvider";
 import {
 	elapsedMs,
 	type FocusSession,
-	type FocusSettings,
+	focusedMs,
 	formatClock,
 	formatDuration,
-	PHASE_LABEL,
-	phaseMs,
+	isFinished,
+	isFresh,
+	MAX_MINUTES,
+	MIN_MINUTES,
+	PRESETS,
 	remainingMs,
-	SETTING_LIMITS,
 } from "./timer";
 
-/** The clock text: counting up in Normal mode, down in Pomodoro. */
-function clockText(s: FocusSession, settings: FocusSettings, now: number) {
-	const left = remainingMs(s, settings, now);
-	return left === null
-		? formatClock(elapsedMs(s, now))
-		: formatClock(left, true);
-}
+const clockText = (s: FocusSession, now: number) =>
+	formatClock(remainingMs(s, now));
 
 /** Mounted once in the shell: the focus screen or pill, when a session is on. */
 export function FocusLayer() {
@@ -61,9 +56,11 @@ export function FocusLayer() {
 		if (gone) focus.end();
 	}, [gone, focus]);
 
-	// "12:34 · Today · mythings" in the tab while focusing.
+	// "12:34 · Today · mythings" in the browser tab while the countdown runs.
 	const clock =
-		session && !gone ? clockText(session, focus.settings, focus.now) : null;
+		session && !gone && session.runningSince !== null
+			? clockText(session, focus.now)
+			: null;
 	useEffect(() => {
 		const strip = (title: string) => title.replace(/^\d+(:\d\d)+ · /, "");
 		document.title = clock
@@ -80,84 +77,76 @@ export function FocusLayer() {
 }
 
 function FocusPill({ todo }: { todo: Todo }) {
-	const { session, settings, now, notice, toggleRunning, setMinimized } =
-		useFocus();
+	const { session, now, toggleRunning, setMinimized } = useFocus();
 	if (!session) return null;
 	const running = session.runningSince !== null;
+	const done = isFinished(session);
 	const title = todo.title === UNREADABLE ? "🔒" : todo.title || "New To-Do";
 	return (
 		<section
 			aria-label="Focus"
 			className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-4 z-30 flex max-w-[calc(100vw-7rem)] animate-pop-in items-center gap-1 rounded-full bg-[var(--card)] py-1 pr-1 pl-1 shadow-[var(--card-shadow)] ring-1 ring-[var(--border)] md:left-1/2 md:max-w-sm md:-translate-x-1/2"
 		>
-			<button
-				type="button"
-				onClick={toggleRunning}
-				aria-label={running ? "Pause focus" : "Resume focus"}
-				className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent pointer-coarse:size-11"
-			>
-				{running ? (
-					<PauseIcon className="size-4" />
-				) : (
-					<PlayIcon className="size-4" />
-				)}
-			</button>
+			{!done && (
+				<button
+					type="button"
+					onClick={toggleRunning}
+					aria-label={running ? "Pause focus" : "Resume focus"}
+					className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent pointer-coarse:size-11"
+				>
+					{running ? (
+						<PauseIcon className="size-4" />
+					) : (
+						<PlayIcon className="size-4" />
+					)}
+				</button>
+			)}
 			<button
 				type="button"
 				onClick={() => setMinimized(false)}
 				aria-label="Open focus"
-				className="flex min-w-0 items-center gap-2 rounded-full py-1.5 pr-3 pl-1.5 text-left hover:bg-[var(--hover)] focus-visible:outline-2 focus-visible:outline-accent"
+				className="flex min-w-0 items-center gap-2 rounded-full py-1.5 pr-3 pl-2 text-left hover:bg-[var(--hover)] focus-visible:outline-2 focus-visible:outline-accent"
 			>
 				<span
-					className="shrink-0 font-semibold tabular-nums"
-					data-testid="focus-pill-clock"
+					className={`shrink-0 font-semibold tabular-nums ${done ? "text-accent" : ""}`}
 				>
-					{clockText(session, settings, now)}
+					{clockText(session, now)}
 				</span>
 				<span className="min-w-0 truncate text-sm text-[var(--fg-muted)]">
-					{notice === "focus"
-						? "Time for a break"
-						: notice === "break"
-							? "Break's over"
-							: session.mode === "pomodoro" && session.phase !== "focus"
-								? PHASE_LABEL[session.phase]
-								: title}
+					{done ? "Time's up" : title}
 				</span>
 			</button>
 		</section>
 	);
 }
 
+/** A round button beside the main one. */
+const SECONDARY =
+	"flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-medium ring-1 ring-[var(--border)] hover:bg-[var(--hover)] focus-visible:outline-2 focus-visible:outline-accent";
+const PRIMARY =
+	"flex min-h-11 items-center gap-2 rounded-full bg-accent px-6 text-base font-semibold text-on-accent hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+
 function FocusScreen({ todo }: { todo: Todo }) {
 	const focus = useFocus();
-	const { session, settings, now, notice } = focus;
+	const { session, now } = focus;
 	const { toggleComplete } = useEditing();
 	const toast = useToast();
 	const items = useChecklist(todo.id);
 	const addItem = useAddChecklistItem(todo.id, items);
 	const [focusItemId, setFocusItemId] = useState<string | null>(null);
-	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [permission, enableNotifications] = useNotificationState();
 	if (!session) return null;
 
-	const pomodoro = session.mode === "pomodoro";
 	const running = session.runningSince !== null;
-	const elapsed = elapsedMs(session, now);
-	const length = phaseMs(session, settings);
-	const progress = length ? Math.min(1, elapsed / length) : 0;
+	const fresh = isFresh(session);
+	const done = isFinished(session);
+	const progress = Math.min(1, elapsedMs(session, now) / session.length);
+	const minutes = Math.round(session.length / 60_000);
 	const unreadable = todo.title === UNREADABLE || todo.notes === UNREADABLE;
 	const title = todo.title === UNREADABLE ? "🔒" : todo.title || "New To-Do";
 	const open = todo.status === "open";
 
-	const primaryLabel = running
-		? "Pause"
-		: elapsed > 0
-			? "Resume"
-			: session.phase === "focus"
-				? "Start focus"
-				: `Start ${PHASE_LABEL[session.phase].toLowerCase()}`;
-
-	const finish = () => {
+	const complete = () => {
 		const total = focus.end();
 		if (open) toggleComplete(todo.id, todo.status);
 		toast.show(
@@ -168,20 +157,10 @@ function FocusScreen({ todo }: { todo: Todo }) {
 	};
 	const endFocus = () => {
 		const total = focus.end();
-		toast.show(`Focused for ${formatDuration(total)}`);
+		toast.show(
+			total > 0 ? `Focused for ${formatDuration(total)}` : "Focus ended",
+		);
 	};
-
-	const phaseLine = pomodoro
-		? session.phase === "focus"
-			? `Focus · round ${session.rounds + 1}`
-			: PHASE_LABEL[session.phase]
-		: "Focus";
-	const noticeLine =
-		notice === "focus"
-			? `Focus round done. Time for a ${settings[session.phase === "long" ? "long" : "short"]}-minute break.`
-			: notice === "break"
-				? "Break's over. Ready for the next round?"
-				: null;
 
 	return (
 		<Dialog.Root
@@ -197,14 +176,19 @@ function FocusScreen({ todo }: { todo: Todo }) {
 						const typing = target.closest(
 							"input, textarea, [contenteditable=true], [data-popover-content]",
 						);
-						if (e.key === " " && !typing && target.tagName !== "BUTTON") {
+						if (
+							e.key === " " &&
+							!typing &&
+							target.tagName !== "BUTTON" &&
+							!done
+						) {
 							e.preventDefault();
 							focus.toggleRunning();
 						}
 					}}
 					className="fixed inset-0 z-50 flex animate-fade-in flex-col overflow-y-auto bg-[var(--bg)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-[var(--fg)] outline-none"
 				>
-					<div className="sticky top-0 z-10 flex items-center gap-2 bg-[var(--bg)]/90 px-3 py-2 backdrop-blur">
+					<div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-[var(--bg)]/90 px-3 py-2 backdrop-blur">
 						<button
 							type="button"
 							onClick={() => focus.setMinimized(true)}
@@ -213,33 +197,13 @@ function FocusScreen({ todo }: { todo: Todo }) {
 							<MinimizeIcon className="size-4" />
 							Minimize
 						</button>
-						<fieldset className="mx-auto flex rounded-lg bg-[var(--hover)] p-0.5 text-sm">
-							<legend className="sr-only">Focus mode</legend>
-							{(["normal", "pomodoro"] as const).map((mode) => (
-								<button
-									key={mode}
-									type="button"
-									aria-pressed={session.mode === mode}
-									onClick={() => session.mode !== mode && focus.setMode(mode)}
-									className={`rounded-md px-3 py-1 font-medium focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:py-2 ${
-										session.mode === mode
-											? "bg-[var(--card)] text-[var(--fg)] shadow-sm"
-											: "text-[var(--fg-muted)] hover:text-[var(--fg)]"
-									}`}
-								>
-									{mode === "normal" ? "Normal" : "Pomodoro"}
-								</button>
-							))}
-						</fieldset>
 						<button
 							type="button"
 							onClick={endFocus}
 							className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:py-2.5"
 						>
 							<CrossIcon className="size-3.5" />
-							<span>
-								End<span className="max-sm:hidden"> focus</span>
-							</span>
+							End focus
 						</button>
 					</div>
 
@@ -250,99 +214,110 @@ function FocusScreen({ todo }: { todo: Todo }) {
 						>
 							<p className="flex items-center gap-1.5 text-sm font-medium text-accent">
 								<FocusIcon className="size-4" />
-								{phaseLine}
+								{done ? "Time's up" : "Focus"}
 							</p>
 							<Dialog.Title className="long-title mt-3 max-w-full text-xl font-semibold break-words [overflow-wrap:anywhere] sm:text-2xl">
 								{title}
 							</Dialog.Title>
 							<p
 								role="timer"
-								aria-label={pomodoro ? "Time left" : "Time focused"}
+								aria-label="Time left"
 								className="mt-6 text-[4.5rem] leading-none font-bold tabular-nums tracking-tight sm:text-[6rem]"
 							>
-								{clockText(session, settings, now)}
+								{clockText(session, now)}
 							</p>
-							{pomodoro && (
+							<div
+								aria-hidden
+								className="mt-5 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-[var(--hover)]"
+							>
 								<div
-									aria-hidden
-									className="mt-5 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-[var(--hover)]"
-								>
-									<div
-										className={`h-full rounded-full ${session.phase === "focus" ? "bg-accent" : "bg-today"}`}
-										style={{ width: `${progress * 100}%` }}
-									/>
-								</div>
+									className="h-full rounded-full bg-accent"
+									style={{ width: `${progress * 100}%` }}
+								/>
+							</div>
+
+							{fresh && (
+								<LengthPicker minutes={minutes} onChange={focus.setLength} />
 							)}
+
 							<p
 								role="status"
 								className="mt-4 min-h-5 text-sm text-[var(--fg-muted)]"
 							>
-								{noticeLine ??
-									(pomodoro && session.rounds > 0
-										? `${session.rounds} ${session.rounds === 1 ? "round" : "rounds"} done`
-										: "")}
+								{done
+									? `Time's up. You focused for ${formatDuration(focusedMs(session, now))}.`
+									: ""}
 							</p>
-							<div className="mt-4 flex items-center gap-3">
-								<button
-									type="button"
-									onClick={focus.toggleRunning}
-									className="flex min-h-11 items-center gap-2 rounded-full bg-accent px-6 text-base font-semibold text-on-accent hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-								>
-									{running ? (
-										<PauseIcon className="size-4" />
-									) : (
-										<PlayIcon className="size-4" />
-									)}
-									{primaryLabel}
-								</button>
-								{pomodoro && (
-									<button
-										type="button"
-										onClick={focus.skip}
-										aria-label={
-											session.phase === "focus" ? "Skip to break" : "Skip break"
-										}
-										title={
-											session.phase === "focus" ? "Skip to break" : "Skip break"
-										}
-										className="flex size-11 items-center justify-center rounded-full text-[var(--fg-muted)] ring-1 ring-[var(--border)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent"
-									>
-										<SkipIcon className="size-4" />
-									</button>
-								)}
-								{pomodoro && (
-									<Popover
-										label="Pomodoro settings"
-										open={settingsOpen}
-										onOpenChange={setSettingsOpen}
-										width="w-72"
-										trigger={
+
+							<div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+								{done ? (
+									<>
+										{open && (
 											<button
 												type="button"
-												aria-label="Pomodoro settings"
-												title="Pomodoro settings"
-												className="flex size-11 items-center justify-center rounded-full text-[var(--fg-muted)] ring-1 ring-[var(--border)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent"
+												onClick={complete}
+												className={PRIMARY}
 											>
-												<GearIcon className="size-4" />
+												Complete to-do
 											</button>
-										}
-									>
-										<PomodoroSettings
-											settings={settings}
-											onChange={focus.updateSettings}
-										/>
-									</Popover>
+										)}
+										<button
+											type="button"
+											onClick={focus.addTime}
+											className={SECONDARY}
+										>
+											+5 min
+										</button>
+										<button
+											type="button"
+											onClick={focus.startAgain}
+											className={SECONDARY}
+										>
+											<RestoreIcon className="size-4" />
+											Start again
+										</button>
+										<button
+											type="button"
+											onClick={endFocus}
+											className={SECONDARY}
+										>
+											End focus
+										</button>
+									</>
+								) : (
+									<>
+										<button
+											type="button"
+											onClick={focus.toggleRunning}
+											className={PRIMARY}
+										>
+											{running ? (
+												<PauseIcon className="size-4" />
+											) : (
+												<PlayIcon className="size-4" />
+											)}
+											{running ? "Pause" : fresh ? "Start focus" : "Resume"}
+										</button>
+										{!fresh && (
+											<button
+												type="button"
+												onClick={focus.addTime}
+												className={SECONDARY}
+											>
+												+5 min
+											</button>
+										)}
+									</>
 								)}
 							</div>
-							{pomodoro &&
-								permission === "default" &&
+							{permission === "default" &&
 								notificationState() !== "unsupported" && (
 									<button
 										type="button"
 										onClick={() => void enableNotifications()}
 										className="mt-4 text-sm text-accent hover:underline"
 									>
-										Notify me when a round ends, even if the app is closed
+										Notify me when time's up, even if the app is closed
 									</button>
 								)}
 						</section>
@@ -380,19 +355,73 @@ function FocusScreen({ todo }: { todo: Todo }) {
 							</section>
 						)}
 
-						<div className="mt-auto flex justify-center pt-10">
-							<button
-								type="button"
-								onClick={finish}
-								className="flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-medium ring-1 ring-[var(--border)] hover:bg-[var(--hover)] focus-visible:outline-2 focus-visible:outline-accent"
-							>
-								{open ? "Complete to-do and end focus" : "End focus"}
-							</button>
-						</div>
+						{!done && open && (
+							<div className="mt-auto flex justify-center pt-10">
+								<button type="button" onClick={complete} className={SECONDARY}>
+									Complete to-do and end focus
+								</button>
+							</div>
+						)}
 					</div>
 				</Dialog.Content>
 			</Dialog.Portal>
 		</Dialog.Root>
+	);
+}
+
+/** Before starting: a preset length, or any number of minutes. */
+function LengthPicker({
+	minutes,
+	onChange,
+}: {
+	minutes: number;
+	onChange: (minutes: number) => void;
+}) {
+	const [custom, setCustom] = useState(String(minutes));
+	useEffect(() => setCustom(String(minutes)), [minutes]);
+	return (
+		<fieldset className="mt-6 flex flex-wrap items-center justify-center gap-2">
+			<legend className="sr-only">Focus length</legend>
+			{PRESETS.map((m) => (
+				<button
+					key={m}
+					type="button"
+					aria-pressed={minutes === m}
+					onClick={() => onChange(m)}
+					className={`min-h-9 rounded-full px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:min-h-11 ${
+						minutes === m
+							? "bg-accent text-on-accent"
+							: "ring-1 ring-[var(--border)] hover:bg-[var(--hover)]"
+					}`}
+				>
+					{m} min
+				</button>
+			))}
+			<label className="flex min-h-9 items-center gap-1.5 rounded-full px-3 text-sm ring-1 ring-[var(--border)] focus-within:ring-accent pointer-coarse:min-h-11">
+				<input
+					type="number"
+					inputMode="numeric"
+					min={MIN_MINUTES}
+					max={MAX_MINUTES}
+					value={custom}
+					aria-label="Minutes"
+					onChange={(e) => {
+						setCustom(e.target.value);
+						const n = Number(e.target.value);
+						if (
+							e.target.value !== "" &&
+							Number.isInteger(n) &&
+							n >= MIN_MINUTES &&
+							n <= MAX_MINUTES
+						)
+							onChange(n);
+					}}
+					onBlur={() => setCustom(String(minutes))}
+					className="w-12 bg-transparent text-right tabular-nums outline-none"
+				/>
+				min
+			</label>
+		</fieldset>
 	);
 }
 
@@ -441,49 +470,5 @@ function FocusChecklist({
 				</button>
 			)}
 		</section>
-	);
-}
-
-function PomodoroSettings({
-	settings,
-	onChange,
-}: {
-	settings: FocusSettings;
-	onChange: (settings: FocusSettings) => void;
-}) {
-	const fields: [keyof FocusSettings, string, string][] = [
-		["focus", "Focus", "min"],
-		["short", "Short break", "min"],
-		["long", "Long break", "min"],
-		["longEvery", "Long break after", "rounds"],
-	];
-	return (
-		<div className="flex flex-col gap-2 p-1">
-			{fields.map(([key, label, unit]) => {
-				const [min, max] = SETTING_LIMITS[key];
-				return (
-					<label key={key} className="flex items-center gap-2">
-						<span className="flex-1">{label}</span>
-						<input
-							type="number"
-							inputMode="numeric"
-							min={min}
-							max={max}
-							value={settings[key]}
-							onChange={(e) => {
-								const n = Math.round(Number(e.target.value));
-								if (Number.isFinite(n) && n >= min && n <= max)
-									onChange({ ...settings, [key]: n });
-							}}
-							className="w-16 rounded-md border border-[var(--border)] bg-transparent px-2 py-1 text-right tabular-nums focus:border-accent focus:outline-none"
-						/>
-						<span className="w-12 text-[var(--fg-muted)]">{unit}</span>
-					</label>
-				);
-			})}
-			<p className="pt-1 text-xs text-[var(--fg-muted)]">
-				Saved on this device.
-			</p>
-		</div>
 	);
 }

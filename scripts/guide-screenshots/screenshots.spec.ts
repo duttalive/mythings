@@ -296,10 +296,10 @@ test("guide screenshots", async ({ page, browser }) => {
 			.getByRole("button", { name: "Focus", exact: true })
 			.click();
 		const screen = page.getByRole("dialog", { name: /Book a van/ });
-		await screen.getByRole("button", { name: "Pomodoro" }).click();
-		await expect(screen.getByRole("timer")).toBeVisible();
-		await page.waitForTimeout(1200);
+		await expect(screen.getByRole("button", { name: "25 min" })).toBeVisible();
 		await shot(page, "focus-mode");
+		await screen.getByRole("button", { name: "Start focus" }).click();
+		await page.waitForTimeout(1200);
 		await screen.getByRole("button", { name: "Minimize" }).click();
 		await expect(page.getByRole("region", { name: "Focus" })).toBeVisible();
 		await shot(page, "focus-pill");
@@ -308,6 +308,23 @@ test("guide screenshots", async ({ page, browser }) => {
 			.getByRole("button", { name: "End focus", exact: true })
 			.click();
 		await expect(screen).toBeHidden();
+	});
+
+	await step(page, "tabs", async () => {
+		await open(page, "/inbox");
+		const strip = page.getByRole("tablist", { name: "Tabs" });
+		await page.keyboard.press("ControlOrMeta+Alt+t");
+		await expect(page).toHaveURL(/\/today$/);
+		await row(page, "Book a van for moving day").click({ button: "middle" });
+		await expect(
+			page.getByRole("textbox", { name: "Task Notes" }),
+		).toBeVisible();
+		await page.getByRole("textbox", { name: "To-do title" }).blur();
+		await shot(page, "tabs");
+		// Back to one tab for the other screenshots.
+		await page.keyboard.press("ControlOrMeta+Alt+w");
+		await page.keyboard.press("ControlOrMeta+Alt+w");
+		await expect(strip.getByRole("button", { name: /^Close/ })).toHaveCount(0);
 	});
 
 	await step(page, "when popover", async () => {

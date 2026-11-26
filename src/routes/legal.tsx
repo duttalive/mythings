@@ -149,7 +149,7 @@ export function PrivacyPage() {
 					encryption keys).
 				</li>
 				<li>
-					<strong>Focus Mode alerts:</strong> while a Pomodoro round or break is
+					<strong>Focus Mode alerts:</strong> while a Focus Mode countdown is
 					running on a device with notifications on, the time it ends, so we can
 					notify that device. It holds no to-do text and is deleted once the
 					alert is sent or the timer is paused or ended.
@@ -162,13 +162,14 @@ export function PrivacyPage() {
 				your to-dos in its local database (IndexedDB), plus changes waiting to
 				sync. It also keeps a few preferences for that device in local storage
 				(your profile for starting offline, theme, text size, sidebar width,
-				passcode lock timing, and Focus Mode's timer and Pomodoro lengths) and a
-				cached copy of the app. Focus Mode's timer isn't synced, and time you
-				spend focusing isn't recorded anywhere. With end-to-end encryption on,
-				the copy of your to-dos on the device is encrypted too, and the key to
-				read it is kept in the browser (locked behind your passcode, if you set
-				one). This data stays in your browser; signing out removes the key, and
-				clearing the site's data in your browser removes everything.
+				passcode lock timing, your open tabs, and Focus Mode's timer and last
+				length) and a cached copy of the app. Focus Mode's timer isn't synced,
+				and time you spend focusing isn't recorded anywhere. With end-to-end
+				encryption on, the copy of your to-dos on the device is encrypted too,
+				and the key to read it is kept in the browser (locked behind your
+				passcode, if you set one). This data stays in your browser; signing out
+				removes the key, and clearing the site's data in your browser removes
+				everything.
 			</p>
 			<p>
 				We set a single cookie, <code>mt_session</code>, which keeps you signed

@@ -78,25 +78,35 @@ for (const size of SIZES) {
 			await expect(row(page, LONG_TITLE)).toContainText("0/1");
 			await expectNoSideScroll(page);
 
-			// Focus Mode, Normal: counts up.
+			// Focus Mode: set the length first (a preset or any minutes), then it counts down.
 			await row(page, LONG_TITLE).click();
 			await page.getByRole("button", { name: "Focus", exact: true }).click();
 			const screen = page.getByRole("dialog", { name: /Check for the COC/ });
 			await expect(screen).toBeVisible();
 			const clock = screen.getByRole("timer");
+			await expect(clock).toHaveText("25:00");
+			await expect(screen.getByRole("button", { name: "Normal" })).toHaveCount(
+				0,
+			);
 			await expect(
-				screen.getByRole("button", { name: "Normal" }),
-			).toHaveAttribute("aria-pressed", "true");
-			await page.clock.fastForward("02:05");
-			await expect(clock).toHaveText(/^2:0\d$/);
+				screen.getByRole("button", { name: "Pomodoro" }),
+			).toHaveCount(0);
+			await screen.getByRole("button", { name: "45 min" }).click();
+			await expect(clock).toHaveText("45:00");
+			await screen.getByRole("spinbutton", { name: "Minutes" }).fill("10");
+			await expect(clock).toHaveText("10:00");
 			await expect(
 				screen.getByRole("checkbox", { name: "Done: Get quotes" }),
 			).toBeVisible();
 			await expectNoSideScroll(page);
+			await screen.getByRole("button", { name: "Start focus" }).click();
+			await expect(screen.getByRole("button", { name: "45 min" })).toHaveCount(
+				0,
+			);
+			await page.clock.fastForward("02:00");
+			await expect(clock).toHaveText(/^[78]:\d\d$/);
 
-			// Pomodoro: counts down 25 minutes; pausing stops it.
-			await screen.getByRole("button", { name: "Pomodoro" }).click();
-			await expect(clock).toHaveText(/^(25:00|24:5\d)$/);
+			// Pausing stops it.
 			await screen.getByRole("button", { name: "Pause" }).click();
 			const paused = await clock.textContent();
 			await page.clock.fastForward("01:00");
@@ -110,26 +120,109 @@ for (const size of SIZES) {
 			await expect(pill).toBeVisible();
 			await expectNoSideScroll(page);
 
-			// The round ends: a break is ready and waits to be started.
-			await page.clock.fastForward("25:00");
-			await expect(pill).toContainText("Time for a break");
+			// At zero it stops and offers what's next.
+			await page.clock.fastForward("10:00");
+			await expect(pill).toContainText("Time's up");
+			await expect(pill).toContainText("0:00");
 			await pill.getByRole("button", { name: "Open focus" }).click();
 			await expect(screen).toBeVisible();
-			await expect(screen).toContainText("Focus round done");
-			await expect(clock).toHaveText("5:00");
-			await expect(
-				screen.getByRole("button", { name: "Start short break" }),
-			).toBeVisible();
+			await expect(screen).toContainText("You focused for 10 min");
+			for (const name of [
+				"Complete to-do",
+				"+5 min",
+				"Start again",
+				"End focus",
+			])
+				await expect(
+					screen.getByRole("button", { name, exact: true }).first(),
+				).toBeVisible();
+			await screen.getByRole("button", { name: "+5 min" }).click();
+			await expect(clock).toHaveText(/^(5:00|4:5\d)$/);
+			await page.clock.fastForward("05:00");
+			await expect(screen).toContainText("You focused for 15 min");
+			await expectNoSideScroll(page);
 
 			// Completing from Focus Mode ends it.
 			await screen
-				.getByRole("button", { name: "Complete to-do and end focus" })
+				.getByRole("button", { name: "Complete to-do", exact: true })
 				.click();
 			await expect(screen).toBeHidden();
 			await expect(
-				page.getByText(/Completed after 2\d min of focus/),
+				page.getByText(/Completed after 15 min of focus/),
 			).toBeVisible();
 			await expect(pill).toBeHidden();
+
+			// Tabs are a desktop thing.
+			const strip = page.getByRole("tablist", { name: "Tabs" });
+			if (size.name === "desktop") await expect(strip).toBeVisible();
+			else await expect(strip).toHaveCount(0);
 		});
 	});
 }
+
+test.describe("desktop tabs", () => {
+	test.use({ viewport: { width: 1280, height: 800 } });
+
+	test("open pages in app tabs, switch, close, and keep them after a reload", async ({
+		page,
+	}) => {
+		await signUp(page);
+		await open(page, "/inbox");
+		await quickEntry(page, "Plan the offsite");
+		const strip = page.getByRole("tablist", { name: "Tabs" });
+		const tabNames = () =>
+			strip
+				.getByRole("tab")
+				.evaluateAll((els) =>
+					els.map((el) => el.textContent?.trim() ?? "").filter((t) => t !== ""),
+				);
+		await expect.poll(tabNames).toEqual(["Inbox"]);
+
+		// New tab (Ctrl+Alt+T / ⌥⌘T) opens Today next to it.
+		await page.keyboard.press("ControlOrMeta+Alt+t");
+		await expect(page).toHaveURL(/\/today$/);
+		await expect.poll(tabNames).toEqual(["Inbox", "Today"]);
+
+		// Switching tabs goes back to the Inbox.
+		await strip.getByRole("tab", { name: "Inbox", exact: true }).click();
+		await expect(page).toHaveURL(/\/inbox$/);
+
+		// A middle-click on a row opens the to-do's page in a new tab.
+		await row(page, "Plan the offsite").click({ button: "middle" });
+		await expect(page).toHaveURL(/\/notes\//);
+		await expect.poll(tabNames).toEqual(["Inbox", "Plan the offsite", "Today"]);
+		// ⌘/Ctrl-click on a sidebar list opens it in a new tab too.
+		await page
+			.getByRole("navigation", { name: "Lists" })
+			.getByRole("link", { name: /Upcoming/ })
+			.click({ modifiers: ["ControlOrMeta"] });
+		await expect(page).toHaveURL(/\/upcoming$/);
+		await expect
+			.poll(tabNames)
+			.toEqual(["Inbox", "Plan the offsite", "Upcoming", "Today"]);
+
+		// Navigating inside a tab changes that tab only.
+		await page
+			.getByRole("navigation", { name: "Lists" })
+			.getByRole("link", { name: /Anytime/ })
+			.click();
+		await expect
+			.poll(tabNames)
+			.toEqual(["Inbox", "Plan the offsite", "Anytime", "Today"]);
+
+		// Closing the active tab moves to its neighbour; ⌥⌘← / ⌥⌘→ switch.
+		await page.keyboard.press("ControlOrMeta+Alt+w");
+		await expect.poll(tabNames).toEqual(["Inbox", "Plan the offsite", "Today"]);
+		await expect(page).toHaveURL(/\/today$/);
+		await page.keyboard.press("ControlOrMeta+Alt+ArrowLeft");
+		await expect(page).toHaveURL(/\/notes\//);
+		await strip.getByRole("button", { name: "Close Today" }).click();
+		await expect.poll(tabNames).toEqual(["Inbox", "Plan the offsite"]);
+
+		// Tabs are remembered on this device.
+		await expectSynced(page);
+		await page.reload();
+		await expect.poll(tabNames).toEqual(["Inbox", "Plan the offsite"]);
+		await expect(page).toHaveURL(/\/notes\//);
+	});
+});

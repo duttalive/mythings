@@ -50,6 +50,17 @@ export const SHORTCUTS: Shortcut[] = [
 	},
 	{ combos: ["a…z"], label: "Quick Find (start typing)", group: "Navigate" },
 	{ combos: ["mod+,"], label: "Settings", group: "Navigate" },
+	{
+		combos: ["mod+t", "mod+alt+t"],
+		label: "New tab (desktop)",
+		group: "Navigate",
+	},
+	{ combos: ["mod+alt+w"], label: "Close tab", group: "Navigate" },
+	{
+		combos: ["mod+alt+left", "mod+alt+right"],
+		label: "Previous / next tab",
+		group: "Navigate",
+	},
 	{ combos: ["mod+k"], label: "Complete", group: "Edit" },
 	{ combos: ["mod+alt+k"], label: "Cancel", group: "Edit" },
 	{
@@ -59,6 +70,7 @@ export const SHORTCUTS: Shortcut[] = [
 	},
 	{ combos: ["mod+shift+m"], label: "Move to list…", group: "Edit" },
 	{ combos: ["mod+shift+t"], label: "Tags…", group: "Edit" },
+	{ combos: ["alt+f"], label: "Focus Mode (in an open to-do)", group: "Other" },
 	{ combos: ["backspace"], label: "Delete", group: "Edit" },
 	{ combos: ["mod+s"], label: "When…", group: "Schedule" },
 	{ combos: ["mod+shift+d"], label: "Deadline…", group: "Schedule" },

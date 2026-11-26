@@ -234,7 +234,7 @@ function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 								type="button"
 								onClick={() => {
 									flush();
-									focus.start(todo.id);
+									focus.open(todo.id);
 								}}
 								className="flex items-center gap-1 text-accent hover:underline"
 							>

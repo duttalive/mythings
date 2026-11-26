@@ -552,14 +552,21 @@ A to-do's `notes` is its Task Notes: a Notion-style editor (TipTap 3, `src/notes
 - **Full width** (setting `fullWidth`, synced, default off): list pages (`LIST_PAGES` in `Shell.tsx`: the lists, project, area, Life Bucket, tag and Task Notes pages) drop the 720px column. Toggled from the top bar (desktop only) and Settings → Appearance.
 - **Tags section** (setting `tagsCollapsed`, synced): the sidebar's Tags heading has the same arrow and hidden count as a Life Bucket; visiting a tag or adding one opens it. Settings changes from outside Settings go through `useSaveSettings`.
 
-### 10.13 Focus Mode (2.7.0)
+### 10.13 Focus Mode (2.7.0; a single countdown since 2.8.0)
 
-- One focus session per device, on one to-do, kept in localStorage (`mythings:focus:<userId>`; Pomodoro lengths in `mythings:focus-settings`, last mode in `mythings:focus-mode`). Never synced and no history is stored. Timer logic is DOM-free in `src/focus/timer.ts`; `FocusProvider` ticks it and shares it across tabs via `storage` events.
-- **Normal** counts up. **Pomodoro**: focus 25 / short 5 / long 15 minutes, a long break after every 4 rounds (1–120 / 1–60 / 1–90 / 2–10, per device). When a phase ends the next one is ready but paused; the app chimes (Web Audio, `src/focus/chime.ts`) if visible.
-- UI (`src/focus/FocusScreen.tsx`): a full-screen Radix dialog (title, clock, progress, Pause/Resume, Skip, settings, checklist, read-only notes with "Edit in Task Notes", "Complete to-do and end focus", End focus). Escape or Minimize → a pill at the bottom (left on phones, centred from md). The tab title is prefixed with the clock. Started from the card's Focus button / ⌥F and from the Task Notes page; ends if the to-do is deleted.
-- Push alerts: while a Pomodoro phase runs, the client `PUT /api/push/focus {endpoint, at, kind}` for its own subscription (checked against `push_subscriptions`, `at` within 3 h); pause/stop/finish sends `DELETE`. The Durable Object keeps one row per endpoint in `focus_alerts`, includes `MIN(at)` in its alarm, sends a fixed text push ("Focus round done" / "Break's over", no to-do text) to that endpoint only, and drops alerts more than 15 minutes late. Unsubscribing deletes the endpoint's alert.
+- One focus session per device, on one to-do, kept in localStorage (`mythings:focus:<userId>`; the last length in `mythings:focus-minutes`). Never synced and no history is stored. Timer logic is DOM-free in `src/focus/timer.ts`; `FocusProvider` ticks it and shares it across browser tabs via `storage` events. Sessions stored by 2.7.0 (Normal/Pomodoro) are dropped.
+- Always a countdown: before starting, pick 15/25/45/60/90 min or 1–240 custom; while running, Pause/Resume and +5 min. At zero it stops (`finish`), chimes if visible (Web Audio, `src/focus/chime.ts`), and offers Complete to-do, +5 min (runs again), Start again (same length; earlier time is banked in the total) and End focus.
+- UI (`src/focus/FocusScreen.tsx`): a full-screen Radix dialog (title, clock, progress, length picker before start, controls, checklist, read-only notes with "Edit in Task Notes", "Complete to-do and end focus"). Escape or Minimize → a pill at the bottom (left on phones, centred from md). The browser tab title is prefixed with the time left while running. Started from the card's Focus button / ⌥F and from the Task Notes page; ends if the to-do is deleted.
+- Push alerts: while the countdown runs, the client `PUT /api/push/focus {endpoint, at, kind: "focus"}` for its own subscription (checked against `push_subscriptions`, `at` within 3 h); pause/finish/end sends `DELETE`. The Durable Object keeps one row per endpoint in `focus_alerts`, includes `MIN(at)` in its alarm, sends a fixed text push ("Focus time's up", no to-do text) to that endpoint only, and drops alerts more than 15 minutes late. Unsubscribing deletes the endpoint's alert. (`kind: "break"` is still accepted from 2.7.0 clients.)
 - The open to-do card (2.7.0) no longer shows notes; notes are written on `/notes/$todoId`.
 - Rows (2.7.0): the title block has a minimum width (~12rem) and the indicators wrap onto a line below it on narrow screens.
+
+### 10.14 Tabs (desktop, 2.8.0)
+
+- At ≥ 1024px a tab strip (`src/tabs/TabStrip.tsx`) sits above the page. Each tab is an app path; the URL is always the active tab's path, and navigating changes only the active tab (`TabsProvider`). Pure state helpers in `src/tabs/tabs.ts` (open next to the active tab, close → neighbour, last tab stays, wrap-around stepping, max 12). Stored per device in `mythings:tabs:<userId>`; on load the current URL becomes the active tab's path. Only same-origin, non-`/api/` paths are kept.
+- Opening in a new tab: ⌘/Ctrl-click or middle-click on any same-app link (a document capture listener), middle-click on a to-do row (`/notes/:id`) or project row (`/project/:id`), and "Open in New Tab" in the card's ⋯ menu. ⌘-click on rows still selects.
+- Shortcuts (capture phase, desktop only): ⌘T / Ctrl+T (browsers usually keep it in a normal tab), ⌥⌘T / Ctrl+Alt+T new tab (Today); ⌥⌘W close; ⌥⌘← / ⌥⌘→ previous/next. Tab names come from the page (list name, or the project/area/bucket/tag/to-do title).
+- Below 1024px there's no strip and "open in new tab" just navigates; stored tabs are kept for when the window is wide again.
 
 ---
 

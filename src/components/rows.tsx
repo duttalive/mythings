@@ -20,6 +20,7 @@ import { useSelection } from "../editing/SelectionProvider";
 import { deadlineLabel, shortDate } from "../lib/format";
 import { formatTime, reminderTime } from "../lib/reminders";
 import { useOps } from "../sync/hooks";
+import { useTabs } from "../tabs/TabsProvider";
 import { useBulkBar } from "./BulkBar";
 import { useConfirmDelete } from "./ConfirmDelete";
 import {
@@ -242,6 +243,7 @@ function RowShell({
 	selected = false,
 	rowId,
 	onSwipe,
+	href,
 }: {
 	box: ReactNode;
 	title: ReactNode;
@@ -264,7 +266,10 @@ function RowShell({
 	drag?: { kind: "todo" | "project"; id: string };
 	/** Touch swipe actions (to-dos): right sets When, left deletes. */
 	onSwipe?: (direction: SwipeDirection) => void;
+	/** The item's own page, which a middle-click opens in a new tab (desktop). */
+	href?: string;
 }) {
+	const tabs = useTabs();
 	const { ctx } = useListData();
 	const swipe = useSwipe(onSwipe);
 	const { justDragged } = useDndRegistry();
@@ -275,8 +280,14 @@ function RowShell({
 				"aria-expanded": false,
 				// The click that ends a drag shouldn't also open the row.
 				onClick: (e: React.MouseEvent) => !justDragged() && onOpen(e),
-				// Shift-click selects rows, not text.
-				onMouseDown: (e: React.MouseEvent) => e.shiftKey && e.preventDefault(),
+				// Shift-click selects rows, not text; a middle-click doesn't start scrolling.
+				onMouseDown: (e: React.MouseEvent) =>
+					(e.shiftKey || (href && e.button === 1)) && e.preventDefault(),
+				onAuxClick: (e: React.MouseEvent) => {
+					if (!href || e.button !== 1) return;
+					e.preventDefault();
+					tabs.openInNewTab(href);
+				},
 				onKeyDown: (e: React.KeyboardEvent) => {
 					if (e.key === "Enter" && e.target === e.currentTarget) {
 						e.preventDefault();
@@ -425,6 +436,7 @@ export function TodoRow({
 	}
 	return (
 		<RowShell
+			href={`/notes/${todo.id}`}
 			box={
 				<Checkbox
 					status={status}
@@ -529,6 +541,7 @@ export function ProjectRow({
 	const open = project.status === "open";
 	return (
 		<RowShell
+			href={`/project/${project.id}`}
 			box={
 				<ProgressRing
 					progress={projectProgress(project.id, data.todos)}

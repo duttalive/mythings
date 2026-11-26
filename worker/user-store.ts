@@ -43,8 +43,12 @@ const STALE_FOCUS_ALERT_MS = 15 * 60 * 1000;
 
 /** What a focus alert says (SPEC §10.13). No to-do text, so it reads the same with encryption on. */
 const FOCUS_NOTICES = {
-	focus: { title: "Focus round done", body: "Time for a break." },
-	break: { title: "Break's over", body: "Ready for the next focus round?" },
+	focus: {
+		title: "Focus time's up",
+		body: "Wrap up, or add a few more minutes.",
+	},
+	// From 2.7.0's Pomodoro breaks; kept for clients that haven't updated yet.
+	break: { title: "Break's over", body: "Ready to focus again?" },
 } as const;
 
 export type FocusAlertKind = keyof typeof FOCUS_NOTICES;
