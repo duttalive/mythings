@@ -218,6 +218,42 @@ export const CloudOffIcon = (p: IconProps) => (
 	</Icon>
 );
 
+/** A target: Focus Mode. */
+export const FocusIcon = (p: IconProps) => (
+	<Icon {...p}>
+		<circle cx="10" cy="10" r="7" />
+		<circle cx="10" cy="10" r="3.5" />
+		<circle cx="10" cy="10" r="0.6" fill="currentColor" />
+	</Icon>
+);
+
+export const PlayIcon = (p: IconProps) => (
+	<Icon fill="currentColor" stroke="none" {...p}>
+		<path d="M6.5 4.2v11.6a.8.8 0 0 0 1.2.7l9.2-5.8a.8.8 0 0 0 0-1.4L7.7 3.5a.8.8 0 0 0-1.2.7z" />
+	</Icon>
+);
+
+export const PauseIcon = (p: IconProps) => (
+	<Icon fill="currentColor" stroke="none" {...p}>
+		<rect x="5" y="4" width="3.4" height="12" rx="1" />
+		<rect x="11.6" y="4" width="3.4" height="12" rx="1" />
+	</Icon>
+);
+
+export const SkipIcon = (p: IconProps) => (
+	<Icon {...p}>
+		<path d="m5 5 7 5-7 5z" fill="currentColor" />
+		<path d="M15 5v10" />
+	</Icon>
+);
+
+/** A chevron pointing down: shrink to a small pill. */
+export const MinimizeIcon = (p: IconProps) => (
+	<Icon {...p}>
+		<path d="m5 7.5 5 5 5-5" />
+	</Icon>
+);
+
 export const GearIcon = (p: IconProps) => (
 	<Icon {...p}>
 		<circle cx="10" cy="10" r="2.5" />

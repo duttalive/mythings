@@ -15,7 +15,7 @@ This guide walks through every feature and flow, end to end, with a screenshot o
 2. [The screen at a glance](#2-the-screen-at-a-glance)
 3. [Core ideas](#3-core-ideas)
 4. [The lists](#4-the-lists): [Inbox](#41-inbox) · [Today](#42-today) · [Upcoming](#43-upcoming) · [Anytime](#44-anytime) · [Someday](#45-someday) · [Overdue](#46-overdue) · [Logbook](#47-logbook) · [Trash](#48-trash) · [Deadlines](#49-deadlines-hidden-list) · [filtering by tag](#410-filtering-a-list-by-tag)
-5. [Working with to-dos](#5-working-with-to-dos): [the to-do card](#52-the-to-do-card) · [moving](#55-moving-a-to-do) · [Task Notes](#57-task-notes)
+5. [Working with to-dos](#5-working-with-to-dos): [the to-do card](#52-the-to-do-card) · [moving](#55-moving-a-to-do) · [Task Notes](#57-task-notes) · [Focus Mode](#58-focus-mode)
 6. [Scheduling: When, deadlines, reminders and repeats](#6-scheduling-when-deadlines-reminders-and-repeats)
 7. [Projects and headings](#7-projects-and-headings)
 8. [Life Buckets and Areas](#8-life-buckets-and-areas)
@@ -462,10 +462,10 @@ A new to-do you close while it's still completely empty is discarded.
 
 Click a to-do (or select it and press **Enter**) to open it in place as a card:
 
-![An open to-do card for "Buy groceries": title, notes, a five-item checklist with two items ticked and a drag handle showing beside "Bread", chips for Today and its tags, and buttons for Move, Deadline, Open in Task Notes and More](docs/guide/todo-card.jpg)
+![An open to-do card for "Buy groceries": the title, a five-item checklist with two items ticked and a drag handle showing beside "Bread", chips for Today and its tags, and buttons for Move, Deadline, Focus, Open in Task Notes and More](docs/guide/todo-card.jpg)
 
 - **Title** at the top; a long title wraps onto more lines. Return closes the card.
-- **Notes** below, in [Task Notes](#57-task-notes). Write freely, or type **/** for headings, lists, checkboxes, toggles, callouts, tables and more.
+- **Notes** aren't shown in the card, to keep it short. Click **Open in Task Notes** (the notes icon in the footer) to read and write them on the to-do's own page ([Task Notes](#57-task-notes)). A to-do with notes shows a small notes icon on its row.
 - **Checklist:**
   - **Add checklist** (in the footer) starts one; Return adds an item below the current one.
   - Backspace on an empty item removes it.
@@ -474,7 +474,7 @@ Click a to-do (or select it and press **Enter**) to open it in place as a card:
   - Tick items off as you go (they're struck through). The collapsed row shows progress like `2/5`.
 - **The footer** shows what's set and offers what isn't:
   - Set values appear as chips on the left: the **When** (★ Today here), the **list** it's in (a project, a heading in one, or an area), a **reminder** time, the **tags** (_errands, shop_) and the **deadline**. Click a chip to change it.
-  - Icons on the right add what's missing: **When** (calendar), **Move** (for a to-do that isn't in a project or area yet), **Tags**, **Add checklist**, **Deadline** (flag), **Open in Task Notes** and **⋯ More actions**.
+  - Icons on the right add what's missing: **When** (calendar), **Move** (for a to-do that isn't in a project or area yet), **Tags**, **Add checklist**, **Deadline** (flag), **Focus** (target; see [Focus Mode](#58-focus-mode)), **Open in Task Notes** and **⋯ More actions**.
 - Changes save automatically a moment after you stop typing, and when the card closes.
 - Close it with Return in the title, **Escape**, **⌘Return**, or by clicking outside.
 
@@ -534,7 +534,7 @@ The Tags button (or chip) on the card, or **⌘⇧T**, opens the tag picker:
 
 ### 5.7 Task Notes
 
-**Task Notes** are every to-do's notes: a place to explore and write as much as you need, Notion-style. Write in the open to-do, or open it as a full page.
+**Task Notes** are every to-do's notes: a place to explore and write as much as you need, Notion-style. You write them on the to-do's own page: open the to-do and click **Open in Task Notes** (the notes icon at the bottom of the card).
 
 **Writing.** An empty line shows a hint, **Type / for blocks**. Type **/** anywhere to insert a block, then keep typing to narrow the list, use ↑ / ↓ and **Enter**, or click one. Escape closes the menu.
 
@@ -560,9 +560,9 @@ The Tags button (or chip) on the card, or **⌘⇧T**, opens the tag picker:
 
 ![The Task Notes page for "Book a van for moving day": its Checklist at the top (1 of 3 done: Measure the hallway, Pack the kitchen, Label every box), then the notes with a heading "Van options", three checkboxes (one ticked), a callout about a parking permit, and an open toggle "Quotes" holding a table of two van companies, with the table buttons below](docs/guide/task-notes-page.jpg)
 
-**The full page.** Click **Open in Task Notes** (the notes icon at the bottom of an open to-do) to write on a whole page. Its title is the to-do's title (long titles wrap), which you can edit, with a checkbox to complete it. Under it are links back to Task Notes and to the list the to-do is in.
+**The full page.** Click **Open in Task Notes** (the notes icon at the bottom of an open to-do) to write on a whole page. It's the only place notes are shown in full. Its title is the to-do's title (long titles wrap), which you can edit, with a checkbox to complete it. Under it are links back to Task Notes and to the list the to-do is in, and **Focus** to start [Focus Mode](#58-focus-mode) on it.
 
-**The checklist on the full page.** A to-do's [checklist](#52-the-to-do-card) appears at the top of its full page, apart from the notes, with how many items are done (like **1 of 3**). Tick items, edit them, drag them into a new order, or add one with **+ Add item**; it's the same checklist as in the open to-do, so changes show up in both. A to-do without a checklist shows **Add checklist** there instead.
+**The checklist on the full page.** A to-do's [checklist](#52-the-to-do-card) appears at the top of its full page, apart from the notes, with how many items are done (like **1 of 3**). Tick items, edit them, drag them into a new order, or add one with **+ Add item**; it's the same checklist as in the open to-do (and in Focus Mode), so changes show up everywhere. A to-do without a checklist shows **Add checklist** there instead.
 
 Changes save a moment after you stop typing, and when you leave.
 
@@ -575,6 +575,29 @@ Changes save a moment after you stop typing, and when you leave.
 - Notes written before Task Notes open just as they were, including Markdown you typed.
 - With [encryption](#171-end-to-end-encryption) on, Task Notes are encrypted like every other note, and searching them happens on your device.
 - Notes stay with their to-do: they're copied when a to-do [repeats](#64-repeating-to-dos-and-projects), go to the Logbook and Trash with it, and are included when you [export](#18-your-data).
+
+### 5.8 Focus Mode
+
+**Focus Mode** puts one to-do on the whole screen with a timer, so you can work on just that. Start it from an open to-do with **Focus** (the target icon in the footer, or **⌥F**), or with **Focus** under the title of the to-do's Task Notes page.
+
+![Focus Mode in Pomodoro on "Book a van for moving day": Minimize, the Normal / Pomodoro switch and End focus at the top; "Focus · round 1", the title, a 24:59 countdown with a progress bar, a link to turn on notifications, Pause, Skip and settings buttons; then the to-do's checklist and notes, and "Complete to-do and end focus" at the bottom](docs/guide/focus-mode.jpg)
+
+- **Normal** counts up from 0:00, for as long as you like.
+- **Pomodoro** counts down a **focus round** (25 minutes), then a **short break** (5 minutes); every fourth break is a **long break** (15 minutes). When a round or break ends, a chime plays and the next one waits for you: press **Start short break** (or **Start focus**). **Skip** ends the current round or break early. The ⚙ button sets the lengths, and how many rounds come before a long break; they're saved on this device.
+- Switch between **Normal** and **Pomodoro** at the top; the timer starts again in the new mode. The app remembers the mode you used last.
+- **Pause** / **Resume** (or **Space**) stops and restarts the clock.
+- The to-do's **checklist** is below the timer: tick, edit, reorder or add items as you go. Its **notes** are shown too, with **Edit in Task Notes** to change them.
+- **Complete to-do and end focus** ticks the to-do off and tells you how long you focused. **End focus** stops without completing it.
+- **Minimize** (or **Escape**) shrinks Focus Mode to a small pill at the bottom of the screen with the time, so you can use the rest of the app. Tap the pill's ▶ / ⏸ to pause or resume, or the time to open Focus Mode again. While you focus, the browser tab shows the time too.
+
+![The focus pill at the bottom of the Today list, showing a pause button, 24:59 and "Book a van for moving day"](docs/guide/focus-pill.jpg)
+
+**Notifications.** With [notifications](#63-reminders) on, you're also notified when a Pomodoro round or break ends, even if the app is closed or your phone is locked. Focus Mode offers to turn them on (**Notify me when a round ends…**) if they aren't yet.
+
+**Good to know:**
+
+- Focus Mode belongs to the device you start it on: the timer keeps going if you reload or close the app, but it isn't synced to your other devices, and the time you spend focusing isn't saved.
+- Focusing on another to-do ends the current session. Deleting the to-do ends it too.
 
 ---
 
@@ -967,7 +990,15 @@ Inside an open to-do card:
 | New checklist item below                 | Return (in a checklist item)           |
 | Remove an empty checklist item           | Backspace                              |
 | Move a checklist item up / down          | ⌘↑ / ⌘↓ (in a checklist item)          |
-| Insert a block in the notes              | / (then Enter); Esc closes the menu    |
+| Start Focus Mode                         | ⌥F                                     |
+| Insert a block (in Task Notes)           | / (then Enter); Esc closes the menu    |
+
+In Focus Mode:
+
+| Action                                   | Keys                                   |
+| ---------------------------------------- | -------------------------------------- |
+| Pause / resume the timer                 | Space                                  |
+| Minimize to the pill                     | Esc                                    |
 
 Some browsers keep a few combinations for themselves in a normal tab (such as Chrome's ⌘1…⌘8); they work in the installed app, and the **g** shortcuts work everywhere.
 
@@ -996,6 +1027,8 @@ mythings works just as well on a phone. Install it to your home screen for the b
 - **Swipe right** on a row to open When. **Swipe left** to delete it (it asks first, and offers Undo).
 - **Press and hold** a row to drag it; mostly vertical movements scroll as usual.
 - **Checklist items** move by dragging their handle (⠿) on the left; no need to hold first.
+- On a phone, a row with tags, a checklist or dates shows them on a line under its title, so a long title keeps the full width.
+- **Focus Mode** fills the screen; **Minimize** leaves a small timer pill at the bottom left, beside the **+** button.
 - Popovers (When, Tags, Deadline…) open as **sheets** from the bottom of the screen.
 - Buttons and rows are finger-sized, and text fields are large enough that your phone doesn't zoom in.
 - **Text size** (Settings → Appearance) can be set separately on each device.
@@ -1213,6 +1246,8 @@ These work without signing in:
 **Something I completed is still showing.** If Settings → Lists → Move completed to-dos to the Logbook is set to **Daily**, completed items stay (ticked) until the end of the day.
 
 **My areas and projects look rearranged.** Since Life Buckets arrived, areas no longer hold projects; your lists were moved once, without losing anything. See [After updating to Life Buckets](#83-after-updating-to-life-buckets).
+
+**Where are a to-do's notes?** The open to-do keeps to its title and checklist. Click **Open in Task Notes** (the notes icon at the bottom of the open to-do) to read and write its notes on their own page; a row with notes shows a small notes icon. See [Task Notes](#57-task-notes).
 
 **A to-do due today isn't in Today.** Today holds only what's planned for today. Set its When to Today to see it there.
 

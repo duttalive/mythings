@@ -28,14 +28,11 @@ test("keyboard-only: create, edit, schedule, reorder, complete, undo, navigate",
 		.poll(() => rowTitles(page))
 		.toEqual(["First", "Third", "Second"]);
 
-	// Enter opens the selected to-do; add notes; Escape closes.
+	// Enter opens the selected to-do (title focused); Escape closes it.
 	await page.keyboard.press("Enter");
-	await page.keyboard.press("Tab");
-	await page.keyboard.type("Some notes");
+	await expect(page.getByRole("textbox", { name: "Title" })).toBeFocused();
 	await page.keyboard.press("Escape");
-	await expect(
-		row(page, "Third").getByRole("img", { name: "Has notes" }),
-	).toBeVisible();
+	await expect(page.getByRole("textbox", { name: "Title" })).toBeHidden();
 
 	// ⌥T schedules it for Today: it leaves the Inbox.
 	await expect(row(page, "Third")).toBeFocused();

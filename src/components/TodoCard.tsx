@@ -1,5 +1,6 @@
-// A to-do expanded inline into an editable card (SPEC §10.2): title, notes,
-// checklist, and a footer for When, Tags, Checklist and Deadline.
+// A to-do expanded inline into an editable card (SPEC §10.2): title,
+// checklist, and a footer for When, Tags, Checklist and Deadline. Notes are
+// written on the to-do's Task Notes page, not here.
 
 import { Link } from "@tanstack/react-router";
 import {
@@ -19,10 +20,10 @@ import { choiceForTodo, choiceTitle } from "../editing/listOptions";
 import { describeRule } from "../editing/repeatForm";
 import { useBulkActions } from "../editing/useBulkActions";
 import { useCreateTag } from "../editing/useCreateTag";
+import { useFocus } from "../focus/FocusProvider";
 import { comboFromEvent } from "../keyboard/keys";
 import { deadlineLabel, shortDate } from "../lib/format";
 import { formatTime, reminderTime } from "../lib/reminders";
-import { NotesEditor } from "../notes";
 import { useChecklist, useOps } from "../sync/hooks";
 import { Checklist, useAddChecklistItem } from "./Checklist";
 import { useConfirmDelete } from "./ConfirmDelete";
@@ -39,6 +40,7 @@ import {
 	ChecklistIcon,
 	CrossIcon,
 	FlagIcon,
+	FocusIcon,
 	LayersIcon,
 	MoreIcon,
 	NotesIcon,
@@ -74,9 +76,14 @@ export function TodoCard({ todo }: { todo: Todo }) {
 	const weekStart = user.settings.weekStart ?? 1;
 	const items = useChecklist(todo.id);
 	const createTag = useCreateTag();
+	const focus = useFocus();
+	const startFocus = () => {
+		flush();
+		collapse();
+		focus.start(todo.id);
+	};
 
 	const [title, setTitle] = useState(todo.title);
-	const [notes, setNotes] = useState(todo.notes);
 	const [popover, setPopover] = useState<PopoverName>(null);
 	const [scheduleView, setScheduleView] = useState<ScheduleView>("when");
 	const [focusItemId, setFocusItemId] = useState<string | null>(null);
@@ -85,10 +92,10 @@ export function TodoCard({ todo }: { todo: Todo }) {
 	const titleRef = useRef<HTMLTextAreaElement>(null);
 	useAutoGrow(titleRef, title);
 
-	// Title and notes save shortly after typing stops, and whenever the card closes.
-	const latest = useRef({ title, notes });
-	latest.current = { title, notes };
-	const saved = useRef({ title: todo.title, notes: todo.notes });
+	// The title saves shortly after typing stops, and whenever the card closes.
+	const latest = useRef({ title, notes: todo.notes });
+	latest.current = { title, notes: todo.notes };
+	const saved = useRef({ title: todo.title });
 	const itemsRef = useRef(items);
 	itemsRef.current = items;
 	const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -98,10 +105,8 @@ export function TodoCard({ todo }: { todo: Todo }) {
 		const patch: Partial<Todo> = {};
 		if (latest.current.title !== saved.current.title)
 			patch.title = latest.current.title;
-		if (latest.current.notes !== saved.current.notes)
-			patch.notes = latest.current.notes;
 		if (Object.keys(patch).length === 0) return;
-		saved.current = { ...latest.current };
+		saved.current = { title: latest.current.title };
 		void ops.update("todo", todo.id, patch).catch(console.error);
 	}, [ops, todo.id]);
 
@@ -176,6 +181,11 @@ export function TodoCard({ todo }: { todo: Todo }) {
 			case "mod+shift+t":
 				e.preventDefault();
 				setPopover("tags");
+				return;
+			case "alt+f":
+				if (status !== "open") return;
+				e.preventDefault();
+				startFocus();
 				return;
 		}
 	};
@@ -322,17 +332,6 @@ export function TodoCard({ todo }: { todo: Todo }) {
 				/>
 			</div>
 
-			<div className="mt-1 pl-[38px] pr-2">
-				<NotesEditor
-					value={notes}
-					onChange={(markdown) => {
-						setNotes(markdown);
-						scheduleSave();
-					}}
-					label="Notes"
-				/>
-			</div>
-
 			{items && items.length > 0 && (
 				<Checklist
 					items={items}
@@ -435,6 +434,11 @@ export function TodoCard({ todo }: { todo: Todo }) {
 								{<FlagIcon className="size-4" />}
 							</IconButton>,
 						)}
+					{status === "open" && !isTemplate && (
+						<IconButton label="Focus" onClick={startFocus}>
+							<FocusIcon className="size-4" />
+						</IconButton>
+					)}
 					<Link
 						to="/notes/$todoId"
 						params={{ todoId: todo.id }}

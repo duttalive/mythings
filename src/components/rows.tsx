@@ -194,7 +194,8 @@ function TagChips({ tagIds }: { tagIds: string[] }) {
 			<span
 				// Titles aren't unique (tags with the same name can sit under different parents).
 				key={tag.id}
-				className="rounded-full border border-[var(--border)] px-1.5 py-px text-[0.6875rem] leading-4"
+				title={tag.title}
+				className="max-w-40 truncate rounded-full border border-[var(--border)] px-1.5 py-px text-[0.6875rem] leading-4"
 			>
 				{tag.title}
 			</span>
@@ -318,9 +319,10 @@ function RowShell({
 				{box}
 				<div
 					{...openProps}
-					className={`flex min-w-0 flex-1 items-start gap-3 pointer-coarse:-my-3 pointer-coarse:py-3 ${onOpen ? "cursor-default rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent" : ""}`}
+					className={`flex min-w-0 flex-1 flex-wrap items-start gap-x-3 gap-y-1 pointer-coarse:-my-3 pointer-coarse:py-3 ${onOpen ? "cursor-default rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent" : ""}`}
 				>
-					<div className="min-w-0 flex-1">
+					{/* At least ~12rem for the title: on narrow screens the indicators move to a line below it instead of squeezing it. */}
+					<div className="min-w-[min(12rem,100%)] flex-1 basis-48">
 						{/* Titles wrap onto more lines rather than being cut off. */}
 						<div className="flex items-start gap-1.5">
 							{date && (
@@ -355,7 +357,7 @@ function RowShell({
 							</div>
 						)}
 					</div>
-					<div className="flex shrink-0 items-center gap-2 pt-0.5 text-xs text-[var(--fg-muted)]">
+					<div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-2 gap-y-1 pt-0.5 text-xs whitespace-nowrap text-[var(--fg-muted)] empty:hidden">
 						{indicators}
 					</div>
 				</div>

@@ -9,9 +9,16 @@ import {
 	signUp,
 } from "./helpers";
 
-/** Writes a plan into the open to-do's notes with Markdown shortcuts and the / menu. */
+/** Opens the open to-do's Task Notes page (the card has no notes box). */
+async function openTaskNotes(page: Page) {
+	await expect(page.getByRole("textbox", { name: "Notes" })).toHaveCount(0);
+	await page.getByRole("link", { name: "Open in Task Notes" }).click();
+	await expect(page.getByRole("textbox", { name: "Task Notes" })).toBeVisible();
+}
+
+/** Writes a plan into a to-do's Task Notes page with Markdown shortcuts and the / menu. */
 async function writePlan(page: Page) {
-	const notes = page.getByRole("textbox", { name: "Notes" });
+	const notes = page.getByRole("textbox", { name: "Task Notes" });
 	await notes.click();
 	await page.keyboard.type("# Plan");
 	await page.keyboard.press("Enter");
@@ -39,6 +46,7 @@ test("a to-do's notes are Task Notes: blocks, a full page, and search", async ({
 	await open(page, "/inbox");
 	await quickEntry(page, "Move flat");
 	await row(page, "Move flat").click();
+	await openTaskNotes(page);
 	await writePlan(page);
 	// Escape with the / menu open only closes the menu.
 	await page.keyboard.press("Enter");
@@ -47,10 +55,12 @@ test("a to-do's notes are Task Notes: blocks, a full page, and search", async ({
 	await expect(
 		page.getByRole("listbox", { name: "Insert a block" }),
 	).toBeHidden();
-	await expect(page.getByRole("textbox", { name: "Notes" })).toBeVisible();
-	await page.keyboard.press("Escape");
-	await expect(page.getByRole("textbox", { name: "Notes" })).toBeHidden();
+	await page.keyboard.press("Backspace");
+	// Notes save a moment after typing stops.
+	await page.waitForTimeout(600);
 	await expectSynced(page);
+	await open(page, "/inbox");
+	await expect(row(page, "Move flat").getByLabel("Has notes")).toBeVisible();
 
 	// The Task Notes button opens it, and closes it again back to the Inbox.
 	const notesButton = page.getByRole("button", { name: "Task Notes" });
@@ -108,9 +118,10 @@ test("Task Notes stay readable with encryption on", async ({ page }) => {
 	await open(page, "/inbox");
 	await quickEntry(page, "Secret plan");
 	await row(page, "Secret plan").click();
+	await openTaskNotes(page);
 	await writePlan(page);
-	await page.keyboard.press("Escape");
-	await page.keyboard.press("Escape");
+	await page.waitForTimeout(600);
+	await open(page, "/inbox");
 	// Saved (encrypting first takes a moment) before leaving the page.
 	await expect(row(page, "Secret plan").getByLabel("Has notes")).toBeVisible();
 	await expectSynced(page);

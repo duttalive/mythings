@@ -6,7 +6,7 @@ import { type ReactNode, useEffect } from "react";
 
 export const LEGAL_CONTACT = "dutta@dynocoder.com";
 /** When the policies last changed. Update it with any change to their text. */
-export const LEGAL_UPDATED = "2026-11-23";
+export const LEGAL_UPDATED = "2026-11-26";
 
 const updated = new Date(`${LEGAL_UPDATED}T12:00:00Z`).toLocaleDateString(
 	undefined,
@@ -148,6 +148,12 @@ export function PrivacyPage() {
 					address your browser gives us for that device (an endpoint URL and its
 					encryption keys).
 				</li>
+				<li>
+					<strong>Focus Mode alerts:</strong> while a Pomodoro round or break is
+					running on a device with notifications on, the time it ends, so we can
+					notify that device. It holds no to-do text and is deleted once the
+					alert is sent or the timer is paused or ended.
+				</li>
 			</ul>
 
 			<h2>What stays on your device</h2>
@@ -156,12 +162,13 @@ export function PrivacyPage() {
 				your to-dos in its local database (IndexedDB), plus changes waiting to
 				sync. It also keeps a few preferences for that device in local storage
 				(your profile for starting offline, theme, text size, sidebar width,
-				passcode lock timing) and a cached copy of the app. With end-to-end
-				encryption on, the copy of your to-dos on the device is encrypted too,
-				and the key to read it is kept in the browser (locked behind your
-				passcode, if you set one). This data stays in your browser; signing out
-				removes the key, and clearing the site's data in your browser removes
-				everything.
+				passcode lock timing, and Focus Mode's timer and Pomodoro lengths) and a
+				cached copy of the app. Focus Mode's timer isn't synced, and time you
+				spend focusing isn't recorded anywhere. With end-to-end encryption on,
+				the copy of your to-dos on the device is encrypted too, and the key to
+				read it is kept in the browser (locked behind your passcode, if you set
+				one). This data stays in your browser; signing out removes the key, and
+				clearing the site's data in your browser removes everything.
 			</p>
 			<p>
 				We set a single cookie, <code>mt_session</code>, which keeps you signed
@@ -173,7 +180,8 @@ export function PrivacyPage() {
 			<ul>
 				<li>
 					To provide the service you asked for: storing and syncing your to-dos,
-					signing you in, and sending the reminders you set.
+					signing you in, and sending the reminders and Focus Mode alerts you
+					set.
 				</li>
 				<li>
 					To send account emails: confirming your email when you sign up, and
@@ -202,10 +210,11 @@ export function PrivacyPage() {
 				</li>
 				<li>
 					<strong>Your browser's push service</strong> (for example Apple,
-					Google or Mozilla, depending on your browser) delivers reminders. The
-					reminder text is encrypted so that only your browser can read it; the
-					push service sees when a message is sent to your device. With
-					end-to-end encryption on, we can't read a reminder's text either.
+					Google or Mozilla, depending on your browser) delivers reminders and
+					Focus Mode alerts. The reminder text is encrypted so that only your
+					browser can read it; the push service sees when a message is sent to
+					your device. With end-to-end encryption on, we can't read a reminder's
+					text either.
 				</li>
 				<li>
 					<strong>Our email provider (Zoho Mail)</strong> holds any email you
@@ -360,10 +369,10 @@ export function TermsPage() {
 				of any kind, to the extent the law allows. We work to keep your data
 				safe and the service running, but we can't promise it will always be
 				available, error-free, or that data can never be lost. Keep exports of
-				anything important. Reminders may arrive late or not at all (for example
-				if your device is offline or your browser's push service is
-				unavailable), so don't rely on mythings for anything critical such as
-				medication or safety.
+				anything important. Reminders and Focus Mode alerts may arrive late or
+				not at all (for example if your device is offline or your browser's push
+				service is unavailable), so don't rely on mythings for anything critical
+				such as medication or safety.
 			</p>
 
 			<h2>Limitation of liability</h2>

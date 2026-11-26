@@ -6,6 +6,8 @@ import { ListDataProvider } from "../data";
 import { DndProvider } from "../dnd/DndProvider";
 import { EditingProvider } from "../editing/EditingProvider";
 import { SelectionProvider } from "../editing/SelectionProvider";
+import { FocusProvider } from "../focus/FocusProvider";
+import { FocusLayer } from "../focus/FocusScreen";
 import { KeyboardProvider, useKeyboard } from "../keyboard/KeyboardProvider";
 import { preloadNotesEditor } from "../notes";
 import { useSyncStatus } from "../sync/hooks";
@@ -103,70 +105,73 @@ export function Shell() {
 				<DndProvider>
 					<SelectionProvider>
 						<ToastProvider>
-							<BulkBarProvider>
-								<KeyboardProvider>
-									<div className="flex h-full">
-										{drawerOpen && (
-											<button
-												type="button"
-												aria-label="Close sidebar"
-												className="fixed inset-0 z-20 bg-black/30 md:hidden"
-												onClick={() => setDrawerOpen(false)}
-											/>
-										)}
-										<aside
-											aria-label="Sidebar"
-											// Off-screen on mobile when closed: keep it out of the tab order and away from screen readers.
-											inert={!desktop && !drawerOpen}
-											// On desktop the width is the user's (drag the edge); the phone drawer is fixed.
-											style={desktop ? { width: sidebar.width } : undefined}
-											className={`fixed inset-y-0 left-0 z-30 w-[min(18rem,85vw)] border-r border-[var(--border)] bg-[var(--bg-sidebar)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-transform duration-200 motion-reduce:transition-none md:relative md:z-auto md:shrink-0 md:translate-x-0 md:pt-0 md:pb-0 ${
-												drawerOpen ? "translate-x-0" : "-translate-x-full"
-											} ${collapsed ? "md:hidden" : ""}`}
-										>
-											<Sidebar />
-											{desktop && <SidebarResizer {...sidebar} />}
-										</aside>
-										<main className="min-w-0 flex-1 overflow-y-auto">
-											<div className="sticky top-0 z-10 flex min-h-11 items-center gap-1 bg-[var(--bg)]/90 px-3 pt-[env(safe-area-inset-top)] backdrop-blur">
+							<FocusProvider>
+								<BulkBarProvider>
+									<KeyboardProvider>
+										<div className="flex h-full">
+											{drawerOpen && (
 												<button
 													type="button"
-													onClick={toggle}
-													aria-label="Toggle sidebar"
-													aria-expanded={desktop ? !collapsed : drawerOpen}
-													className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-2.5"
-												>
-													<SidebarIcon className="size-5" />
-												</button>
-												<SearchButton />
-												<TaskNotesButton />
-												{listPage && <FullWidthButton />}
-												{offline && (
-													<span
-														className="ml-auto flex items-center gap-1.5 rounded-full bg-[var(--hover)] px-2.5 py-1 text-xs font-medium text-[var(--fg-muted)]"
-														title="Changes are saved on this device and will sync when you're back online."
-														data-testid="offline-indicator"
-													>
-														<CloudOffIcon className="size-3.5" />
-														Offline
-													</span>
-												)}
-											</div>
-											<div
-												// Re-mounted per page, so each list fades in.
-												key={pathname}
-												className={`mx-auto w-full animate-fade-in px-4 pb-24 pt-4 md:px-10 ${
-													wide ? "max-w-none" : "max-w-[720px]"
-												}`}
+													aria-label="Close sidebar"
+													className="fixed inset-0 z-20 bg-black/30 md:hidden"
+													onClick={() => setDrawerOpen(false)}
+												/>
+											)}
+											<aside
+												aria-label="Sidebar"
+												// Off-screen on mobile when closed: keep it out of the tab order and away from screen readers.
+												inert={!desktop && !drawerOpen}
+												// On desktop the width is the user's (drag the edge); the phone drawer is fixed.
+												style={desktop ? { width: sidebar.width } : undefined}
+												className={`fixed inset-y-0 left-0 z-30 w-[min(18rem,85vw)] border-r border-[var(--border)] bg-[var(--bg-sidebar)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-transform duration-200 motion-reduce:transition-none md:relative md:z-auto md:shrink-0 md:translate-x-0 md:pt-0 md:pb-0 ${
+													drawerOpen ? "translate-x-0" : "-translate-x-full"
+												} ${collapsed ? "md:hidden" : ""}`}
 											>
-												<Outlet />
-											</div>
-										</main>
-										<NewTodoButton />
-										<UpdateToast />
-									</div>
-								</KeyboardProvider>
-							</BulkBarProvider>
+												<Sidebar />
+												{desktop && <SidebarResizer {...sidebar} />}
+											</aside>
+											<main className="min-w-0 flex-1 overflow-y-auto">
+												<div className="sticky top-0 z-10 flex min-h-11 items-center gap-1 bg-[var(--bg)]/90 px-3 pt-[env(safe-area-inset-top)] backdrop-blur">
+													<button
+														type="button"
+														onClick={toggle}
+														aria-label="Toggle sidebar"
+														aria-expanded={desktop ? !collapsed : drawerOpen}
+														className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-2.5"
+													>
+														<SidebarIcon className="size-5" />
+													</button>
+													<SearchButton />
+													<TaskNotesButton />
+													{listPage && <FullWidthButton />}
+													{offline && (
+														<span
+															className="ml-auto flex items-center gap-1.5 rounded-full bg-[var(--hover)] px-2.5 py-1 text-xs font-medium text-[var(--fg-muted)]"
+															title="Changes are saved on this device and will sync when you're back online."
+															data-testid="offline-indicator"
+														>
+															<CloudOffIcon className="size-3.5" />
+															Offline
+														</span>
+													)}
+												</div>
+												<div
+													// Re-mounted per page, so each list fades in.
+													key={pathname}
+													className={`mx-auto w-full animate-fade-in px-4 pb-24 pt-4 md:px-10 ${
+														wide ? "max-w-none" : "max-w-[720px]"
+													}`}
+												>
+													<Outlet />
+												</div>
+											</main>
+											<NewTodoButton />
+											<FocusLayer />
+											<UpdateToast />
+										</div>
+									</KeyboardProvider>
+								</BulkBarProvider>
+							</FocusProvider>
 						</ToastProvider>
 					</SelectionProvider>
 				</DndProvider>

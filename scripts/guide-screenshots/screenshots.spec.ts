@@ -231,7 +231,7 @@ test("guide screenshots", async ({ page, browser }) => {
 	await step(page, "todo card", async () => {
 		await open(page, "/today");
 		await row(page, "Buy groceries").click();
-		const card = main(page).getByRole("textbox", { name: "Notes" });
+		const card = main(page).getByRole("textbox", { name: "Title" });
 		await expect(card).toBeVisible();
 		// Hovering an item shows its drag handle.
 		await main(page)
@@ -255,7 +255,7 @@ test("guide screenshots", async ({ page, browser }) => {
 			page,
 			"move-picker",
 			picker,
-			main(page).getByRole("textbox", { name: "Notes" }),
+			main(page).getByRole("textbox", { name: "Title" }),
 		);
 		await page.keyboard.press("Escape");
 	});
@@ -287,6 +287,27 @@ test("guide screenshots", async ({ page, browser }) => {
 			page.getByRole("heading", { name: "Task Notes" }),
 		).toBeVisible();
 		await shot(page, "task-notes-pad");
+	});
+
+	await step(page, "focus mode", async () => {
+		await open(page, "/today");
+		await row(page, "Book a van for moving day").click();
+		await main(page)
+			.getByRole("button", { name: "Focus", exact: true })
+			.click();
+		const screen = page.getByRole("dialog", { name: /Book a van/ });
+		await screen.getByRole("button", { name: "Pomodoro" }).click();
+		await expect(screen.getByRole("timer")).toBeVisible();
+		await page.waitForTimeout(1200);
+		await shot(page, "focus-mode");
+		await screen.getByRole("button", { name: "Minimize" }).click();
+		await expect(page.getByRole("region", { name: "Focus" })).toBeVisible();
+		await shot(page, "focus-pill");
+		await page.getByRole("button", { name: "Open focus" }).click();
+		await screen
+			.getByRole("button", { name: "End focus", exact: true })
+			.click();
+		await expect(screen).toBeHidden();
 	});
 
 	await step(page, "when popover", async () => {
@@ -556,8 +577,8 @@ test("guide screenshots", async ({ page, browser }) => {
 		await page.context().setOffline(true);
 		await row(page, "Ideas for Alex").click();
 		await main(page)
-			.getByRole("textbox", { name: "Notes" })
-			.fill("A good book, or concert tickets?");
+			.getByRole("textbox", { name: "Title" })
+			.fill("Ideas for Alex: a good book, or concert tickets?");
 		await page.keyboard.press("Escape");
 		await expect(page.getByTestId("sync-status")).toContainText("will sync");
 		await shot(page, "offline");

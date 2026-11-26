@@ -117,3 +117,39 @@ export function useNotificationState(): [
 	);
 	return [state, enable];
 }
+
+/** This browser's push endpoint, if notifications are on and it's subscribed. */
+async function currentEndpoint(): Promise<string | null> {
+	if (notificationState() !== "granted") return null;
+	const registration = await navigator.serviceWorker.getRegistration();
+	const subscription = await registration?.pushManager.getSubscription();
+	return subscription?.endpoint ?? null;
+}
+
+/**
+ * Focus Mode (SPEC §10.13): asks the server to ping this browser at `at`,
+ * when a focus round or break ends, even if the app is closed by then.
+ * Does nothing without notifications.
+ */
+export async function setFocusAlert(
+	at: number,
+	kind: "focus" | "break",
+): Promise<void> {
+	const endpoint = await currentEndpoint();
+	if (!endpoint) return;
+	await fetch("/api/push/focus", {
+		method: "PUT",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ endpoint, at, kind }),
+	});
+}
+
+export async function clearFocusAlert(): Promise<void> {
+	const endpoint = await currentEndpoint();
+	if (!endpoint) return;
+	await fetch("/api/push/focus", {
+		method: "DELETE",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ endpoint }),
+	});
+}

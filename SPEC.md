@@ -427,7 +427,7 @@ Implementation notes (milestone 12):
 ### 10.2 To-do row
 
 - Collapsed: checkbox, title, then right-aligned indicators — tags, checklist progress (2/5), notes icon, deadline flag (red when overdue), ★ when in Today (in non-Today lists), ↻ when repeating.
-- Click/Enter → **expands inline** (not a modal) into a card: title, notes (the Task Notes editor, §10.10), checklist, and a footer with buttons: When (calendar icon), Move (or a chip naming its list), Tags, Checklist, Deadline, Open in Task Notes, More. Click outside or press Esc → collapse.
+- Click/Enter → **expands inline** (not a modal) into a card: title, checklist, and a footer with buttons: When (calendar icon), Move (or a chip naming its list), Tags, Checklist, Deadline, Focus (§10.13), Open in Task Notes, More. Notes are not shown in the card (since 2.7.0); they're edited on the to-do's Task Notes page (§10.10). Click outside or press Esc → collapse.
 - Completing: the checkbox animates; the item stays in place (struck through) for ~1.5s, then leaves Today/Anytime. In Projects it stays visible until the day ends.
 
 ### 10.3 "When" popover
@@ -551,6 +551,15 @@ A to-do's `notes` is its Task Notes: a Notion-style editor (TipTap 3, `src/notes
 
 - **Full width** (setting `fullWidth`, synced, default off): list pages (`LIST_PAGES` in `Shell.tsx`: the lists, project, area, Life Bucket, tag and Task Notes pages) drop the 720px column. Toggled from the top bar (desktop only) and Settings → Appearance.
 - **Tags section** (setting `tagsCollapsed`, synced): the sidebar's Tags heading has the same arrow and hidden count as a Life Bucket; visiting a tag or adding one opens it. Settings changes from outside Settings go through `useSaveSettings`.
+
+### 10.13 Focus Mode (2.7.0)
+
+- One focus session per device, on one to-do, kept in localStorage (`mythings:focus:<userId>`; Pomodoro lengths in `mythings:focus-settings`, last mode in `mythings:focus-mode`). Never synced and no history is stored. Timer logic is DOM-free in `src/focus/timer.ts`; `FocusProvider` ticks it and shares it across tabs via `storage` events.
+- **Normal** counts up. **Pomodoro**: focus 25 / short 5 / long 15 minutes, a long break after every 4 rounds (1–120 / 1–60 / 1–90 / 2–10, per device). When a phase ends the next one is ready but paused; the app chimes (Web Audio, `src/focus/chime.ts`) if visible.
+- UI (`src/focus/FocusScreen.tsx`): a full-screen Radix dialog (title, clock, progress, Pause/Resume, Skip, settings, checklist, read-only notes with "Edit in Task Notes", "Complete to-do and end focus", End focus). Escape or Minimize → a pill at the bottom (left on phones, centred from md). The tab title is prefixed with the clock. Started from the card's Focus button / ⌥F and from the Task Notes page; ends if the to-do is deleted.
+- Push alerts: while a Pomodoro phase runs, the client `PUT /api/push/focus {endpoint, at, kind}` for its own subscription (checked against `push_subscriptions`, `at` within 3 h); pause/stop/finish sends `DELETE`. The Durable Object keeps one row per endpoint in `focus_alerts`, includes `MIN(at)` in its alarm, sends a fixed text push ("Focus round done" / "Break's over", no to-do text) to that endpoint only, and drops alerts more than 15 minutes late. Unsubscribing deletes the endpoint's alert.
+- The open to-do card (2.7.0) no longer shows notes; notes are written on `/notes/$todoId`.
+- Rows (2.7.0): the title block has a minimum width (~12rem) and the indicators wrap onto a line below it on narrow screens.
 
 ---
 

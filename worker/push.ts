@@ -24,13 +24,15 @@ type SubscriptionRow = {
 };
 
 /**
- * Sends each notice to every subscription of the user. Subscriptions the push
+ * Sends each notice to every subscription of the user (or just `endpoint`). Subscriptions the push
  * service says are gone (404/410) are deleted. Returns how many were delivered.
  */
 export async function sendPush(
 	env: Env,
 	userId: string,
 	notices: PushNotice[],
+	/** Only this subscription of the user's, if given. */
+	endpoint?: string,
 ): Promise<number> {
 	if (notices.length === 0) return 0;
 	if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
@@ -39,11 +41,14 @@ export async function sendPush(
 		);
 		return 0;
 	}
-	const { results } = await env.DB.prepare(
-		"SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?",
-	)
-		.bind(userId)
-		.all<SubscriptionRow>();
+	const { results } = await (endpoint
+		? env.DB.prepare(
+				"SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ? AND endpoint = ?",
+			).bind(userId, endpoint)
+		: env.DB.prepare(
+				"SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?",
+			).bind(userId)
+	).all<SubscriptionRow>();
 	const vapid = {
 		subject: env.VAPID_SUBJECT,
 		publicKey: env.VAPID_PUBLIC_KEY,

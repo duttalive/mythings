@@ -9,12 +9,18 @@ import { localDateOf } from "../../shared/dates";
 import type { Todo } from "../../shared/schema";
 import { Checklist, useAddChecklistItem } from "../components/Checklist";
 import { EditableTitle } from "../components/controls";
-import { ChecklistIcon, NotesIcon, SearchIcon } from "../components/icons";
+import {
+	ChecklistIcon,
+	FocusIcon,
+	NotesIcon,
+	SearchIcon,
+} from "../components/icons";
 import { Empty, ListPage } from "../components/ListPage";
 import { Checkbox } from "../components/rows";
 import { useListData } from "../data";
 import { useEditing } from "../editing/EditingProvider";
 import { routeFor } from "../editing/routeFor";
+import { useFocus } from "../focus/FocusProvider";
 import { shortDate } from "../lib/format";
 import { NotesEditor } from "../notes";
 import { matchesNotes, plainText, snippet } from "../notes/plain";
@@ -148,6 +154,7 @@ function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 	const ops = useOps();
 	const where = useWhere();
 	const { toggleComplete, displayStatus } = useEditing();
+	const focus = useFocus();
 	const [notes, setNotes] = useState(todo.notes);
 	const saved = useRef(todo.notes);
 	const latest = useRef(notes);
@@ -220,6 +227,22 @@ function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 					>
 						{todo.deletedAt !== null ? "In Trash" : place || "Show in list"}
 					</Link>
+					{!readOnly && todo.status === "open" && todo.repeat === null && (
+						<>
+							<span aria-hidden>·</span>
+							<button
+								type="button"
+								onClick={() => {
+									flush();
+									focus.start(todo.id);
+								}}
+								className="flex items-center gap-1 text-accent hover:underline"
+							>
+								<FocusIcon className="size-3.5" />
+								Focus
+							</button>
+						</>
+					)}
 				</div>
 			}
 		>

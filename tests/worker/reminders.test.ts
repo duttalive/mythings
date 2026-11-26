@@ -334,3 +334,135 @@ describe("alarms", () => {
 		).toBeNull();
 	});
 });
+
+describe("focus alerts", () => {
+	/** Push requests made to push.test since `from`, by endpoint path. */
+	const pushedTo = (from: number) =>
+		vi
+			.mocked(globalThis.fetch)
+			.mock.calls.slice(from)
+			.map(([input]) => new Request(input as RequestInfo).url)
+			.filter((url) => url.startsWith("https://push.test/"));
+
+	const alerts = () =>
+		runInDurableObject(stub(), (_, state) =>
+			state.storage.sql
+				.exec("SELECT endpoint, kind FROM focus_alerts")
+				.toArray(),
+		);
+
+	it("pings only the device that set it, once, when it's due", async () => {
+		const mine = await fakeSubscription(`https://push.test/ok/${ulid()}`);
+		const other = await fakeSubscription(`https://push.test/ok/${ulid()}`);
+		for (const sub of [mine, other])
+			await api("/push/subscribe", { method: "POST", cookie, body: sub });
+
+		const at = Date.now() + 25 * 60 * 1000;
+		const res = await api("/push/focus", {
+			method: "PUT",
+			cookie,
+			body: { endpoint: mine.endpoint, at, kind: "focus" },
+		});
+		expect(res.status).toBe(200);
+		expect(await alerts()).toEqual([
+			{ endpoint: mine.endpoint, kind: "focus" },
+		]);
+		const alarm = await runInDurableObject(stub(), (_, state) =>
+			state.storage.getAlarm(),
+		);
+		expect(alarm as number).toBeLessThanOrEqual(at);
+
+		// Make it due, then run the alarm.
+		await runInDurableObject(stub(), (_, state) =>
+			state.storage.sql.exec(
+				"UPDATE focus_alerts SET at = ?",
+				Date.now() - 1000,
+			),
+		);
+		const from = vi.mocked(globalThis.fetch).mock.calls.length;
+		await runDurableObjectAlarm(stub());
+		expect(pushedTo(from)).toEqual([mine.endpoint]);
+		expect(await alerts()).toEqual([]);
+	});
+
+	it("can be moved and cleared, and goes with the subscription", async () => {
+		const sub = await fakeSubscription(`https://push.test/ok/${ulid()}`);
+		await api("/push/subscribe", { method: "POST", cookie, body: sub });
+		const set = (at: number, kind: string) =>
+			api("/push/focus", {
+				method: "PUT",
+				cookie,
+				body: { endpoint: sub.endpoint, at, kind },
+			});
+		await set(Date.now() + 60_000, "focus");
+		await set(Date.now() + 120_000, "break");
+		expect(await alerts()).toEqual([{ endpoint: sub.endpoint, kind: "break" }]);
+
+		await api("/push/focus", {
+			method: "DELETE",
+			cookie,
+			body: { endpoint: sub.endpoint },
+		});
+		expect(await alerts()).toEqual([]);
+
+		await set(Date.now() + 60_000, "focus");
+		await api("/push/subscribe", {
+			method: "DELETE",
+			cookie,
+			body: { endpoint: sub.endpoint },
+		});
+		expect(await alerts()).toEqual([]);
+	});
+
+	it("drops alerts that are long overdue instead of sending them late", async () => {
+		const sub = await fakeSubscription(`https://push.test/ok/${ulid()}`);
+		await api("/push/subscribe", { method: "POST", cookie, body: sub });
+		await api("/push/focus", {
+			method: "PUT",
+			cookie,
+			body: { endpoint: sub.endpoint, at: Date.now() + 60_000, kind: "focus" },
+		});
+		await runInDurableObject(stub(), (_, state) =>
+			state.storage.sql.exec(
+				"UPDATE focus_alerts SET at = ?",
+				Date.now() - 60 * 60 * 1000,
+			),
+		);
+		const from = vi.mocked(globalThis.fetch).mock.calls.length;
+		await runDurableObjectAlarm(stub());
+		expect(pushedTo(from)).toEqual([]);
+		expect(await alerts()).toEqual([]);
+	});
+
+	it("only for this account's subscriptions, and only for the next few hours", async () => {
+		const endpoint = `https://push.test/ok/${ulid()}`;
+		const put = (body: unknown) =>
+			api("/push/focus", { method: "PUT", cookie, body });
+		expect(
+			(await put({ endpoint, at: Date.now() + 60_000, kind: "focus" })).status,
+		).toBe(404);
+
+		const sub = await fakeSubscription(endpoint);
+		await api("/push/subscribe", { method: "POST", cookie, body: sub });
+		expect(
+			(
+				await put({
+					endpoint,
+					at: Date.now() + 4 * 60 * 60 * 1000,
+					kind: "focus",
+				})
+			).status,
+		).toBe(400);
+		expect(
+			(await put({ endpoint, at: Date.now() + 60_000, kind: "nap" })).status,
+		).toBe(400);
+		expect(
+			(
+				await api("/push/focus", {
+					method: "PUT",
+					body: { endpoint, at: Date.now() + 60_000, kind: "focus" },
+				})
+			).status,
+		).toBe(401);
+	});
+});

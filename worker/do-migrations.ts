@@ -148,4 +148,13 @@ export const DO_MIGRATIONS: string[] = [
 	ALTER TABLE areas ADD COLUMN bucket_id TEXT;
 	CREATE INDEX idx_areas_bucket ON areas(bucket_id);
 	`,
+	`
+	-- Focus Mode (2.7.0): when to ping one device that a focus round or break
+	-- is over. One row per push endpoint, deleted once it's sent or cleared.
+	CREATE TABLE focus_alerts (
+		endpoint TEXT PRIMARY KEY,
+		at INTEGER NOT NULL,
+		kind TEXT NOT NULL
+	);
+	`,
 ];

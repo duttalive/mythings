@@ -38,6 +38,17 @@ const MAX_ENCRYPTED_IN_PUSH = 1400;
 /** Reminders missed by more than this aren't sent at all. */
 const STALE_REMINDER_MS = 60 * 60 * 1000;
 
+/** A focus alert whose time passed by more than this (e.g. the device was off) isn't sent. */
+const STALE_FOCUS_ALERT_MS = 15 * 60 * 1000;
+
+/** What a focus alert says (SPEC §10.13). No to-do text, so it reads the same with encryption on. */
+const FOCUS_NOTICES = {
+	focus: { title: "Focus round done", body: "Time for a break." },
+	break: { title: "Break's over", body: "Ready for the next focus round?" },
+} as const;
+
+export type FocusAlertKind = keyof typeof FOCUS_NOTICES;
+
 /** Ops per transaction (and per broadcast) when importing. */
 const IMPORT_BATCH = 200;
 
@@ -217,15 +228,25 @@ export class UserStore extends DurableObject<Env> {
 		return row?.at ?? null;
 	}
 
-	/** One alarm: the earlier of the next local midnight and the next unsent reminder. */
+	/** Earliest focus alert (SPEC §10.13). */
+	private nextFocusAlertAt(): number | null {
+		const row = this.ctx.storage.sql
+			.exec<{ at: number | null }>("SELECT MIN(at) AS at FROM focus_alerts")
+			.toArray()[0];
+		return row?.at ?? null;
+	}
+
+	/** One alarm: the earliest of the next local midnight, the next unsent reminder and the next focus alert. */
 	private scheduleAlarm() {
 		const user = this.storedUser();
 		if (!user) return;
 		const now = Date.now();
 		const reminder = this.nextReminderAt();
+		const focus = this.nextFocusAlertAt();
 		const at = Math.min(
 			nextLocalMidnight(user.tz, now),
 			reminder ?? Number.POSITIVE_INFINITY,
+			focus ?? Number.POSITIVE_INFINITY,
 		);
 		void this.ctx.storage.setAlarm(Math.max(at, now + 1000));
 	}
@@ -258,7 +279,56 @@ export class UserStore extends DurableObject<Env> {
 		}
 
 		await this.sendDueReminders(user, now);
+		await this.sendDueFocusAlerts(user, now);
 		this.scheduleAlarm();
+	}
+
+	// -------------------------------------------------------------------------
+	// Focus Mode alerts (SPEC §10.13): the timer runs on the device; the server
+	// only pings that device's push subscription when a round or break ends.
+
+	/** Sets (or moves) the alert for one push endpoint, which the caller has checked is the user's. */
+	setFocusAlert(
+		user: UserContext,
+		endpoint: string,
+		at: number,
+		kind: FocusAlertKind,
+	): void {
+		this.ctx.storage.sql.exec(
+			"INSERT OR REPLACE INTO focus_alerts (endpoint, at, kind) VALUES (?, ?, ?)",
+			endpoint,
+			at,
+			kind,
+		);
+		this.rememberUser(user);
+		this.scheduleAlarm();
+	}
+
+	clearFocusAlert(endpoint: string): void {
+		this.ctx.storage.sql.exec(
+			"DELETE FROM focus_alerts WHERE endpoint = ?",
+			endpoint,
+		);
+	}
+
+	private async sendDueFocusAlerts(user: UserContext, now: number) {
+		const due = this.ctx.storage.sql
+			.exec<{ endpoint: string; at: number; kind: FocusAlertKind }>(
+				"SELECT endpoint, at, kind FROM focus_alerts WHERE at <= ?",
+				now,
+			)
+			.toArray();
+		for (const alert of due) {
+			this.clearFocusAlert(alert.endpoint);
+			if (alert.at < now - STALE_FOCUS_ALERT_MS) continue;
+			const notice = FOCUS_NOTICES[alert.kind] ?? FOCUS_NOTICES.focus;
+			await sendPush(
+				this.env,
+				user.userId,
+				[{ ...notice, url: "/today", tag: "focus" }],
+				alert.endpoint,
+			);
+		}
 	}
 
 	private async sendDueReminders(user: UserContext, now: number) {
