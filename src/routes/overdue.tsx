@@ -2,9 +2,8 @@
 // by, most overdue first, one section per day they slipped. Today holds only
 // today, so this is where everything that slipped waits to be dealt with.
 
-import { useMemo } from "react";
 import { diffDays } from "../../shared/dates";
-import { overdue, tagsInUse } from "../../shared/views";
+import { overdue } from "../../shared/views";
 import { FlagIcon } from "../components/icons";
 import { Empty, ListPage, Section } from "../components/ListPage";
 import { EntryRow, RowList } from "../components/rows";
@@ -19,15 +18,6 @@ function lateBy(days: number): string {
 export function OverduePage() {
 	const { data, ctx } = useListData();
 	const groups = overdue(data, useFilteredContext());
-	// The filter bar offers the tags of what's overdue, filtered or not.
-	const filterTags = useMemo(
-		() =>
-			tagsInUse(
-				data,
-				overdue(data, ctx).flatMap((g) => g.entries),
-			),
-		[data, ctx],
-	);
 	const filtering = useFiltering();
 
 	return (
@@ -36,7 +26,6 @@ export function OverduePage() {
 			icon={<FlagIcon className="size-7 text-overdue" />}
 			description={VIEWS.overdue.description}
 			filterable
-			filterTags={filterTags}
 		>
 			{groups.length === 0 ? (
 				<Empty>

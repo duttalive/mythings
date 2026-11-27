@@ -213,6 +213,16 @@ test("guide screenshots", async ({ page, browser }) => {
 		await page.keyboard.press("Escape");
 		await shot(page, "tag-filter");
 		await bar.getByRole("button", { name: "Clear filters" }).click();
+		// Life Bucket first, then the Areas in the buckets picked.
+		await bar.getByRole("button", { name: "Filter by Life Bucket" }).click();
+		const buckets = page.getByRole("dialog", { name: "Filter by Life Bucket" });
+		await buckets.getByRole("button", { name: "Home" }).click();
+		await buckets.getByRole("button", { name: "Work" }).click();
+		await page.keyboard.press("Escape");
+		await bar.getByRole("button", { name: "Filter by Area" }).click();
+		await shot(page, "filter-linked");
+		await page.keyboard.press("Escape");
+		await bar.getByRole("button", { name: "Clear filters" }).click();
 	});
 
 	await step(page, "today grouped", async () => {

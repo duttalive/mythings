@@ -739,15 +739,74 @@ function SectionNav({
 		sections[0]?.[0] ?? "appearance",
 	);
 	const bar = useRef<HTMLElement>(null);
+	// A jump in progress: the section, whether it's the follow-up jump, and the
+	// timer that ends it once the page stops scrolling. While it runs, the
+	// picked section stays highlighted.
+	const jump = useRef<{
+		id: SectionId;
+		retried: boolean;
+		timer: number;
+	} | null>(null);
+
+	const scroller = () => bar.current?.closest("main") ?? null;
+	/** How far the page must scroll to land a section's heading just under the bars. */
+	const offsetOf = (id: SectionId) => {
+		const nav = bar.current;
+		const el = document.getElementById(`settings-${id}`);
+		if (!nav || !el) return null;
+		return (
+			el.getBoundingClientRect().top - nav.getBoundingClientRect().bottom - 12
+		);
+	};
+
+	const jumpTo = (id: SectionId, retried = false) => {
+		const main = scroller();
+		const offset = offsetOf(id);
+		if (!main || offset === null) return;
+		setActive(id);
+		if (jump.current) clearTimeout(jump.current.timer);
+		// Ends on a quiet moment if the page doesn't scroll at all.
+		jump.current = { id, retried, timer: window.setTimeout(endJump, 600) };
+		main.scrollTo({
+			top: main.scrollTop + offset,
+			behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+				? "auto"
+				: "smooth",
+		});
+	};
+
+	const endJump = () => {
+		const done = jump.current;
+		if (!done) return;
+		clearTimeout(done.timer);
+		jump.current = null;
+		// Sections that load late can move the target while the page scrolls;
+		// finish the jump once if it fell short.
+		const main = scroller();
+		const offset = offsetOf(done.id);
+		if (done.retried || !main || offset === null || Math.abs(offset) <= 4)
+			return;
+		const atEnd = main.scrollTop >= main.scrollHeight - main.clientHeight - 1;
+		if (offset < 0 || !atEnd) jumpTo(done.id, true);
+	};
+	const endJumpRef = useRef(endJump);
+	endJumpRef.current = endJump;
+
 	// The current section is the last one whose heading has passed under the bars;
 	// at the very bottom it's the last section, however short.
 	useEffect(() => {
-		const scroller = bar.current?.closest("main");
-		if (!scroller) return;
+		const main = bar.current?.closest("main");
+		if (!main) return;
 		const update = () => {
+			// A jump ends when the page stops scrolling ("scrollend", or a quiet
+			// moment where that event isn't supported).
+			if (jump.current) {
+				clearTimeout(jump.current.timer);
+				jump.current.timer = window.setTimeout(() => endJumpRef.current(), 200);
+				return;
+			}
 			const navBottom = bar.current?.getBoundingClientRect().bottom ?? 0;
-			const atEnd =
-				scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4;
+			const atEnd = main.scrollTop + main.clientHeight >= main.scrollHeight - 4;
 			let current = sections[0]?.[0];
 			for (const [id] of sections) {
 				const el = document.getElementById(`settings-${id}`);
@@ -757,12 +816,18 @@ function SectionNav({
 			if (atEnd) current = sections.at(-1)?.[0];
 			if (current) setActive(current);
 		};
+		const onScrollEnd = () => endJumpRef.current();
 		update();
-		scroller.addEventListener("scroll", update, { passive: true });
-		return () => scroller.removeEventListener("scroll", update);
+		main.addEventListener("scroll", update, { passive: true });
+		main.addEventListener("scrollend", onScrollEnd);
+		return () => {
+			main.removeEventListener("scroll", update);
+			main.removeEventListener("scrollend", onScrollEnd);
+		};
 	}, [sections]);
 	// Keep the current link in view when the bar scrolls sideways (phones).
-	// Only the bar moves: scrollIntoView here would stop the page's own scroll.
+	// Only the bar moves, and at once: a smooth scroll here (or scrollIntoView)
+	// stops the page's own smooth scroll in Chrome.
 	useEffect(() => {
 		const nav = bar.current;
 		const link = nav?.querySelector<HTMLElement>(`[data-section="${active}"]`);
@@ -772,7 +837,7 @@ function SectionNav({
 			left < nav.scrollLeft ||
 			left + link.offsetWidth > nav.scrollLeft + nav.clientWidth
 		)
-			nav.scrollTo({ left: left - 16, behavior: "smooth" });
+			nav.scrollLeft = left - 16;
 	}, [active]);
 
 	return (
@@ -789,13 +854,7 @@ function SectionNav({
 					aria-current={active === id ? "true" : undefined}
 					onClick={(e) => {
 						e.preventDefault();
-						setActive(id);
-						document.getElementById(`settings-${id}`)?.scrollIntoView({
-							behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-								? "auto"
-								: "smooth",
-							block: "start",
-						});
+						jumpTo(id);
 					}}
 					className="shrink-0 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent aria-[current=true]:bg-[var(--selected)] aria-[current=true]:text-[var(--fg)] pointer-coarse:py-2"
 				>

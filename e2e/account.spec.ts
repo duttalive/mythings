@@ -208,3 +208,24 @@ test("the home page introduces the app and leads to sign-up and sign-in", async 
 		page.getByRole("link", { name: /Get started/ }).first(),
 	).toBeVisible();
 });
+
+test("on a phone, the Settings section bar jumps to each section", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 375, height: 812 });
+	await signUp(page);
+	await open(page, "/settings");
+	const bar = page.getByRole("navigation", { name: "Settings sections" });
+	const main = page.locator("main");
+	for (const name of ["Data", "About", "Lists"]) {
+		await bar.getByRole("link", { name, exact: true }).click();
+		await expect(bar.getByRole("link", { name, exact: true })).toHaveAttribute(
+			"aria-current",
+			"true",
+		);
+		await expect(
+			page.getByRole("region", { name, exact: true }).getByRole("heading"),
+		).toBeInViewport();
+	}
+	expect(await main.evaluate((m) => m.scrollTop)).toBeGreaterThan(0);
+});

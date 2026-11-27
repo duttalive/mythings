@@ -1,10 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { useMemo } from "react";
 import {
 	type Entry,
 	groupByProject,
 	projectProgress,
-	tagsInUse,
 	today,
 } from "../../shared/views";
 import { useAuth } from "../auth/AuthGate";
@@ -24,13 +22,8 @@ const placedEntries = (entries: Entry[]): Placed[] =>
 	}));
 
 export function TodayPage() {
-	const { data, ctx, projects } = useListData();
+	const { data, projects } = useListData();
 	const view = today(data, useFilteredContext());
-	// The filter bar offers the tags of what's in Today, filtered or not.
-	const filterTags = useMemo(() => {
-		const all = today(data, ctx);
-		return tagsInUse(data, all.main);
-	}, [data, ctx]);
 	const grouped = useAuth().user.settings.groupTodayByProject ?? false;
 	const groups = grouped ? groupByProject(view.main, projects) : null;
 	// Grouped, the rows (and the order dragging works in) follow the groups.
@@ -55,7 +48,6 @@ export function TodayPage() {
 			icon={<StarIcon className="size-7 text-today" />}
 			description={VIEWS.today.description}
 			filterable
-			filterTags={filterTags}
 		>
 			{empty && (
 				<Empty>

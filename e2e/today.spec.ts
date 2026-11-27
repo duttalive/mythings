@@ -65,9 +65,7 @@ test("grouped by project, Today moves a to-do only within its project's group", 
 		.toEqual(["Dentist", "Label", "Pack"]);
 });
 
-test("Today's filter bar offers only the tags of what's in Today", async ({
-	page,
-}) => {
+test("Today's filter bar offers every tag", async ({ page }) => {
 	await signUp(page);
 	await quickEntry(page, "Buy milk #shop @today");
 	await quickEntry(page, "Plan week #work @someday");
@@ -77,7 +75,7 @@ test("Today's filter bar offers only the tags of what's in Today", async ({
 	await bar.getByRole("button", { name: "Filter by Tag" }).click();
 	const menu = page.getByRole("dialog", { name: "Filter by Tag" });
 	await expect(menu.getByRole("button", { name: "shop" })).toBeVisible();
-	await expect(menu.getByRole("button", { name: "work" })).toHaveCount(0);
+	await expect(menu.getByRole("button", { name: "work" })).toBeVisible();
 
 	await menu.getByRole("button", { name: "shop" }).click();
 	await expect(page).toHaveURL(/tags=/);

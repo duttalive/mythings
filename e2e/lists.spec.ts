@@ -406,3 +406,70 @@ test("New List asks which Life Bucket, picks the one you're in, and can start a 
 	await expect(sidebar.getByRole("link", { name: "Family" })).toBeVisible();
 	await expect(sidebar.getByRole("link", { name: "Birthdays" })).toBeVisible();
 });
+
+test("the filter bar unlocks Areas and Projects for the Life Buckets picked", async ({
+	page,
+}) => {
+	await signUp(page);
+	const sidebar = page.getByRole("navigation", { name: "Lists" });
+	const link = (name: string) =>
+		sidebar.getByRole("link", { name, exact: true });
+	await newList(page, "New Project");
+	await typeTitle(page, "New Project", "Solo");
+	await addTodo(page, "Solo task");
+	await newList(page, "New Life Bucket");
+	await typeTitle(page, "New Life Bucket", "Work");
+	await link("Work").click();
+	await newList(page, "New Area");
+	await typeTitle(page, "New Area", "Admin");
+	await addTodo(page, "Admin task");
+	await link("Work").click();
+	await newList(page, "New Project");
+	await typeTitle(page, "New Project", "Launch");
+	await addTodo(page, "Launch task");
+	await expectSynced(page);
+
+	await page.goto("/anytime");
+	const bar = page.getByRole("toolbar", { name: "Filters" });
+	// Areas wait for a Life Bucket.
+	await bar.getByRole("button", { name: /^Filter by Area/ }).click();
+	await expect(
+		page.getByText("Pick a Life Bucket first to see its areas."),
+	).toBeVisible();
+	await page.keyboard.press("Escape");
+
+	await bar.getByRole("button", { name: "Filter by Life Bucket" }).click();
+	await page
+		.getByRole("dialog", { name: "Filter by Life Bucket" })
+		.getByRole("button", { name: "Work" })
+		.click();
+	await page.keyboard.press("Escape");
+	await expect
+		.poll(() => rowTitles(page))
+		.toEqual(["Admin task", "Launch task"]);
+
+	await bar.getByRole("button", { name: "Filter by Project" }).click();
+	const projects = page.getByRole("dialog", { name: "Filter by Project" });
+	await expect(projects.getByRole("button", { name: "Solo" })).toHaveCount(0);
+	await projects.getByRole("button", { name: "Launch" }).click();
+	await page.keyboard.press("Escape");
+	await expect.poll(() => rowTitles(page)).toEqual(["Launch task"]);
+
+	// Another Life Bucket comes in whole; Work stays narrowed to Launch.
+	await bar.getByRole("button", { name: /Life Bucket/ }).click();
+	await page
+		.getByRole("dialog", { name: "Filter by Life Bucket" })
+		.getByRole("button", { name: "Personal" })
+		.click();
+	await expect
+		.poll(async () => (await rowTitles(page)).sort())
+		.toEqual(["Launch task", "Solo task"]);
+
+	// Unticking Work clears Launch too.
+	await page
+		.getByRole("dialog", { name: "Filter by Life Bucket" })
+		.getByRole("button", { name: "Work" })
+		.click();
+	await expect(page).not.toHaveURL(/project=/);
+	await expect.poll(() => rowTitles(page)).toEqual(["Solo task"]);
+});

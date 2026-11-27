@@ -1,11 +1,14 @@
 // The filter bar at the top of a list (SPEC §6.6): one dropdown each for Life
 // Buckets, Areas, Projects and Tags. Each dropdown picks any number; the
 // choices live in the page's search params, so they survive reloads and tabs.
+// Life Bucket → Area / Project are linked: Areas and Projects unlock once a
+// Life Bucket is picked and list only what's in the picked buckets. Tags are
+// independent.
 
 import { useNavigate } from "@tanstack/react-router";
-import { type ReactNode, useMemo, useState } from "react";
+import { Fragment, type ReactNode, useMemo, useState } from "react";
 import { UNREADABLE } from "../../shared/crypto/fields";
-import { bySortKey, type FilterKind } from "../../shared/views";
+import { bySortKey, type FilterKind, linkedFilter } from "../../shared/views";
 import { FILTER_PARAMS, useListData, useListFilter } from "../data";
 import {
 	AreaIcon,
@@ -26,15 +29,24 @@ type Option = {
 	/** Where it sits, e.g. the Life Bucket of an area. */
 	detail?: string;
 	depth?: number;
+	/** The Life Bucket heading it's listed under, when more than one is picked. */
+	group?: string;
 	icon?: ReactNode;
 	muted?: boolean;
 };
 
-const LABELS: Record<FilterKind, { one: string; untitled: string }> = {
-	buckets: { one: "Life Bucket", untitled: "New Life Bucket" },
-	areas: { one: "Area", untitled: "New Area" },
-	projects: { one: "Project", untitled: "New Project" },
-	tags: { one: "Tag", untitled: "New Tag" },
+const LABELS: Record<
+	FilterKind,
+	{ one: string; many: string; untitled: string }
+> = {
+	buckets: {
+		one: "Life Bucket",
+		many: "Life Buckets",
+		untitled: "New Life Bucket",
+	},
+	areas: { one: "Area", many: "areas", untitled: "New Area" },
+	projects: { one: "Project", many: "projects", untitled: "New Project" },
+	tags: { one: "Tag", many: "tags", untitled: "New Tag" },
 };
 
 const shown = (title: string, untitled: string) =>
@@ -43,15 +55,23 @@ const shown = (title: string, untitled: string) =>
 /** All four kinds unless a page narrows it (e.g. a project page offers only tags). */
 export function FilterBar({
 	kinds = ["buckets", "areas", "projects", "tags"],
-	onlyTags,
 }: {
 	kinds?: FilterKind[];
-	/** Only these tags (and any chosen) are offered; all if omitted. */
-	onlyTags?: Set<string>;
 }) {
 	const { data } = useListData();
-	const filter = useListFilter();
+	const raw = useListFilter();
 	const navigate = useNavigate();
+	// Areas and Projects counted under their Life Buckets (an old link may name
+	// an Area without its bucket).
+	const linked = useMemo(() => linkedFilter(data, raw), [data, raw]);
+	const filter: Record<FilterKind, string[]> = {
+		buckets: linked.buckets,
+		areas: linked.areas,
+		projects: linked.projects,
+		tags: raw.tags ?? [],
+	};
+	const linking = kinds.includes("buckets");
+	const picked = new Set(linked.buckets);
 
 	const options = useMemo(() => {
 		const buckets = data.buckets
@@ -71,6 +91,9 @@ export function FilterBar({
 				(bucketOrder.get(bucketId(a) ?? "") ?? -1) -
 					(bucketOrder.get(bucketId(b) ?? "") ?? -1) || bySortKey(a, b);
 		};
+		const several = linked.buckets.length > 1;
+		const inPicked = (bucketId: string | null) =>
+			!linking || (bucketId !== null && picked.has(bucketId));
 		const byKind: Record<FilterKind, Option[]> = {
 			buckets: buckets.map((b) => ({
 				id: b.id,
@@ -78,26 +101,34 @@ export function FilterBar({
 				icon: <BucketIcon className="size-4 text-[var(--fg-muted)]" />,
 			})),
 			areas: data.areas
-				.filter((a) => a.deletedAt === null)
+				.filter((a) => a.deletedAt === null && inPicked(a.bucketId))
 				.sort(inBucketOrder((a) => a.bucketId))
 				.map((a) => ({
 					id: a.id,
 					title: shown(a.title, LABELS.areas.untitled),
-					detail: bucketTitle(a.bucketId),
+					...(several
+						? { group: bucketTitle(a.bucketId) }
+						: linking
+							? {}
+							: { detail: bucketTitle(a.bucketId) }),
 					icon: <AreaIcon className="size-4 text-[var(--fg-muted)]" />,
 				})),
 			// Open projects first, then finished ones (for the Logbook and Trash).
 			projects: data.projects
-				.filter((p) => p.deletedAt === null)
+				.filter((p) => p.deletedAt === null && inPicked(p.areaId))
 				.sort(
 					(a, b) =>
-						Number(a.status !== "open") - Number(b.status !== "open") ||
-						inBucketOrder<typeof a>((p) => p.areaId)(a, b),
+						inBucketOrder<typeof a>((p) => p.areaId)(a, b) ||
+						Number(a.status !== "open") - Number(b.status !== "open"),
 				)
 				.map((p) => ({
 					id: p.id,
 					title: shown(p.title, LABELS.projects.untitled),
-					detail: bucketTitle(p.areaId),
+					...(several
+						? { group: bucketTitle(p.areaId) }
+						: linking
+							? {}
+							: { detail: bucketTitle(p.areaId) }),
 					muted: p.status !== "open",
 					icon: (
 						<ProgressRing
@@ -108,32 +139,42 @@ export function FilterBar({
 						/>
 					),
 				})),
-			tags: flattenTags(data.tags)
-				.filter(
-					({ tag }) =>
-						!onlyTags ||
-						onlyTags.has(tag.id) ||
-						(filter.tags ?? []).includes(tag.id),
-				)
-				.map(({ tag, depth }) => ({
-					id: tag.id,
-					title: shown(tag.title, LABELS.tags.untitled),
-					depth,
-					icon: <TagIcon className="size-4 text-[var(--fg-muted)]" />,
-				})),
+			tags: flattenTags(data.tags).map(({ tag, depth }) => ({
+				id: tag.id,
+				title: shown(tag.title, LABELS.tags.untitled),
+				depth,
+				icon: <TagIcon className="size-4 text-[var(--fg-muted)]" />,
+			})),
 		};
 		return byKind;
-	}, [data, onlyTags, filter.tags]);
+	}, [data, linked, linking, picked]);
 
-	const set = (kind: FilterKind, ids: string[]) =>
-		navigate({
+	const set = (kind: FilterKind, ids: string[]) => {
+		const next = { ...filter, [kind]: ids };
+		// Unticking a Life Bucket clears the Areas and Projects picked in it.
+		if (kind === "buckets" && linking) {
+			const keep = new Set(ids);
+			const bucketOf = new Map<string, string | null>([
+				...data.areas.map((a) => [a.id, a.bucketId] as const),
+				...data.projects.map((p) => [p.id, p.areaId] as const),
+			]);
+			const inKept = (id: string) => keep.has(bucketOf.get(id) ?? "");
+			next.areas = next.areas.filter(inKept);
+			next.projects = next.projects.filter(inKept);
+		}
+		return navigate({
 			to: ".",
-			search: (prev: Record<string, unknown>) => ({
-				...prev,
-				[FILTER_PARAMS[kind]]: ids.length ? ids.join(",") : undefined,
-			}),
+			search: (prev: Record<string, unknown>) => {
+				const search = { ...prev };
+				for (const k of kinds)
+					search[FILTER_PARAMS[k]] = next[k].length
+						? next[k].join(",")
+						: undefined;
+				return search;
+			},
 			replace: true,
 		});
+	};
 
 	const clearAll = () =>
 		navigate({
@@ -146,11 +187,7 @@ export function FilterBar({
 			replace: true,
 		});
 
-	const visible = kinds.filter(
-		(kind) => options[kind].length > 0 || (filter[kind]?.length ?? 0) > 0,
-	);
-	if (visible.length === 0) return null;
-	const filtering = kinds.some((kind) => (filter[kind]?.length ?? 0) > 0);
+	const filtering = kinds.some((kind) => (raw[kind]?.length ?? 0) > 0);
 
 	return (
 		<div
@@ -158,12 +195,17 @@ export function FilterBar({
 			aria-label="Filters"
 			className="mb-4 flex flex-wrap items-center gap-1.5"
 		>
-			{visible.map((kind) => (
+			{kinds.map((kind) => (
 				<FilterDropdown
 					key={kind}
 					kind={kind}
 					options={options[kind]}
-					selected={filter[kind] ?? []}
+					selected={filter[kind]}
+					locked={
+						linking &&
+						(kind === "areas" || kind === "projects") &&
+						picked.size === 0
+					}
 					onChange={(ids) => set(kind, ids)}
 				/>
 			))}
@@ -185,16 +227,19 @@ function FilterDropdown({
 	kind,
 	options,
 	selected,
+	locked,
 	onChange,
 }: {
 	kind: FilterKind;
 	options: Option[];
 	selected: string[];
+	/** Waits for a Life Bucket to be picked (Areas and Projects). */
+	locked: boolean;
 	onChange: (ids: string[]) => void;
 }) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
-	const { one } = LABELS[kind];
+	const { one, many } = LABELS[kind];
 	const count = selected.length;
 	const chosen = new Set(selected);
 	const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -225,12 +270,18 @@ function FilterDropdown({
 				<button
 					type="button"
 					aria-label={
-						count ? `${one} filter: ${count} chosen` : `Filter by ${one}`
+						count
+							? `${one} filter: ${count} chosen`
+							: locked
+								? `Filter by ${one} (pick a Life Bucket first)`
+								: `Filter by ${one}`
 					}
 					className={`flex max-w-56 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors duration-150 pointer-coarse:px-3 pointer-coarse:py-2 ${
 						count
 							? "border-accent bg-accent text-on-accent"
-							: "border-[var(--border)] text-[var(--fg-muted)] hover:bg-[var(--hover)]"
+							: locked
+								? "border-dashed border-[var(--border)] text-[var(--fg-muted)] opacity-60"
+								: "border-[var(--border)] text-[var(--fg-muted)] hover:bg-[var(--hover)]"
 					}`}
 				>
 					<span className="truncate">
@@ -244,7 +295,12 @@ function FilterDropdown({
 				</button>
 			}
 		>
-			{options.length > 8 && (
+			{locked && (
+				<p className="px-2 py-1.5 text-[var(--fg-muted)]">
+					Pick a Life Bucket first to see its {many}.
+				</p>
+			)}
+			{!locked && options.length > 8 && (
 				<div className="mb-1 flex items-center gap-2 rounded-md border border-[var(--border)] px-2 focus-within:border-accent">
 					<SearchIcon className="size-3.5 shrink-0 text-[var(--fg-muted)]" />
 					<input
@@ -257,50 +313,68 @@ function FilterDropdown({
 					/>
 				</div>
 			)}
-			<div className="max-h-72 overflow-y-auto">
-				{matching.length === 0 && (
-					<p className="px-2 py-1.5 text-[var(--fg-muted)]">No matches.</p>
-				)}
-				{matching.map((o) => (
-					<button
-						key={o.id}
-						type="button"
-						aria-pressed={chosen.has(o.id)}
-						onClick={() => toggle(o.id)}
-						style={
-							o.depth && !words.length
-								? { paddingLeft: `${0.5 + o.depth}rem` }
-								: undefined
-						}
-						className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left pointer-coarse:py-3 hover:bg-[var(--hover)] focus-visible:bg-[var(--hover)] focus-visible:outline-none"
-					>
-						<span className="flex w-4 shrink-0 justify-center">{o.icon}</span>
-						<span className="min-w-0 flex-1">
-							<span
-								className={`block truncate ${o.muted ? "text-[var(--fg-muted)]" : ""}`}
-							>
-								{o.title}
-							</span>
-							{o.detail && (
-								<span className="block truncate text-xs text-[var(--fg-muted)]">
-									{o.detail}
-								</span>
+			{!locked && (
+				<div className="max-h-72 overflow-y-auto">
+					{matching.length === 0 && (
+						<p className="px-2 py-1.5 text-[var(--fg-muted)]">
+							{options.length === 0
+								? kind === "buckets" || kind === "tags"
+									? `No ${many} yet.`
+									: `No ${many} in the picked Life Buckets.`
+								: "No matches."}
+						</p>
+					)}
+					{matching.map((o, i) => (
+						<Fragment key={o.id}>
+							{o.group !== undefined && o.group !== matching[i - 1]?.group && (
+								<p
+									role="presentation"
+									className="truncate px-2 pt-2 pb-1 text-xs font-semibold text-[var(--fg-muted)]"
+								>
+									{o.group}
+								</p>
 							)}
-						</span>
-						<CheckIcon
-							className={`size-4 shrink-0 text-accent ${chosen.has(o.id) ? "" : "invisible"}`}
-						/>
-					</button>
-				))}
-			</div>
+							<button
+								type="button"
+								aria-pressed={chosen.has(o.id)}
+								onClick={() => toggle(o.id)}
+								style={
+									o.depth && !words.length
+										? { paddingLeft: `${0.5 + o.depth}rem` }
+										: undefined
+								}
+								className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left pointer-coarse:py-3 hover:bg-[var(--hover)] focus-visible:bg-[var(--hover)] focus-visible:outline-none"
+							>
+								<span className="flex w-4 shrink-0 justify-center">
+									{o.icon}
+								</span>
+								<span className="min-w-0 flex-1">
+									<span
+										className={`block truncate ${o.muted ? "text-[var(--fg-muted)]" : ""}`}
+									>
+										{o.title}
+									</span>
+									{o.detail && (
+										<span className="block truncate text-xs text-[var(--fg-muted)]">
+											{o.detail}
+										</span>
+									)}
+								</span>
+								<CheckIcon
+									className={`size-4 shrink-0 text-accent ${chosen.has(o.id) ? "" : "invisible"}`}
+								/>
+							</button>
+						</Fragment>
+					))}
+				</div>
+			)}
 			{count > 0 && (
 				<button
 					type="button"
 					onClick={() => onChange([])}
 					className="mt-1 w-full rounded-md border-t border-[var(--border)] px-2 pt-2 pb-1 text-left text-[var(--fg-muted)] hover:text-[var(--fg)]"
 				>
-					Show all{" "}
-					{one === "Life Bucket" ? "Life Buckets" : `${one.toLowerCase()}s`}
+					Show all {many}
 				</button>
 			)}
 		</Popover>

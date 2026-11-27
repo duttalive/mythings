@@ -15,6 +15,7 @@ import {
 	isInToday,
 	type LogbookCursor,
 	lateness,
+	linkedFilter,
 	logbook,
 	overdue,
 	projectProgress,
@@ -780,6 +781,48 @@ describe("filter bar", () => {
 		expect(anytimeIds({ buckets: [work.id], projects: [launch.id] })).toEqual([
 			inLaunch.id,
 		]);
+	});
+
+	it("narrows only the Life Bucket an Area or Project is picked in", () => {
+		const atHome = todo({ when: "anytime", areaId: home.id });
+		const atWork = todo({ when: "anytime", areaId: work.id });
+		const linked = data({
+			buckets: [home, work],
+			areas: [chores],
+			projects: [launch],
+			todos: [inChores, inLaunch, atHome, atWork],
+		});
+		const pick = (filter: Parameters<typeof isFiltering>[0]) =>
+			ids(
+				linked.todos.filter((item) =>
+					filterMatcher(linked, filter)({ kind: "todo", item }),
+				),
+			).sort();
+		// Home narrowed to Chores; Work stays whole.
+		expect(pick({ buckets: [home.id, work.id], areas: [chores.id] })).toEqual(
+			[inChores.id, inLaunch.id, atWork.id].sort(),
+		);
+		// An Area and a Project in different buckets each narrow their own.
+		expect(
+			pick({
+				buckets: [home.id, work.id],
+				areas: [chores.id],
+				projects: [launch.id],
+			}),
+		).toEqual([inChores.id, inLaunch.id].sort());
+		// A link without the bucket still counts the Area under its bucket.
+		expect(pick({ areas: [chores.id] })).toEqual([inChores.id]);
+		// An Area that's gone matches nothing.
+		expect(pick({ areas: ["gone"] })).toEqual([]);
+	});
+
+	it("links an Area or Project to its Life Bucket", () => {
+		const linked = linkedFilter(d, {
+			areas: [chores.id],
+			projects: [launch.id],
+		});
+		expect(linked.buckets).toEqual([home.id, work.id]);
+		expect([...(linked.within.get(work.id) ?? [])]).toEqual([launch.id]);
 	});
 
 	it("filters the Trash, areas and headings included", () => {

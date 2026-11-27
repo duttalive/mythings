@@ -458,7 +458,7 @@ Every open task and project that has a deadline, overdue or not (for only the ov
 
 ### 4.10 Filtering a list
 
-Every built-in view except the Inbox (Today, Upcoming, Anytime, Someday, Overdue, Deadlines, the Logbook, the Trash and the Task Notes list) has a **filter bar** under its title: a row of dropdowns for **Life Bucket**, **Area**, **Project** and **Tag**. A dropdown is left out when there's nothing to choose in it (for example **Tag**, before you've made any tags).
+Every built-in view except the Inbox (Today, Upcoming, Anytime, Someday, Overdue, Deadlines, the Logbook, the Trash and the Task Notes list) has a **filter bar** under its title: the same row of dropdowns everywhere, for **Life Bucket**, **Area**, **Project** and **Tag**.
 
 ![Anytime filtered by the "home" tag: the filter bar under the title shows "Tag: home" highlighted, with a Clear filters button, and only items in the Home Life Bucket remain](docs/guide/tag-filter.jpg)
 
@@ -466,14 +466,17 @@ Click a dropdown and tick what you want to see:
 
 ![The Tag dropdown open over Anytime, listing the tags with "home" ticked, and "Show all tags" at the bottom](docs/guide/filter-menu.jpg)
 
+![The Area dropdown open over Anytime after picking the Home and Work Life Buckets: it lists only their areas (Admin and Household), under the headings Work and Home](docs/guide/filter-linked.jpg)
+
+- **Work from top to bottom: Life Bucket first.** **Area** and **Project** are dimmed until you pick a Life Bucket (clicking one says "Pick a Life Bucket first"). Then they list only the areas and projects in the Life Buckets you picked, under each bucket's name when you've picked more than one.
+- **A Life Bucket** matches everything in its areas and projects. Pick an area or project to narrow **just that Life Bucket** to it; any other Life Bucket you picked stays whole. Picking _Home_ and _Work_, then the area _Chores_ in Home, shows Chores plus everything in Work.
+- Unticking a Life Bucket also clears the areas and projects you'd picked in it.
 - **Tick several in one dropdown** to see items that match **any** of them: ticking the tags `home` and `errands` shows items with either tag.
-- **Choices in different dropdowns combine:** an item has to match every dropdown you've chosen something in. Picking the _Work_ Life Bucket and the tag `urgent` shows only urgent items in Work.
-- **A Life Bucket** matches everything in its areas and projects.
+- **Tags** work on their own, alongside the rest: picking the _Work_ Life Bucket and the tag `urgent` shows only urgent items in Work.
 - **Tags** include the tags nested inside them, and tags inherited from a project, area or Life Bucket count, so filtering by `home` here shows everything in the _Home_ Life Bucket.
 - A dropdown with a choice is highlighted and says what's chosen: "Tag: shop", or "Tag · 2" when you've ticked two.
 - A long dropdown has a **Find a …** box at the top (for example **Find a Tag**) to narrow it as you type.
 - **Show all …** at the bottom of a dropdown (for example **Show all tags**) clears just that dropdown; **Clear filters** at the end of the bar clears them all.
-- In Today and Overdue, the **Tag** dropdown offers only the tags that something in the list has.
 - When the filters leave nothing, the list says so, for example "Nothing in Today matches these filters."
 - The filter is part of the page's address, so Back, bookmarks and [tabs](#23-tabs-desktop) keep it.
 - New tasks you add while filtering get the chosen tags, so they stay visible.
@@ -481,6 +484,8 @@ Click a dropdown and tick what you want to see:
 - In the Trash, **Empty Trash** still empties the whole Trash, not just what the filter shows.
 
 On a project's, area's or Life Bucket's own page, the filter bar offers just the **Tag** dropdown. A tag's page has no filter bar.
+
+In version 2.9.3 the Area and Project dropdowns became linked to the Life Bucket dropdown, and Today and Overdue started offering every tag.
 
 Before version 2.9.0 this was a row of tag chips, and ticking several tags showed only items with **all** of them. Now ticking several shows items with **any** of them.
 

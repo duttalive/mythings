@@ -353,6 +353,42 @@ function placementOf(entry: FilterableEntry, idx: Index): Placement {
 	}
 }
 
+/**
+ * The filter bar's Life Bucket → Area / Project choices, linked (SPEC §6.6):
+ * an Area or Project counts only under its own Life Bucket, which is added if
+ * a link names the Area or Project without it. Picking Areas or Projects in a
+ * bucket narrows that bucket to them; a bucket with none picked stays whole.
+ */
+export function linkedFilter(
+	data: Pick<ViewData, "areas" | "buckets" | "projects">,
+	filter: ListFilter | undefined,
+): {
+	buckets: string[];
+	areas: string[];
+	projects: string[];
+	/** Bucket id → the Areas and Projects picked in it. */
+	within: Map<string, Set<string>>;
+} {
+	const areaBucket = new Map(data.areas.map((a) => [a.id, a.bucketId]));
+	const projectBucket = new Map(data.projects.map((p) => [p.id, p.areaId]));
+	const buckets = [...(filter?.buckets ?? [])];
+	const within = new Map<string, Set<string>>();
+	const keep = (
+		ids: string[] | undefined,
+		bucketOf: Map<string, string | null>,
+	) =>
+		(ids ?? []).filter((id) => {
+			const bucket = bucketOf.get(id);
+			if (!bucket) return false;
+			if (!buckets.includes(bucket)) buckets.push(bucket);
+			within.set(bucket, (within.get(bucket) ?? new Set()).add(id));
+			return true;
+		});
+	const areas = keep(filter?.areas, areaBucket);
+	const projects = keep(filter?.projects, projectBucket);
+	return { buckets, areas, projects, within };
+}
+
 /** Whether an entry passes the filter bar's choices. */
 export function filterMatcher(
 	data: ViewData,
@@ -361,20 +397,28 @@ export function filterMatcher(
 ): (entry: FilterableEntry) => boolean {
 	if (!isFiltering(filter)) return () => true;
 	const f = filter as ListFilter;
-	const pick = (ids: string[] | undefined) =>
-		ids?.length ? new Set(ids) : null;
-	const buckets = pick(f.buckets);
-	const areas = pick(f.areas);
-	const projects = pick(f.projects);
+	const linked = linkedFilter(data, f);
+	const buckets = linked.buckets.length ? new Set(linked.buckets) : null;
+	// Names in the link that no longer exist match nothing.
+	const lost =
+		(f.areas?.length ?? 0) + (f.projects?.length ?? 0) >
+		linked.areas.length + linked.projects.length;
 	const tags = f.tags?.length ? withNested(data.tags, f.tags) : null;
 	return (entry) => {
 		const p = placementOf(entry, idx);
-		return (
-			(!buckets || (p.bucketId !== null && buckets.has(p.bucketId))) &&
-			(!areas || (p.areaId !== null && areas.has(p.areaId))) &&
-			(!projects || (p.projectId !== null && projects.has(p.projectId))) &&
-			(!tags || p.tags.some((t) => tags.has(t)))
-		);
+		if (buckets || lost) {
+			if (p.bucketId === null || !buckets?.has(p.bucketId)) return false;
+			const picked = linked.within.get(p.bucketId);
+			if (
+				picked &&
+				!(
+					(p.areaId !== null && picked.has(p.areaId)) ||
+					(p.projectId !== null && picked.has(p.projectId))
+				)
+			)
+				return false;
+		}
+		return !tags || p.tags.some((t) => tags.has(t));
 	};
 }
 

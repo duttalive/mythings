@@ -19,7 +19,6 @@ export function ListPage({
 	header,
 	filterable = false,
 	filterKinds,
-	filterTags,
 	children,
 }: {
 	title: string;
@@ -33,8 +32,6 @@ export function ListPage({
 	filterable?: boolean;
 	/** The dropdowns the filter bar offers; all four if omitted. */
 	filterKinds?: FilterKind[];
-	/** Only these tags (and any chosen) are offered in the filter bar; all if omitted. */
-	filterTags?: Set<string>;
 	children: ReactNode;
 }) {
 	useEffect(() => {
@@ -68,7 +65,7 @@ export function ListPage({
 				)}
 				{header}
 			</header>
-			{filterable && <FilterBar kinds={filterKinds} onlyTags={filterTags} />}
+			{filterable && <FilterBar kinds={filterKinds} />}
 			{children}
 		</article>
 	);
