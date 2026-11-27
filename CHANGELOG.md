@@ -2,6 +2,17 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.9.2 — 2026-11-27
+
+A cleaner Settings page.
+
+- Settings are grouped into panels, one per section, that read clearly in both light and dark.
+- A row of section names under the title stays in view as you scroll: tap one to jump there, and it shows which section you're in.
+- On phones, settings with buttons or choices put them under their name, so text like the encryption explanation is no longer squeezed into a narrow column. Switches and choices are bigger to tap, and Full width (which only matters on bigger screens) is no longer shown.
+- Buttons you can't use yet, like Save before you change your name, now look greyed out instead of half-lit.
+- Signing out of every device is a red "Sign out everywhere…" button, set apart from the rest.
+- About shows the version, with What's new, the Privacy Policy and the Terms of Service as rows you can tap.
+
 ## Version 2.9.1 — 2026-11-27
 
 - The sync status no longer shows "Synced" while a change is still being saved
