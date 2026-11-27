@@ -2,6 +2,12 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.9.3 — 2026-11-27
+
+- **Filters work top to bottom.** Pick one or more Life Buckets first; the Area and Project dropdowns then list only what's in them, grouped by bucket. Picking an area or project narrows just its own Life Bucket, so other buckets you picked stay whole. Unticking a Life Bucket clears what you picked inside it. Tags still work on their own.
+- **The same filters everywhere.** Today and Overdue now show the Tag dropdown with all your tags, like every other view, and every view shows all four dropdowns.
+- **Settings on phones:** tapping a section name in the bar at the top now scrolls to that section.
+
 ## Version 2.9.2 — 2026-11-27
 
 A cleaner Settings page.
