@@ -109,6 +109,8 @@ export class SyncEngine {
 	#retryTimer: ReturnType<typeof setTimeout> | undefined;
 	#pollTimer: ReturnType<typeof setInterval> | undefined;
 	#ackWaiter: AckWaiter | null = null;
+	/** Local writes still on their way into the outbox (encrypting, or in their transaction). */
+	#writing = 0;
 	/** Incoming `changes` are applied strictly in arrival order. */
 	#incoming: Promise<void> = Promise.resolve();
 	#undo: Mutation[][] = [];
@@ -141,7 +143,8 @@ export class SyncEngine {
 	}
 
 	private async refreshPending() {
-		this.setStatus({ pending: await this.db.outbox.count() });
+		const queued = await this.db.outbox.count();
+		this.setStatus({ pending: queued + this.#writing });
 	}
 
 	// -------------------------------------------------------------------------
@@ -226,12 +229,26 @@ export class SyncEngine {
 		mutations: Mutation[],
 		options: { undoable?: boolean } = {},
 	): Promise<void> {
-		const inverse = await this.applyRecording(
-			await this.encryptMutations(mutations),
-		);
+		const inverse = await this.write(mutations);
 		if (options.undoable !== false && inverse.length > 0) {
 			this.pushHistory(this.#undo, inverse);
 			this.#redo = [];
+		}
+	}
+
+	/**
+	 * Encrypts and records mutations. They count as pending from the moment
+	 * they're made, so the status never reads "Synced" while a change is still
+	 * being written (a reload or sign-out in that moment would lose it).
+	 */
+	private async write(mutations: Mutation[]): Promise<Mutation[]> {
+		this.#writing++;
+		this.setStatus({ pending: this.#status.pending + 1 });
+		try {
+			return await this.applyRecording(await this.encryptMutations(mutations));
+		} finally {
+			this.#writing--;
+			await this.refreshPending();
 		}
 	}
 
@@ -266,9 +283,7 @@ export class SyncEngine {
 	async undo(): Promise<boolean> {
 		const entry = await this.popRunnable(this.#undo);
 		if (!entry) return false;
-		const inverse = await this.applyRecording(
-			await this.encryptMutations(entry),
-		);
+		const inverse = await this.write(entry);
 		if (inverse.length > 0) this.pushHistory(this.#redo, inverse);
 		return true;
 	}
@@ -277,9 +292,7 @@ export class SyncEngine {
 	async redo(): Promise<boolean> {
 		const entry = await this.popRunnable(this.#redo);
 		if (!entry) return false;
-		const inverse = await this.applyRecording(
-			await this.encryptMutations(entry),
-		);
+		const inverse = await this.write(entry);
 		if (inverse.length > 0) this.pushHistory(this.#undo, inverse);
 		return true;
 	}
@@ -352,7 +365,6 @@ export class SyncEngine {
 				}
 			}
 		});
-		await this.refreshPending();
 		this.requestSync();
 		return inverse;
 	}

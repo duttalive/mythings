@@ -47,6 +47,16 @@ describe("local mutations", () => {
 		expect(server.pushCalls).toBe(0);
 	});
 
+	it("count as pending from the moment they're made, not once written", async () => {
+		const write = engine.create("todo", { title: "Buy milk" });
+		// A reload now would lose the change, so the status mustn't read "Synced".
+		expect(engine.getStatus().pending).toBe(1);
+		await write;
+		expect(engine.getStatus().pending).toBe(1);
+		await expect(engine.create("heading", { title: "x" })).rejects.toThrow();
+		expect(engine.getStatus().pending).toBe(1);
+	});
+
 	it("normalize like the server does", async () => {
 		const id = await engine.create("todo", { title: "Call" });
 		await engine.update("todo", id, { startDate: "2026-10-25", evening: true });
