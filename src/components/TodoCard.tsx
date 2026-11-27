@@ -305,7 +305,7 @@ export function TodoCard({ todo }: { todo: Todo }) {
 			onKeyDown={onCardKeyDown}
 			className="my-2 animate-card-open rounded-xl bg-[var(--card)] px-2 pb-2 pt-1.5 shadow-[var(--card-shadow)] ring-1 ring-[var(--border)]"
 		>
-			<div className="flex items-start gap-3 px-1">
+			<div className="flex items-start gap-3">
 				<Checkbox
 					status={status}
 					label={title || "New Task"}
@@ -328,7 +328,7 @@ export function TodoCard({ todo }: { todo: Todo }) {
 					}}
 					placeholder="New Task"
 					aria-label="Title"
-					className={`min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-[0.9375rem] font-medium break-words outline-none placeholder:text-[var(--fg-muted)] ${
+					className={`min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-[0.9375rem] break-words outline-none placeholder:text-[var(--fg-muted)] ${
 						status !== "open" ? "text-[var(--fg-muted)] line-through" : ""
 					}`}
 				/>
@@ -341,11 +341,11 @@ export function TodoCard({ todo }: { todo: Todo }) {
 					onFocusId={setFocusItemId}
 					onAdd={addChecklistItem}
 					onLeaveTop={() => titleRef.current?.focus()}
-					className="mt-2 ml-[38px] mr-1"
+					className="mt-2 ml-8.5 mr-1"
 				/>
 			)}
 
-			<div className="mt-2 flex flex-wrap items-center gap-1.5 pl-[34px]">
+			<div className="mt-2 flex flex-wrap items-center gap-1.5 pl-7.5">
 				{isTemplate && todo.repeat
 					? whenPopover(
 							<ChipButton
@@ -446,7 +446,7 @@ export function TodoCard({ todo }: { todo: Todo }) {
 						params={{ todoId: todo.id }}
 						aria-label="Open in Task Notes"
 						title="Open in Task Notes"
-						className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:p-2.5"
+						className="rounded-md p-1.5 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent pointer-coarse:p-2.5 relative pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1"
 					>
 						<NotesIcon className="size-4" />
 					</Link>

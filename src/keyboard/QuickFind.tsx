@@ -237,14 +237,14 @@ export function QuickFind({
 						onMouseEnter={() => setActive(i)}
 						onClick={result.open}
 						onKeyDown={() => {}}
-						className={`flex cursor-default items-center gap-3 rounded-lg px-3 py-2 text-sm ${i === active ? "bg-[var(--selected)]" : ""}`}
+						className={`flex cursor-default items-center gap-3 rounded-lg px-3 py-2 text-sm pointer-coarse:py-3 ${i === active ? "bg-[var(--selected)]" : ""}`}
 					>
 						<span className="flex w-4 shrink-0 justify-center">
 							{result.icon}
 						</span>
 						<span className="min-w-0 flex-1 truncate">{result.title}</span>
 						{result.subtitle && (
-							<span className="shrink-0 truncate text-xs text-[var(--fg-muted)]">
+							<span className="max-w-[45%] min-w-0 shrink truncate text-xs text-[var(--fg-muted)]">
 								{result.subtitle}
 							</span>
 						)}

@@ -18,6 +18,7 @@ import {
 	RestoreIcon,
 } from "../components/icons";
 import { useToast } from "../components/Toast";
+import { quietLinkClass } from "../components/ui";
 import { useListData } from "../data";
 import { useEditing } from "../editing/EditingProvider";
 import { NotesEditor } from "../notes";
@@ -207,7 +208,7 @@ function FocusScreen({ todo }: { todo: Todo }) {
 						</button>
 					</div>
 
-					<div className="mx-auto flex w-full max-w-[640px] flex-1 flex-col px-4 pb-10 md:px-8">
+					<div className="mx-auto flex w-full max-w-[40rem] flex-1 flex-col px-4 pb-10 md:px-8">
 						<section
 							aria-label="Timer"
 							className="flex flex-col items-center pt-6 pb-8 text-center sm:pt-12"
@@ -315,7 +316,7 @@ function FocusScreen({ todo }: { todo: Todo }) {
 									<button
 										type="button"
 										onClick={() => void enableNotifications()}
-										className="mt-4 text-sm text-accent hover:underline"
+										className={`mt-4 text-sm ${quietLinkClass} pointer-coarse:py-2`}
 									>
 										Notify me when time's up, even if the app is closed
 									</button>

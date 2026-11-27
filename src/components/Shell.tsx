@@ -116,7 +116,7 @@ export function Shell() {
 													<button
 														type="button"
 														aria-label="Close sidebar"
-														className="fixed inset-0 z-20 bg-black/30 md:hidden"
+														className="fixed inset-0 z-20 animate-fade-in bg-scrim md:hidden"
 														onClick={() => setDrawerOpen(false)}
 													/>
 												)}
@@ -127,7 +127,8 @@ export function Shell() {
 													// On desktop the width is the user's (drag the edge); the phone drawer is fixed.
 													style={desktop ? { width: sidebar.width } : undefined}
 													className={`fixed inset-y-0 left-0 z-30 w-[min(18rem,85vw)] border-r border-[var(--border)] bg-[var(--bg-sidebar)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-transform duration-200 motion-reduce:transition-none md:relative md:z-auto md:shrink-0 md:translate-x-0 md:pt-0 md:pb-0 ${
-														drawerOpen ? "translate-x-0" : "-translate-x-full"
+														// No translate at all when open: one would trap the bottom sheets of menus opened from here inside the drawer.
+														drawerOpen ? "translate-none" : "-translate-x-full"
 													} ${collapsed ? "md:hidden" : ""}`}
 												>
 													<Sidebar />
@@ -144,7 +145,7 @@ export function Shell() {
 																aria-expanded={
 																	desktop ? !collapsed : drawerOpen
 																}
-																className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-2.5"
+																className="rounded-md p-1.5 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-3"
 															>
 																<SidebarIcon className="size-5" />
 															</button>
@@ -166,7 +167,7 @@ export function Shell() {
 															// Re-mounted per page, so each list fades in.
 															key={pathname}
 															className={`mx-auto w-full animate-fade-in px-4 pb-24 pt-4 md:px-10 ${
-																wide ? "max-w-none" : "max-w-[720px]"
+																wide ? "max-w-none" : "max-w-[45rem]"
 															}`}
 														>
 															<Outlet />
@@ -196,7 +197,7 @@ function Skeleton({ offline = false }: { offline?: boolean }) {
 			{offline ? (
 				<p
 					role="status"
-					className="fixed inset-x-0 top-6 mx-auto w-fit rounded-full bg-[var(--hover)] px-3 py-1.5 text-sm text-[var(--fg-muted)]"
+					className="fixed inset-x-4 top-[calc(1.5rem+env(safe-area-inset-top))] mx-auto w-fit rounded-full bg-[var(--hover)] px-3 py-1.5 text-sm text-[var(--fg-muted)]"
 				>
 					You're offline. Your lists will appear once this device has synced.
 				</p>
@@ -204,8 +205,8 @@ function Skeleton({ offline = false }: { offline?: boolean }) {
 				<span className="sr-only">Loading…</span>
 			)}
 			<div className="hidden w-60 shrink-0 border-r border-[var(--border)] bg-[var(--bg-sidebar)] md:block" />
-			<div className="mx-auto w-full max-w-[720px] px-4 pt-16 md:px-10">
-				<div className="h-7 w-40 animate-pulse rounded bg-[var(--hover)] motion-reduce:animate-none" />
+			<div className="mx-auto w-full max-w-[45rem] px-4 pt-[4.25rem] md:px-10">
+				<div className="h-8 w-40 animate-pulse rounded bg-[var(--hover)] motion-reduce:animate-none" />
 				{[0, 1, 2, 3].map((i) => (
 					<div
 						key={i}
@@ -227,7 +228,7 @@ function SearchButton() {
 			onClick={openQuickFind}
 			aria-label="Search"
 			title="Search (or just start typing)"
-			className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-2.5"
+			className="rounded-md p-1.5 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-3"
 		>
 			<SearchIcon className="size-5" />
 		</button>
@@ -267,7 +268,7 @@ function FullWidthButton() {
 			aria-pressed={on}
 			aria-label="Full width"
 			title={on ? "Use a centered column" : "Use the full width"}
-			className={`hidden rounded-md p-1.5 hover:bg-[var(--hover)] hover:text-[var(--fg)] md:block ${
+			className={`hidden rounded-md p-1.5 transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] md:block ${
 				on ? "text-accent" : "text-[var(--fg-muted)]"
 			}`}
 		>
@@ -299,7 +300,7 @@ function TaskNotesButton() {
 			aria-pressed={open}
 			aria-label="Task Notes"
 			title={open ? "Close Task Notes" : "Task Notes (g then n)"}
-			className={`rounded-md p-1.5 hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-2.5 ${
+			className={`rounded-md p-1.5 transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-3 ${
 				open ? "text-accent" : "text-[var(--fg-muted)]"
 			}`}
 		>

@@ -24,6 +24,7 @@ import {
 	TagPicker,
 	WhenPicker,
 } from "../components/pickers";
+import { buttonClass } from "../components/ui";
 import { useListData } from "../data";
 import {
 	type ListLocation,
@@ -299,7 +300,7 @@ export function QuickEntry({
 					<button
 						type="submit"
 						disabled={saving || (!parsed.title && !notes.trim())}
-						className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-on-accent hover:opacity-90 disabled:opacity-40"
+						className={`ml-auto ${buttonClass}`}
 					>
 						Add Task
 					</button>

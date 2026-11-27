@@ -37,10 +37,12 @@ export const InboxIcon = (p: IconProps) => (
 	</Icon>
 );
 
+// The Today star: its edge is darker than its yellow on light backgrounds.
 export const StarIcon = (p: IconProps) => (
 	<Icon {...p}>
 		<path
 			fill="currentColor"
+			stroke="var(--today-edge, currentColor)"
 			d="m10 2.8 2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L2.8 8.1l5-.7z"
 		/>
 	</Icon>

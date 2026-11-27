@@ -276,11 +276,11 @@ function FilterDropdown({
 								? `Filter by ${one} (pick a Life Bucket first)`
 								: `Filter by ${one}`
 					}
-					className={`flex max-w-56 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors duration-150 pointer-coarse:px-3 pointer-coarse:py-2 ${
+					className={`flex max-w-56 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors duration-150 pointer-coarse:px-3 pointer-coarse:py-2 relative pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1.5 ${
 						count
 							? "border-accent bg-accent text-on-accent"
 							: locked
-								? "border-dashed border-[var(--border)] text-[var(--fg-muted)] opacity-60"
+								? "border-dashed border-[var(--checkbox)] text-[var(--fg-muted)]"
 								: "border-[var(--border)] text-[var(--fg-muted)] hover:bg-[var(--hover)]"
 					}`}
 				>
@@ -343,7 +343,7 @@ function FilterDropdown({
 										? { paddingLeft: `${0.5 + o.depth}rem` }
 										: undefined
 								}
-								className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left pointer-coarse:py-3 hover:bg-[var(--hover)] focus-visible:bg-[var(--hover)] focus-visible:outline-none"
+								className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors duration-150 pointer-coarse:py-3 hover:bg-[var(--hover)] focus-visible:bg-[var(--hover)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
 							>
 								<span className="flex w-4 shrink-0 justify-center">
 									{o.icon}
@@ -372,7 +372,7 @@ function FilterDropdown({
 				<button
 					type="button"
 					onClick={() => onChange([])}
-					className="mt-1 w-full rounded-md border-t border-[var(--border)] px-2 pt-2 pb-1 text-left text-[var(--fg-muted)] hover:text-[var(--fg)]"
+					className="mt-1 w-full rounded-b-md border-t border-[var(--border)] px-2 pt-2 pb-1 text-left text-[var(--fg-muted)] transition-colors duration-150 hover:text-[var(--fg)] focus-visible:-outline-offset-2 pointer-coarse:py-3"
 				>
 					Show all {many}
 				</button>

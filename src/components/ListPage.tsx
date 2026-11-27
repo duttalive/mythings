@@ -71,8 +71,24 @@ export function ListPage({
 	);
 }
 
-export function Empty({ children }: { children: ReactNode }) {
-	return <p className="py-10 text-center text-[var(--fg-muted)]">{children}</p>;
+/** What an empty list says, under a faded copy of the view's icon when given one. */
+export function Empty({
+	icon,
+	children,
+}: {
+	icon?: ReactNode;
+	children: ReactNode;
+}) {
+	return (
+		<div className="flex flex-col items-center gap-3 py-10 text-center text-[var(--fg-muted)]">
+			{icon && (
+				<span aria-hidden className="flex opacity-40">
+					{icon}
+				</span>
+			)}
+			<p>{children}</p>
+		</div>
+	);
 }
 
 /** A titled group of rows. */

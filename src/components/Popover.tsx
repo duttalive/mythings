@@ -70,7 +70,7 @@ export function PopoverOption({
 			type="button"
 			onClick={onSelect}
 			aria-pressed={pressed}
-			className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left pointer-coarse:py-3 hover:bg-[var(--hover)] focus-visible:bg-[var(--hover)] focus-visible:outline-none aria-pressed:font-medium"
+			className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors duration-150 pointer-coarse:py-3 hover:bg-[var(--hover)] focus-visible:bg-[var(--hover)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent aria-pressed:font-medium"
 		>
 			<span className="flex w-4 justify-center">{icon}</span>
 			{children}

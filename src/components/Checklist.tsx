@@ -236,7 +236,7 @@ function ChecklistRow({
 					{...listeners}
 					aria-label={`Move: ${label}`}
 					title="Drag to reorder"
-					className="-ml-5 mt-[0.1rem] shrink-0 cursor-grab touch-none rounded text-[var(--fg-muted)] opacity-0 group-hover/item:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing pointer-coarse:-ml-7 pointer-coarse:-my-1.5 pointer-coarse:p-1.5 pointer-coarse:opacity-60"
+					className="-ml-5 mt-[0.1rem] shrink-0 cursor-grab touch-none rounded text-[var(--fg-muted)] opacity-0 transition-opacity duration-150 group-hover/item:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing pointer-coarse:-ml-7 pointer-coarse:-my-1.5 pointer-coarse:p-1.5 pointer-coarse:opacity-60"
 				>
 					<GripIcon className="size-3.5" />
 				</button>
@@ -251,7 +251,7 @@ function ChecklistRow({
 						.update("checklist", item.id, { done: !item.done })
 						.catch(console.error)
 				}
-				className="mt-[0.2rem] size-3.5 shrink-0 cursor-pointer appearance-none rounded-full border border-[var(--checkbox)] checked:border-accent checked:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-default"
+				className="relative mt-[0.2rem] size-3.5 shrink-0 cursor-pointer appearance-none rounded-full border border-[var(--checkbox)] transition-colors duration-150 checked:border-accent checked:bg-accent hover:border-accent pointer-coarse:after:absolute pointer-coarse:after:-inset-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-default"
 			/>
 			{/* One line that wraps onto more as it grows, like the title. */}
 			<textarea

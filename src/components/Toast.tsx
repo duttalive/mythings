@@ -53,7 +53,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 			<div
 				role="status"
 				aria-live="polite"
-				className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-4 md:bottom-8"
+				// Above the + button on phones, and above the selection bar when that shows too.
+				className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-4 md:bottom-[calc(2rem+env(safe-area-inset-bottom))] [body:has([data-bulk-bar])_&]:bottom-[calc(9.5rem+env(safe-area-inset-bottom))] md:[body:has([data-bulk-bar])_&]:bottom-[calc(5rem+env(safe-area-inset-bottom))]"
 			>
 				{toast && (
 					<div
@@ -68,7 +69,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 									toast.action?.run();
 									setToast(null);
 								}}
-								className="font-semibold underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--bg)]"
+								className="-my-1.5 rounded-md px-1.5 py-1.5 font-semibold underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--bg)] pointer-coarse:-my-3 pointer-coarse:py-3"
 							>
 								{toast.action.label}
 							</button>

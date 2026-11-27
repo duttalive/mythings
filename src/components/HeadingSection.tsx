@@ -193,7 +193,7 @@ export function HeadingSection({
 		>
 			<div
 				{...sortable.handle}
-				className="group/heading flex items-center gap-1 border-b border-[var(--border)] pb-1 pl-2"
+				className="group/heading mb-1 flex items-center gap-1 border-b border-[var(--border)] pb-1 pl-2"
 			>
 				<h2 id={titleId} className="sr-only">
 					{heading.title || "New Heading"}
@@ -216,7 +216,7 @@ export function HeadingSection({
 						className="text-[0.9375rem] font-semibold"
 					/>
 				)}
-				<span className="opacity-0 group-hover/heading:opacity-100 group-focus-within/heading:opacity-100 [@media(hover:none)]:opacity-100">
+				<span className="opacity-0 transition-opacity duration-150 group-hover/heading:opacity-100 group-focus-within/heading:opacity-100 [@media(hover:none)]:opacity-100">
 					{menu}
 				</span>
 			</div>

@@ -3,6 +3,7 @@ import { logbook } from "../../shared/views";
 import { LogbookIcon } from "../components/icons";
 import { Empty, ListPage, Section } from "../components/ListPage";
 import { EntryRow, RowList } from "../components/rows";
+import { compactSecondaryButtonClass } from "../components/ui";
 import { useFilteredContext, useListData } from "../data";
 import { dayLabel } from "../lib/format";
 import { VIEWS } from "../lib/views";
@@ -22,7 +23,9 @@ export function LogbookPage() {
 			filterable
 		>
 			{groups.length === 0 ? (
-				<Empty>Completed tasks show up here.</Empty>
+				<Empty icon={VIEWS.logbook.icon("size-10")}>
+					Completed tasks show up here.
+				</Empty>
 			) : (
 				groups.map((group, i) => (
 					<Section
@@ -48,7 +51,7 @@ export function LogbookPage() {
 					<button
 						type="button"
 						onClick={() => setLimit((n) => n + PAGE_SIZE)}
-						className="rounded-md border border-[var(--border)] px-3 py-1 text-sm hover:bg-[var(--hover)]"
+						className={`${compactSecondaryButtonClass} text-sm`}
 					>
 						Show more
 					</button>

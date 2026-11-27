@@ -57,7 +57,7 @@ import { SignOutButton } from "./SignOutButton";
 import { SyncPill } from "./SyncPill";
 
 const itemClass =
-	"flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition-colors duration-150 pointer-coarse:py-2.5 hover:bg-[var(--hover)] data-[status=active]:bg-[var(--selected)] data-[status=active]:font-medium";
+	"flex items-center gap-2.5 rounded-md px-2 py-1 text-sm transition-colors duration-150 pointer-coarse:py-3 hover:bg-[var(--hover)] focus-visible:-outline-offset-2 data-[status=active]:bg-[var(--selected)] data-[status=active]:font-medium";
 
 // Highlight for a sidebar item that something is about to be dropped onto.
 const dropHighlight =
@@ -660,12 +660,15 @@ export function Sidebar() {
 
 	return (
 		<div className="flex h-full flex-col">
-			<nav aria-label="Lists" className="flex-1 overflow-y-auto p-3 pt-4">
+			<nav
+				aria-label="Lists"
+				className="flex-1 overflow-y-auto overscroll-contain p-3 pt-4"
+			>
 				<div className="flex flex-col gap-px">
 					<DropTarget type="inbox">
 						<NavItem
 							to="/inbox"
-							icon={<InboxIcon className="size-[18px] text-accent" />}
+							icon={<InboxIcon className="size-4.5 text-accent" />}
 							badge={<Badge count={counts.inbox} />}
 						>
 							Inbox
@@ -676,7 +679,7 @@ export function Sidebar() {
 					<DropTarget type="today">
 						<NavItem
 							to="/today"
-							icon={<StarIcon className="size-[18px] text-today" />}
+							icon={<StarIcon className="size-4.5 text-today" />}
 							badge={
 								<span className="flex items-center gap-1.5">
 									<Badge count={counts.due} tone="red" />
@@ -688,20 +691,20 @@ export function Sidebar() {
 						</NavItem>
 					</DropTarget>
 					{shown.has("upcoming") && (
-						<NavItem to="/upcoming" icon={VIEWS.upcoming.icon("size-[18px]")}>
+						<NavItem to="/upcoming" icon={VIEWS.upcoming.icon("size-4.5")}>
 							Upcoming
 						</NavItem>
 					)}
 					{shown.has("anytime") && (
 						<DropTarget type="anytime">
-							<NavItem to="/anytime" icon={VIEWS.anytime.icon("size-[18px]")}>
+							<NavItem to="/anytime" icon={VIEWS.anytime.icon("size-4.5")}>
 								Anytime
 							</NavItem>
 						</DropTarget>
 					)}
 					{shown.has("someday") && (
 						<DropTarget type="someday">
-							<NavItem to="/someday" icon={VIEWS.someday.icon("size-[18px]")}>
+							<NavItem to="/someday" icon={VIEWS.someday.icon("size-4.5")}>
 								Someday
 							</NavItem>
 						</DropTarget>
@@ -709,19 +712,19 @@ export function Sidebar() {
 					{shown.has("overdue") && (
 						<NavItem
 							to="/overdue"
-							icon={VIEWS.overdue.icon("size-[18px]")}
+							icon={VIEWS.overdue.icon("size-4.5")}
 							badge={<Badge count={counts.overdue} tone="red" />}
 						>
 							Overdue
 						</NavItem>
 					)}
 					{shown.has("deadlines") && (
-						<NavItem to="/deadlines" icon={VIEWS.deadlines.icon("size-[18px]")}>
+						<NavItem to="/deadlines" icon={VIEWS.deadlines.icon("size-4.5")}>
 							Deadlines
 						</NavItem>
 					)}
 					{shown.has("notes") && (
-						<NavItem to="/notes" icon={VIEWS.notes.icon("size-[18px]")}>
+						<NavItem to="/notes" icon={VIEWS.notes.icon("size-4.5")}>
 							Task Notes
 						</NavItem>
 					)}
@@ -730,7 +733,7 @@ export function Sidebar() {
 					<DropTarget type="logbook">
 						<NavItem
 							to="/logbook"
-							icon={<LogbookIcon className="size-[18px] text-done" />}
+							icon={<LogbookIcon className="size-4.5 text-done" />}
 						>
 							Logbook
 						</NavItem>
@@ -738,9 +741,7 @@ export function Sidebar() {
 					<DropTarget type="trash">
 						<NavItem
 							to="/trash"
-							icon={
-								<TrashIcon className="size-[18px] text-[var(--fg-muted)]" />
-							}
+							icon={<TrashIcon className="size-4.5 text-[var(--fg-muted)]" />}
 						>
 							Trash
 						</NavItem>
@@ -785,7 +786,7 @@ export function Sidebar() {
 											to="/bucket/$bucketId"
 											params={{ bucketId: bucket.id }}
 											icon={
-												<BucketIcon className="size-[18px] text-[var(--fg-muted)]" />
+												<BucketIcon className="size-4.5 text-[var(--fg-muted)]" />
 											}
 											badge={
 												toggle && (
@@ -843,7 +844,7 @@ export function Sidebar() {
 							}}
 							aria-label="New tag"
 							title="New tag"
-							className="rounded p-0.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:-my-2 pointer-coarse:p-3"
+							className="rounded p-0.5 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:-my-2.5 pointer-coarse:p-3.5"
 						>
 							<PlusIcon className="size-3.5 pointer-coarse:size-4" />
 						</button>
@@ -857,7 +858,7 @@ export function Sidebar() {
 								aria-controls={tagsHidden ? undefined : "sidebar-tags"}
 								aria-label={tagsHidden ? "Show tags" : "Hide tags"}
 								title={tagsHidden ? "Show tags" : "Hide tags"}
-								className="rounded p-0.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:-my-2 pointer-coarse:p-3"
+								className="rounded p-0.5 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:-my-2.5 pointer-coarse:p-3.5"
 							>
 								<ChevronIcon
 									className={`size-3.5 pointer-coarse:size-4 transition-transform duration-150 ${tagsHidden ? "" : "rotate-90"}`}
@@ -894,7 +895,7 @@ export function Sidebar() {
 						to="/settings"
 						aria-label="Settings"
 						title="Settings (⌘,)"
-						className="-my-1 shrink-0 rounded-md p-1 hover:bg-[var(--hover)] hover:text-[var(--fg)] data-[status=active]:text-accent pointer-coarse:-my-2 pointer-coarse:p-2.5"
+						className="-my-1 shrink-0 rounded-md p-1 transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] data-[status=active]:text-accent pointer-coarse:-my-3 pointer-coarse:p-3.5"
 					>
 						<GearIcon className="size-4" />
 					</Link>

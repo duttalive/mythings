@@ -28,7 +28,7 @@ export function OverduePage() {
 			filterable
 		>
 			{groups.length === 0 ? (
-				<Empty>
+				<Empty icon={VIEWS.overdue.icon("size-10")}>
 					{filtering
 						? "Nothing overdue matches these filters."
 						: "Nothing is overdue. Nice work."}

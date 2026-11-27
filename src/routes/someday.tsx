@@ -15,12 +15,14 @@ export function SomedayPage() {
 	return (
 		<ListPage
 			title="Someday"
-			icon={<BoxIcon className="size-7 text-amber-700" />}
+			icon={<BoxIcon className="size-7 text-someday" />}
 			description={VIEWS.someday.description}
 			filterable
 		>
 			{isEmptyGroupedList(list) ? (
-				<Empty>Nothing set aside for someday.</Empty>
+				<Empty icon={VIEWS.someday.icon("size-10")}>
+					Nothing set aside for someday.
+				</Empty>
 			) : (
 				<GroupedListView list={list} />
 			)}

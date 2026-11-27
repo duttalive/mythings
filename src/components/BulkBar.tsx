@@ -87,7 +87,7 @@ function BulkBar({
 			onClick={onClick}
 			title={label}
 			aria-label={label}
-			className="rounded-lg p-2 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent"
+			className="flex items-center justify-center rounded-lg p-2 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent pointer-coarse:size-11"
 		>
 			{icon}
 		</button>
@@ -98,8 +98,9 @@ function BulkBar({
 			data-bulk-bar
 			role="toolbar"
 			aria-label={`${count} selected`}
-			// On phones it sits above the + button.
-			className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-30 flex max-w-[calc(100vw-1rem)] overflow-x-auto md:bottom-5 animate-fade-in -translate-x-1/2 items-center gap-0.5 rounded-xl bg-[var(--card)] p-1 pl-3 text-sm shadow-[var(--card-shadow)] ring-1 ring-[var(--border)]"
+			// On phones it sits above the + button. Centred without a transform,
+			// which would trap the bottom sheets of its menus inside the bar.
+			className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-30 mx-auto flex w-fit max-w-[calc(100vw-1rem)] overflow-x-auto md:bottom-[calc(1.25rem+env(safe-area-inset-bottom))] animate-fade-in items-center gap-0.5 rounded-xl bg-[var(--card)] p-1 pl-3 text-sm shadow-[var(--card-shadow)] ring-1 ring-[var(--border)]"
 		>
 			<span className="mr-2 font-medium tabular-nums" aria-live="polite">
 				{count} selected

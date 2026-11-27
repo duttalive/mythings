@@ -15,12 +15,14 @@ export function AnytimePage() {
 	return (
 		<ListPage
 			title="Anytime"
-			icon={<LayersIcon className="size-7 text-teal-600" />}
+			icon={<LayersIcon className="size-7 text-anytime" />}
 			description={VIEWS.anytime.description}
 			filterable
 		>
 			{isEmptyGroupedList(list) ? (
-				<Empty>Nothing to do anytime.</Empty>
+				<Empty icon={VIEWS.anytime.icon("size-10")}>
+					Nothing to do anytime.
+				</Empty>
 			) : (
 				<GroupedListView list={list} showStar />
 			)}

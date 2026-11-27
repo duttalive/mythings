@@ -50,7 +50,7 @@ export function TodayPage() {
 			filterable
 		>
 			{empty && (
-				<Empty>
+				<Empty icon={VIEWS.today.icon("size-10")}>
 					{filtering
 						? "Nothing in Today matches these filters."
 						: "Nothing planned for today."}
@@ -74,7 +74,7 @@ export function TodayPage() {
 						groups.map(({ project, entries }) =>
 							project ? (
 								<section key={project.id} className="mt-4 first:mt-0">
-									<h2 className="mb-1 flex items-center gap-2 px-2 text-sm font-semibold">
+									<h2 className="mb-1 flex items-center gap-2 border-b border-[var(--border)] px-2 pb-1.5 text-[0.9375rem] font-semibold">
 										<ProgressRing
 											progress={projectProgress(project.id, data.todos)}
 											decorative
@@ -83,7 +83,7 @@ export function TodayPage() {
 										<Link
 											to="/project/$projectId"
 											params={{ projectId: project.id }}
-											className="hover:underline"
+											className="min-w-0 rounded break-words underline-offset-2 hover:underline"
 										>
 											{project.title || "New Project"}
 										</Link>

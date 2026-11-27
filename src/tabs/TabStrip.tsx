@@ -63,7 +63,7 @@ export function TabStrip() {
 				return (
 					<div
 						key={tab.id}
-						className={`group/tab flex h-8 max-w-52 min-w-24 shrink items-center rounded-t-lg text-sm ${
+						className={`group/tab flex h-8 max-w-52 min-w-24 shrink items-center rounded-t-lg text-sm transition-colors duration-150 ${
 							active
 								? "bg-[var(--bg)] text-[var(--fg)] shadow-[0_1px_0_var(--bg)] ring-1 ring-[var(--border)]"
 								: "text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)]"
@@ -91,7 +91,7 @@ export function TabStrip() {
 								aria-label={`Close ${name}`}
 								title={`Close tab (${mod}W)`}
 								onClick={() => close(tab.id)}
-								className={`mr-1 shrink-0 rounded p-1 hover:bg-[var(--hover)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent ${
+								className={`mr-1 shrink-0 rounded p-1 transition-opacity duration-150 hover:bg-[var(--hover)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent ${
 									active ? "" : "opacity-0 group-hover/tab:opacity-100"
 								}`}
 							>
@@ -106,7 +106,7 @@ export function TabStrip() {
 				aria-label="New tab"
 				title={`New tab (${isApple ? "⌘T or ⌥⌘T" : "Ctrl+T or Ctrl+Alt+T"})`}
 				onClick={() => newTab()}
-				className="mb-0.5 ml-1 shrink-0 rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent"
+				className="mb-0.5 ml-1 shrink-0 rounded-md p-1.5 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent"
 			>
 				<PlusIcon className="size-4" />
 			</button>

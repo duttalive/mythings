@@ -56,7 +56,7 @@ export function Checkbox({
 	label?: string;
 	onToggle?: () => void;
 }) {
-	const className = `mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] transition-colors duration-150 motion-reduce:transition-none ${
+	const className = `mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-[0.3125rem] border-[1.5px] transition-colors duration-150 motion-reduce:transition-none ${
 		status === "completed"
 			? "border-accent bg-accent text-on-accent"
 			: status === "canceled"
@@ -90,7 +90,7 @@ export function Checkbox({
 				onClick={(e) => e.stopPropagation()}
 				aria-label={`${status === "canceled" ? "Canceled — reopen" : "Complete"} ${label || "task"}`}
 				// On touch screens the tap area reaches well beyond the 18px box.
-				className="absolute inset-0 m-0 cursor-pointer appearance-none rounded-[5px] focus-visible:outline-none pointer-coarse:-inset-3"
+				className="absolute inset-0 m-0 cursor-pointer appearance-none rounded-[0.3125rem] focus-visible:outline-none pointer-coarse:-inset-3"
 			/>
 			<span className="pointer-events-none flex">{mark}</span>
 		</span>
@@ -101,7 +101,7 @@ export function Checkbox({
 export function ProgressRing({
 	progress,
 	status = "open",
-	className = "size-[18px]",
+	className = "size-4.5",
 	decorative = false,
 }: {
 	progress: Progress;
@@ -324,7 +324,7 @@ function RowShell({
 						? "bg-[var(--selected)]"
 						: swipe.offset !== 0
 							? "bg-[var(--bg)]"
-							: "hover:bg-[var(--hover)]"
+							: "transition-colors duration-150 hover:bg-[var(--hover)]"
 				} ${onSwipe ? "touch-pan-y" : ""}`}
 			>
 				{box}
@@ -546,14 +546,14 @@ export function ProjectRow({
 				<ProgressRing
 					progress={projectProgress(project.id, data.todos)}
 					status={project.status}
-					className="mt-0.5 size-[18px]"
+					className="mt-0.5 size-4.5"
 				/>
 			}
 			title={
 				<Link
 					to="/project/$projectId"
 					params={{ projectId: project.id }}
-					className="font-medium hover:underline focus-visible:underline"
+					className="rounded font-medium underline-offset-2 hover:underline"
 				>
 					{project.title || "New Project"}
 				</Link>

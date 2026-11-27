@@ -104,6 +104,12 @@ test("mobile: search button, bottom-sheet pickers, finger-sized targets", async 
 	expect(await title.evaluate((el) => getComputedStyle(el).fontSize)).toBe(
 		"16px",
 	);
+	// The open task and its row of buttons fit the screen: nothing scrolls sideways.
+	expect(
+		await page
+			.locator("main")
+			.evaluate((el) => el.scrollWidth - el.clientWidth),
+	).toBeLessThanOrEqual(1);
 	await page.locator("main").getByRole("button", { name: "When" }).click();
 	const sheet = page.getByRole("dialog", { name: "When" });
 	await expect(sheet).toBeVisible();

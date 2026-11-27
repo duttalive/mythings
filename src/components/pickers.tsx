@@ -40,7 +40,7 @@ import { PopoverOption } from "./Popover";
 import { ProgressRing } from "./rows";
 
 const inputClass =
-	"mb-1 w-full rounded-md border border-[var(--border)] bg-transparent px-2 py-1.5 text-sm outline-none focus:border-accent";
+	"mb-1 w-full rounded-md border border-[var(--border)] bg-transparent px-2 py-1.5 text-sm outline-none transition-shadow duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30";
 
 function Preview({ text }: { text: string | null }) {
 	return (
@@ -136,7 +136,7 @@ export function WhenPicker({
 				/>
 			</div>
 			<PopoverOption
-				icon={<BoxIcon className="size-4 text-amber-700" />}
+				icon={<BoxIcon className="size-4 text-someday" />}
 				pressed={value.when === "someday"}
 				onSelect={() => choose({ kind: "someday" })}
 			>
@@ -299,7 +299,7 @@ export function TagPicker({
 							aria-checked={on}
 							onClick={() => onToggle(tag.id)}
 							style={{ paddingLeft: `${0.5 + (q ? 0 : depth) * 0.9}rem` }}
-							className="flex w-full items-center gap-2 rounded-md py-1.5 pr-2 text-left hover:bg-[var(--hover)] focus-visible:bg-[var(--hover)] focus-visible:outline-none"
+							className="flex w-full items-center gap-2 rounded-md py-1.5 pr-2 text-left transition-colors duration-150 hover:bg-[var(--hover)] focus-visible:bg-[var(--hover)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent pointer-coarse:py-3"
 						>
 							<span
 								className={`flex size-4 shrink-0 items-center justify-center rounded border ${

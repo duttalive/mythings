@@ -8,6 +8,7 @@ import {
 } from "../components/icons";
 import { Empty, ListPage } from "../components/ListPage";
 import { ProjectRow, RowList, TodoRow } from "../components/rows";
+import { compactSecondaryButtonClass } from "../components/ui";
 import { useListData, useListFilter } from "../data";
 import { emptyTrashRequest } from "../editing/deleteRequests";
 import { VIEWS } from "../lib/views";
@@ -62,7 +63,7 @@ export function TrashPage() {
 			onClick={() => restore(entry)}
 			aria-label={`Restore ${entry.item.title || UNTITLED[entry.kind]}`}
 			title="Restore"
-			className="shrink-0 rounded-md p-1 text-[var(--fg-muted)] opacity-0 group-hover:opacity-100 hover:bg-[var(--selected)] hover:text-[var(--fg)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent [@media(hover:none)]:opacity-100"
+			className="shrink-0 rounded-md p-1 text-[var(--fg-muted)] opacity-0 transition duration-150 pointer-coarse:-my-2 pointer-coarse:p-3.5 group-hover:opacity-100 hover:bg-[var(--selected)] hover:text-[var(--fg)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent [@media(hover:none)]:opacity-100"
 		>
 			<RestoreIcon className="size-4" />
 		</button>
@@ -80,7 +81,7 @@ export function TrashPage() {
 						<button
 							type="button"
 							onClick={() => void emptyTrash()}
-							className="rounded-md border border-[var(--border)] px-2.5 py-1 hover:bg-[var(--hover)]"
+							className={compactSecondaryButtonClass}
 						>
 							Empty Trash
 						</button>
@@ -89,7 +90,7 @@ export function TrashPage() {
 			}
 		>
 			{entries.length === 0 ? (
-				<Empty>
+				<Empty icon={VIEWS.trash.icon("size-10")}>
 					{filtering
 						? "Nothing in Trash matches these filters."
 						: "Trash is empty."}
@@ -121,19 +122,19 @@ export function TrashPage() {
 								return (
 									<li
 										key={entry.item.id}
-										className="group flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-[var(--hover)]"
+										className="group flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors duration-150 hover:bg-[var(--hover)] pointer-coarse:py-3"
 									>
 										{entry.kind === "area" && entry.item.kind === "bucket" ? (
-											<BucketIcon className="size-[18px] text-[var(--fg-muted)]" />
+											<BucketIcon className="size-4.5 text-[var(--fg-muted)]" />
 										) : entry.kind === "area" ? (
-											<AreaIcon className="size-[18px] text-[var(--fg-muted)]" />
+											<AreaIcon className="size-4.5 text-[var(--fg-muted)]" />
 										) : (
-											<span className="w-[18px]" aria-hidden />
+											<span className="w-4.5" aria-hidden />
 										)}
-										<span className="font-medium">
+										<span className="long-title min-w-0 font-medium break-words">
 											{entry.item.title || `New ${label(entry)}`}
 										</span>
-										<span className="flex-1 text-xs text-[var(--fg-muted)]">
+										<span className="flex-1 shrink-0 text-xs text-[var(--fg-muted)]">
 											{label(entry)}
 										</span>
 										{restoreButton(entry)}

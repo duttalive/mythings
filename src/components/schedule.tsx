@@ -31,6 +31,7 @@ import {
 import { BellIcon, RepeatIcon } from "./icons";
 import { PopoverOption } from "./Popover";
 import { WhenPicker } from "./pickers";
+import { compactButtonClass, compactGhostButtonClass, linkClass } from "./ui";
 
 export type ScheduleView = "when" | "repeat" | "reminder";
 
@@ -143,11 +144,7 @@ function NotificationNotice({
 		default: (
 			<>
 				Reminders arrive as notifications.{" "}
-				<button
-					type="button"
-					onClick={onEnable}
-					className="font-medium text-accent hover:underline"
-				>
+				<button type="button" onClick={onEnable} className={linkClass}>
 					Allow notifications
 				</button>
 			</>
@@ -209,7 +206,7 @@ function ReminderPicker({
 					required
 					value={time}
 					onChange={(e) => setTime(e.target.value)}
-					className="rounded-md border border-[var(--border)] bg-transparent px-1.5 py-1 outline-none focus:border-accent"
+					className="rounded-md border border-[var(--border)] bg-transparent px-1.5 py-1 outline-none transition-shadow duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30"
 				/>
 			</label>
 			<NotificationNotice
@@ -217,17 +214,14 @@ function ReminderPicker({
 				onEnable={() => void enable()}
 			/>
 			<div className="mt-3 flex items-center gap-2">
-				<button
-					type="submit"
-					className="rounded-md bg-accent px-2.5 py-1 text-sm font-medium text-on-accent hover:opacity-90"
-				>
+				<button type="submit" className={`${compactButtonClass} text-sm`}>
 					Save
 				</button>
 				{todo.reminderAt !== null && (
 					<button
 						type="button"
 						onClick={() => onSave({ reminderAt: null })}
-						className="rounded-md px-2 py-1 text-sm text-overdue hover:bg-[var(--hover)]"
+						className={`${compactGhostButtonClass} text-sm text-overdue`}
 					>
 						Remove
 					</button>
@@ -235,7 +229,7 @@ function ReminderPicker({
 				<button
 					type="button"
 					onClick={onBack}
-					className="ml-auto rounded-md px-2 py-1 text-sm hover:bg-[var(--hover)]"
+					className={`ml-auto ${compactGhostButtonClass} text-sm`}
 				>
 					Back
 				</button>
@@ -276,7 +270,7 @@ const MONTHS = [
 ];
 
 const fieldClass =
-	"rounded-md border border-[var(--border)] bg-transparent px-1.5 py-1 text-sm outline-none focus:border-accent";
+	"rounded-md border border-[var(--border)] bg-transparent px-1.5 py-1 text-sm outline-none transition-shadow duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30";
 
 function RepeatEditor({
 	item,
@@ -331,7 +325,7 @@ function RepeatEditor({
 						role="radio"
 						aria-checked={form.mode === mode}
 						onClick={() => set({ mode })}
-						className={`rounded-md px-2 py-1 font-medium ${form.mode === mode ? "bg-[var(--segment-on)] text-[var(--on-segment-on)] shadow-sm" : "text-[var(--fg-muted)] hover:text-[var(--fg)]"}`}
+						className={`rounded-md px-2 py-1 font-medium transition-colors duration-150 pointer-coarse:min-h-10 ${form.mode === mode ? "bg-[var(--segment-on)] text-[var(--on-segment-on)] shadow-sm" : "text-[var(--fg-muted)] hover:text-[var(--fg)]"}`}
 					>
 						{mode === "fixed" ? "On a schedule" : "After completion"}
 					</button>
@@ -382,7 +376,7 @@ function RepeatEditor({
 											: [...form.weekdays, day],
 									})
 								}
-								className={`size-7 rounded-full text-xs font-medium ${on ? "bg-accent text-on-accent" : "bg-[var(--hover)] text-[var(--fg-muted)]"}`}
+								className={`size-7 rounded-full text-xs font-medium transition-colors duration-150 pointer-coarse:size-10 ${on ? "bg-accent text-on-accent" : "bg-[var(--hover)] text-[var(--fg-muted)]"}`}
 							>
 								{WEEKDAY_LETTERS[day]}
 							</button>
@@ -397,6 +391,7 @@ function RepeatEditor({
 					<label className="flex items-center gap-2">
 						<input
 							type="radio"
+							className="size-4 shrink-0 accent-[var(--accent)]"
 							checked={form.monthlyBy === "day"}
 							onChange={() => set({ monthlyBy: "day" })}
 						/>
@@ -419,6 +414,7 @@ function RepeatEditor({
 					<label className="flex items-center gap-2">
 						<input
 							type="radio"
+							className="size-4 shrink-0 accent-[var(--accent)]"
 							checked={form.monthlyBy === "nth"}
 							onChange={() => set({ monthlyBy: "nth" })}
 						/>
@@ -497,6 +493,7 @@ function RepeatEditor({
 			<label className="flex items-center gap-2">
 				<input
 					type="checkbox"
+					className="size-4 shrink-0 accent-[var(--accent)]"
 					checked={form.deadlineOffset !== null}
 					onChange={(e) => set({ deadlineOffset: e.target.checked ? 0 : null })}
 				/>
@@ -521,6 +518,7 @@ function RepeatEditor({
 				<label className="flex items-center gap-2">
 					<input
 						type="checkbox"
+						className="size-4 shrink-0 accent-[var(--accent)]"
 						checked={form.reminderTime !== null}
 						onChange={(e) =>
 							set({ reminderTime: e.target.checked ? "09:00" : null })
@@ -542,6 +540,7 @@ function RepeatEditor({
 			<label className="flex items-center gap-2">
 				<input
 					type="checkbox"
+					className="size-4 shrink-0 accent-[var(--accent)]"
 					checked={form.endsOn !== null}
 					onChange={(e) =>
 						set({ endsOn: e.target.checked ? addDays(form.start, 30) : null })
@@ -579,7 +578,7 @@ function RepeatEditor({
 				<button
 					type="submit"
 					disabled={"error" in result}
-					className="rounded-md bg-accent px-2.5 py-1 font-medium text-on-accent hover:opacity-90 disabled:opacity-40"
+					className={compactButtonClass}
 				>
 					{item.repeat ? "Save" : "Repeat"}
 				</button>
@@ -587,7 +586,7 @@ function RepeatEditor({
 					<button
 						type="button"
 						onClick={() => onSave(null)}
-						className="rounded-md px-2 py-1 text-overdue hover:bg-[var(--hover)]"
+						className={`${compactGhostButtonClass} text-overdue`}
 					>
 						Stop Repeating
 					</button>
@@ -595,7 +594,7 @@ function RepeatEditor({
 				<button
 					type="button"
 					onClick={onBack}
-					className="ml-auto rounded-md px-2 py-1 hover:bg-[var(--hover)]"
+					className={`ml-auto ${compactGhostButtonClass}`}
 				>
 					{item.repeat ? "Cancel" : "Back"}
 				</button>

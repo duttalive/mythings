@@ -17,7 +17,7 @@ export function InboxPage() {
 			description={VIEWS.inbox.description}
 		>
 			{todos.length === 0 ? (
-				<Empty>Your Inbox is empty.</Empty>
+				<Empty icon={VIEWS.inbox.icon("size-10")}>Your Inbox is empty.</Empty>
 			) : (
 				<SortableList
 					list={{

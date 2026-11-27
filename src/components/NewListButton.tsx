@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { bySortKey } from "../../shared/views";
 import { useListData } from "../data";
 import { bucketOnPage, useCreateList } from "../editing/useCreateList";
-import { AreaIcon, BucketIcon, PlusIcon } from "./icons";
+import { AreaIcon, BucketIcon, ChevronIcon, PlusIcon } from "./icons";
 import { Popover, PopoverOption, useFocusHandoff } from "./Popover";
 import { ProgressRing } from "./rows";
 
@@ -61,7 +61,7 @@ export function NewListButton() {
 			trigger={
 				<button
 					type="button"
-					className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent"
+					className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent pointer-coarse:py-3"
 				>
 					<PlusIcon className="size-4" />
 					New List
@@ -161,9 +161,9 @@ function BucketStep({
 					type="button"
 					onClick={onBack}
 					aria-label="Back"
-					className="rounded px-1 hover:bg-[var(--hover)] hover:text-[var(--fg)]"
+					className="-ml-1 rounded-md p-1 transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-offset-0 pointer-coarse:p-3"
 				>
-					‹
+					<ChevronIcon className="size-3.5 rotate-180" />
 				</button>
 				New {kind === "project" ? "Project" : "Area"} in which Life Bucket?
 			</p>

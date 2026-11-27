@@ -116,7 +116,7 @@ export function Calendar({
 						type="button"
 						aria-label="Previous month"
 						onClick={() => shiftMonth(-1)}
-						className="rounded p-1 text-[var(--fg-muted)] hover:bg-[var(--hover)] pointer-coarse:p-2.5"
+						className="rounded-md p-1 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-3.5"
 					>
 						<ChevronIcon className="size-4 rotate-180" />
 					</button>
@@ -124,7 +124,7 @@ export function Calendar({
 						type="button"
 						aria-label="Next month"
 						onClick={() => shiftMonth(1)}
-						className="rounded p-1 text-[var(--fg-muted)] hover:bg-[var(--hover)] pointer-coarse:p-2.5"
+						className="rounded-md p-1 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:p-3.5"
 					>
 						<ChevronIcon className="size-4" />
 					</button>
@@ -162,13 +162,13 @@ export function Calendar({
 							aria-label={`${dayLabel.format(utc(date))}${date === today ? ", today" : ""}`}
 							onClick={() => onSelect(date)}
 							onFocus={() => setFocused(date)}
-							className={`mx-auto flex size-8 pointer-coarse:size-10 items-center justify-center rounded-full text-[0.8125rem] tabular-nums focus-visible:outline-2 focus-visible:outline-accent ${
+							className={`mx-auto flex size-8 pointer-coarse:size-10 items-center justify-center rounded-full text-[0.8125rem] tabular-nums transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent ${
 								selected
 									? "bg-accent font-semibold text-on-accent"
 									: date === today
 										? "font-semibold text-accent hover:bg-[var(--hover)]"
 										: "hover:bg-[var(--hover)]"
-							} ${inMonth ? "" : "text-[var(--fg-muted)] opacity-60"} disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent`}
+							} ${inMonth || selected ? "" : "text-[var(--fg-muted)]"} disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent`}
 						>
 							{parseLocalDate(date).day}
 						</button>

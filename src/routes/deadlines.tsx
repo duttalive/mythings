@@ -52,7 +52,7 @@ export function DeadlinesPage() {
 			}
 		>
 			{groups.length === 0 && (
-				<Empty>
+				<Empty icon={VIEWS.deadlines.icon("size-10")}>
 					{query.trim()
 						? `No deadlines match “${query.trim()}”.`
 						: filtering

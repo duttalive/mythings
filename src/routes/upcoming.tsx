@@ -17,7 +17,7 @@ export function UpcomingPage() {
 			const tomorrow = group === groups[0];
 			return (
 				<>
-					<span className="w-7 text-2xl font-bold tabular-nums">
+					<span className="min-w-8 text-2xl font-bold tabular-nums">
 						{parseLocalDate(group.date).day}
 					</span>
 					<span className="text-[var(--fg-muted)]">
@@ -34,7 +34,7 @@ export function UpcomingPage() {
 	return (
 		<ListPage
 			title="Upcoming"
-			icon={<CalendarIcon className="size-7 text-overdue" />}
+			icon={<CalendarIcon className="size-7 text-accent" />}
 			description={VIEWS.upcoming.description}
 			filterable
 		>

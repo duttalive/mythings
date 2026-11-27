@@ -52,7 +52,7 @@ export function WhenIcon({
 	today: LocalDate;
 }) {
 	if (todo.when === "someday")
-		return <BoxIcon className="size-3.5 text-amber-700" />;
+		return <BoxIcon className="size-3.5 text-someday" />;
 	if (todo.startDate === today)
 		return <StarIcon className="size-3.5 text-today" />;
 	return <CalendarIcon className="size-3.5" />;
@@ -60,6 +60,8 @@ export function WhenIcon({
 
 const chipClass =
 	"flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-[var(--fg-muted)] hover:bg-[var(--hover)] pointer-coarse:px-2.5 pointer-coarse:py-2";
+// Buttons fade their highlight in; on touch screens the tap area reaches past the chip.
+const chipButtonClass = `${chipClass} transition-colors duration-150 relative pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1.5`;
 
 export function Chip({
 	icon,
@@ -91,7 +93,7 @@ export function ChipButton({
 		<button
 			type="button"
 			{...props}
-			className={`${chipClass} ${danger ? "text-overdue" : ""} ${className}`}
+			className={`${chipButtonClass} ${danger ? "text-overdue" : ""} ${className}`}
 		>
 			{icon}
 			{children}
@@ -110,7 +112,7 @@ export function IconButton({
 			aria-label={label}
 			title={label}
 			{...props}
-			className="rounded-md p-1.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:p-2.5"
+			className="rounded-md p-1.5 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent pointer-coarse:p-2.5 relative pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1"
 		>
 			{children}
 		</button>
