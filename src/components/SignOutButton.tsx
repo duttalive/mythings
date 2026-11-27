@@ -4,6 +4,12 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useState } from "react";
 import { useAuth } from "../auth/AuthGate";
 import { useSyncStatus } from "../sync/hooks";
+import {
+	dangerButtonClass,
+	dialogContentClass,
+	dialogOverlayClass,
+	secondaryButtonClass,
+} from "./ui";
 
 export function SignOutButton({ className }: { className?: string }) {
 	const { user, signOut } = useAuth();
@@ -19,11 +25,8 @@ export function SignOutButton({ className }: { className?: string }) {
 				</button>
 			</Dialog.Trigger>
 			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 z-50 animate-fade-in bg-black/40" />
-				<Dialog.Content
-					role="alertdialog"
-					className="fixed top-1/2 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 animate-fade-in rounded-2xl bg-[var(--card)] p-5 text-[var(--fg)] shadow-[var(--card-shadow)] ring-1 ring-[var(--border)] outline-none"
-				>
+				<Dialog.Overlay className={dialogOverlayClass} />
+				<Dialog.Content role="alertdialog" className={dialogContentClass}>
 					<Dialog.Title className="text-base font-semibold">
 						Sign out of mythings?
 					</Dialog.Title>
@@ -40,7 +43,7 @@ export function SignOutButton({ className }: { className?: string }) {
 								// The safe choice is the default.
 								// biome-ignore lint/a11y/noAutofocus: focus the non-destructive action
 								autoFocus
-								className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent pointer-coarse:px-4 pointer-coarse:py-2.5"
+								className={secondaryButtonClass}
 							>
 								Cancel
 							</button>
@@ -57,7 +60,7 @@ export function SignOutButton({ className }: { className?: string }) {
 									setOpen(false);
 								}
 							}}
-							className="rounded-lg bg-overdue px-3 py-1.5 text-sm font-medium text-on-overdue hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60 pointer-coarse:px-4 pointer-coarse:py-2.5"
+							className={dangerButtonClass}
 						>
 							{busy ? "Signing out…" : "Sign out"}
 						</button>

@@ -10,7 +10,10 @@
 	--color-evening: #5b5fc7;
 	--color-overdue: var(--overdue);
 	--color-on-overdue: var(--on-overdue);
-	--color-done: #30a46c;
+	--color-done: var(--done);
+	--color-someday: var(--someday);
+	--color-anytime: var(--anytime);
+	--color-scrim: var(--scrim);
 }
 
 /* Light by default; dark follows the system unless the user picked a theme (data-theme on <html>). */
@@ -35,6 +38,14 @@
 	--on-accent: #ffffff;
 	--overdue: #cf2a30;
 	--on-overdue: #ffffff;
+	/* View icons, picked to stand out at least 3:1 from the page, sidebar and selected row. */
+	--done: #218358;
+	--someday: #a8490a;
+	--anytime: #007d73;
+	/* The Today star keeps its yellow; on light backgrounds a darker edge makes it readable. */
+	--today-edge: #a87300;
+	/* Behind dialogs, the phone sidebar and bottom sheets. */
+	--scrim: rgb(0 0 0 / 0.35);
 	color-scheme: light;
 }
 
@@ -59,6 +70,11 @@
 		--on-accent: #0b1530;
 		--overdue: #ff6369;
 		--on-overdue: #1c1c1e;
+		--done: #30a46c;
+		--someday: #e08a3c;
+		--anytime: #2bb5a8;
+		--today-edge: #f5c518;
+		--scrim: rgb(0 0 0 / 0.5);
 		color-scheme: dark;
 	}
 }
@@ -83,6 +99,11 @@
 	--on-accent: #0b1530;
 	--overdue: #ff6369;
 	--on-overdue: #1c1c1e;
+	--done: #30a46c;
+	--someday: #e08a3c;
+	--anytime: #2bb5a8;
+	--today-edge: #f5c518;
+	--scrim: rgb(0 0 0 / 0.5);
 	color-scheme: dark;
 }
 
@@ -105,6 +126,29 @@ body {
 	font-family: var(--font-sans);
 	font-size: 0.9375rem;
 	-webkit-font-smoothing: antialiased;
+}
+
+/* One focus ring for everything you can tab to. It has no specificity and sits
+   in the base layer, so a component's own outline utilities still win. */
+@layer base {
+	:where(
+		a,
+		button,
+		summary,
+		[role="button"],
+		[role="tab"],
+		[role="radio"],
+		[role="switch"],
+		[role="separator"],
+		[tabindex]:not([tabindex="-1"])
+	):focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+	/* The ring shows in the accent colour straight away, even on controls whose colours fade. */
+	:where(a, button, summary, [role="button"], [role="tab"], [tabindex]) {
+		outline-color: var(--accent);
+	}
 }
 
 /* Checkmark pop when a to-do is completed. */
@@ -161,7 +205,7 @@ body {
 		position: fixed;
 		inset: 0;
 		z-index: -1;
-		background: rgb(0 0 0 / 0.3);
+		background: var(--scrim);
 		animation: fade-in 150ms ease-out;
 	}
 	[data-popover-content] {
@@ -391,9 +435,14 @@ body {
 	color: var(--fg-muted);
 	border-radius: 0.3em;
 	cursor: pointer;
+	transition: background-color 150ms;
 }
 .notes-editor .toggle-button:hover {
 	background: var(--hover);
+}
+.notes-editor .toggle-button:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
 }
 .notes-editor .toggle-button::before {
 	content: "";

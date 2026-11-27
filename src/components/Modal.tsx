@@ -20,10 +20,11 @@ export function Modal({
 	return (
 		<Dialog.Root open onOpenChange={(open) => !open && onClose()}>
 			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 z-50 animate-fade-in bg-black/30" />
+				<Dialog.Overlay className="fixed inset-0 z-50 animate-fade-in bg-scrim" />
 				<Dialog.Content
 					aria-describedby={description ? undefined : undefined}
-					className={`fixed top-[12vh] left-1/2 z-50 animate-fade-in w-[calc(100vw-2rem)] ${width} -translate-x-1/2 rounded-2xl bg-[var(--card)] text-[var(--fg)] shadow-[var(--card-shadow)] ring-1 ring-[var(--border)] outline-none`}
+					// Centred without a transform, which would trap the bottom sheets of pickers inside the dialog.
+					className={`fixed inset-x-0 top-[12vh] z-50 mx-auto animate-fade-in w-[calc(100vw-2rem)] ${width} rounded-2xl bg-[var(--card)] text-[var(--fg)] shadow-[var(--card-shadow)] ring-1 ring-[var(--border)] outline-none`}
 				>
 					<Dialog.Title
 						className={

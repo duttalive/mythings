@@ -1,4 +1,11 @@
 import * as Dialog from "@radix-ui/react-dialog";
+import {
+	buttonClass,
+	dialogContentClass,
+	dialogOverlayClass,
+	ghostButtonClass,
+	secondaryButtonClass,
+} from "./ui";
 
 /** Asks what to do with a project's remaining to-dos when it's completed (SPEC §5.2). */
 export function CompleteProjectDialog({
@@ -17,12 +24,12 @@ export function CompleteProjectDialog({
 	return (
 		<Dialog.Root open={open} onOpenChange={(o) => !o && onCancel()}>
 			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-				<Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-[var(--card)] p-5 text-[var(--fg)] shadow-[var(--card-shadow)] ring-1 ring-[var(--border)] outline-none">
-					<Dialog.Title className="text-base font-semibold">
+				<Dialog.Overlay className={dialogOverlayClass} />
+				<Dialog.Content className={dialogContentClass}>
+					<Dialog.Title className="text-base font-semibold break-words">
 						Complete “{projectTitle}”?
 					</Dialog.Title>
-					<Dialog.Description className="mt-1.5 text-sm text-[var(--fg-muted)]">
+					<Dialog.Description className="mt-2 text-sm text-[var(--fg-muted)]">
 						This project still has {remaining} open{" "}
 						{remaining === 1 ? "task" : "tasks"}. What should happen to{" "}
 						{remaining === 1 ? "it" : "them"}?
@@ -31,20 +38,18 @@ export function CompleteProjectDialog({
 						<button
 							type="button"
 							onClick={() => onChoose("completed")}
-							className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-on-accent hover:opacity-90"
+							className={buttonClass}
 						>
 							Mark remaining as Completed
 						</button>
 						<button
 							type="button"
 							onClick={() => onChoose("canceled")}
-							className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--hover)]"
+							className={secondaryButtonClass}
 						>
 							Mark remaining as Canceled
 						</button>
-						<Dialog.Close className="rounded-lg px-3 py-2 text-sm text-[var(--fg-muted)] hover:bg-[var(--hover)]">
-							Cancel
-						</Dialog.Close>
+						<Dialog.Close className={ghostButtonClass}>Cancel</Dialog.Close>
 					</div>
 				</Dialog.Content>
 			</Dialog.Portal>

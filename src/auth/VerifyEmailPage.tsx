@@ -2,11 +2,16 @@ import { type FormEvent, useEffect, useId, useState } from "react";
 import type { Me } from "../../shared/schema";
 import { api } from "../api";
 import { PasswordInput } from "../components/PasswordInput";
+import {
+	errorClass,
+	largeButtonClass,
+	largeInputClass,
+	standaloneLinkClass,
+} from "../components/ui";
 import { markUpgraded, newPasswordKeys } from "../crypto/account";
 import { AgreementLine, messageFor } from "./LoginPage";
 
-const inputClass =
-	"w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accent/25";
+const inputClass = largeInputClass;
 
 /**
  * /verify-email?token=…, from the sign-up email (SPEC §8). Opening it
@@ -28,6 +33,7 @@ export function VerifyEmailPage({
 	const nameId = useId();
 	const passwordId = useId();
 	const errorId = useId();
+	const hintId = useId();
 
 	useEffect(() => {
 		if (!token) return;
@@ -117,36 +123,37 @@ export function VerifyEmailPage({
 								minLength={8}
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
-								aria-describedby={error ? errorId : undefined}
+								aria-describedby={error ? `${hintId} ${errorId}` : hintId}
 								className={inputClass}
 							/>
-							<p className="text-xs text-[var(--fg-muted)]">
+							<p id={hintId} className="text-xs text-[var(--fg-muted)]">
 								At least 8 characters.
 							</p>
 						</div>
 						{error && (
-							<p id={errorId} role="alert" className="text-sm text-overdue">
+							<p id={errorId} role="alert" className={errorClass}>
 								{error}
 							</p>
 						)}
 						<button
 							type="submit"
 							disabled={busy}
-							className="mt-2 rounded-lg bg-accent px-3 py-2 font-medium text-on-accent transition-opacity hover:opacity-90 disabled:opacity-60"
+							aria-busy={busy}
+							className={`mt-2 ${largeButtonClass}`}
 						>
-							{busy ? "…" : "Create account"}
+							{busy ? "Creating account…" : "Create account"}
 						</button>
 						<AgreementLine />
 					</form>
 				) : (
 					error && (
 						<div className="mt-8 text-center">
-							<p role="alert" className="text-overdue">
+							<p role="alert" className={errorClass}>
 								{error}
 							</p>
 							<a
 								href="/signup"
-								className="mt-6 inline-block font-medium text-accent"
+								className={`mt-6 inline-block ${standaloneLinkClass}`}
 							>
 								Sign up again
 							</a>
@@ -154,7 +161,7 @@ export function VerifyEmailPage({
 					)
 				)}
 				<p className="mt-6 text-center text-sm">
-					<a href="/login" className="font-medium text-accent">
+					<a href="/login" className={standaloneLinkClass}>
 						Already have an account? Sign in
 					</a>
 				</p>

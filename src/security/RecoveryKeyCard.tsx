@@ -1,6 +1,7 @@
 // Shows a new recovery key with ways to keep it, and asks to confirm it's saved.
 
 import { useId, useState } from "react";
+import { secondaryButtonClass } from "../components/ui";
 
 export function RecoveryKeyCard({
 	recoveryKey,
@@ -52,25 +53,28 @@ export function RecoveryKeyCard({
 				<button
 					type="button"
 					onClick={() => void copy()}
-					className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--hover)]"
+					className={secondaryButtonClass}
 				>
-					{copied ? "Copied" : "Copy"}
+					<span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
 				</button>
 				<button
 					type="button"
 					onClick={download}
-					className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--hover)]"
+					className={secondaryButtonClass}
 				>
 					Download
 				</button>
 			</div>
-			<label htmlFor={checkId} className="flex items-start gap-2 text-sm">
+			<label
+				htmlFor={checkId}
+				className="flex cursor-pointer items-start gap-2 text-sm pointer-coarse:py-1"
+			>
 				<input
 					id={checkId}
 					type="checkbox"
 					checked={saved}
 					onChange={(e) => onSavedChange(e.target.checked)}
-					className="mt-1"
+					className="mt-0.5 size-4 shrink-0 accent-[var(--accent)]"
 				/>
 				I've saved my recovery key somewhere safe.
 			</label>

@@ -12,6 +12,12 @@ import {
 	useRef,
 	useState,
 } from "react";
+import {
+	dangerButtonClass,
+	dialogContentClass,
+	dialogOverlayClass,
+	secondaryButtonClass,
+} from "./ui";
 
 export type DeleteRequest = {
 	/** e.g. Delete project “Taxes”? */
@@ -69,8 +75,6 @@ export function ConfirmDeleteProvider({ children }: { children: ReactNode }) {
 	};
 
 	const permanent = request?.permanent ?? false;
-	const buttonBase =
-		"rounded-lg px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent pointer-coarse:px-4 pointer-coarse:py-2.5";
 
 	return (
 		<ConfirmContext value={confirm}>
@@ -82,10 +86,7 @@ export function ConfirmDeleteProvider({ children }: { children: ReactNode }) {
 				}}
 			>
 				<Dialog.Portal>
-					<Dialog.Overlay
-						data-dialog-overlay
-						className="fixed inset-0 z-50 animate-fade-in bg-black/40"
-					/>
+					<Dialog.Overlay data-dialog-overlay className={dialogOverlayClass} />
 					<Dialog.Content
 						role="alertdialog"
 						// Cancel gets focus. A menu that just closed hands focus back to its
@@ -97,7 +98,7 @@ export function ConfirmDeleteProvider({ children }: { children: ReactNode }) {
 						}}
 						// Keep the to-do or popover underneath from reacting to these keys.
 						onKeyDown={(e) => e.stopPropagation()}
-						className="fixed top-1/2 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 animate-fade-in rounded-2xl bg-[var(--card)] p-5 text-[var(--fg)] shadow-[var(--card-shadow)] ring-1 ring-[var(--border)] outline-none"
+						className={dialogContentClass}
 					>
 						<Dialog.Title className="text-base font-semibold break-words">
 							{request?.title}
@@ -127,7 +128,7 @@ export function ConfirmDeleteProvider({ children }: { children: ReactNode }) {
 								<button
 									ref={cancelRef}
 									type="button"
-									className={`${buttonBase} border border-[var(--border)] hover:bg-[var(--hover)]`}
+									className={secondaryButtonClass}
 								>
 									Cancel
 								</button>
@@ -136,7 +137,7 @@ export function ConfirmDeleteProvider({ children }: { children: ReactNode }) {
 								type="button"
 								disabled={permanent && !understood}
 								onClick={() => finish(true)}
-								className={`${buttonBase} bg-overdue text-on-overdue hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50`}
+								className={dangerButtonClass}
 							>
 								{request?.confirmLabel ??
 									(permanent ? "Delete Forever" : "Move to Trash")}

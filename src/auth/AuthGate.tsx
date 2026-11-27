@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { Me } from "../../shared/schema";
 import { ApiError, api } from "../api";
+import { largeButtonClass } from "../components/ui";
 import { forgetKeys } from "../crypto/account";
 import { resetCrypto } from "../crypto/session";
 import { HomePage } from "../home/HomePage";
@@ -183,9 +184,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
 function OfflineStart({ onRetry }: { onRetry: () => void }) {
 	return (
 		<main className="flex min-h-full items-center justify-center px-4 py-12">
-			<div className="max-w-sm text-center">
+			<div className="w-full max-w-sm text-center">
 				<img src="/favicon.svg" alt="" className="mx-auto size-12" />
-				<h1 className="mt-5 text-xl font-bold">You're offline</h1>
+				<h1 className="mt-5 text-2xl font-bold">You're offline</h1>
 				<p className="mt-2 text-sm text-[var(--fg-muted)]">
 					mythings needs a connection the first time you use it on this device.
 					After that it works offline.
@@ -193,7 +194,7 @@ function OfflineStart({ onRetry }: { onRetry: () => void }) {
 				<button
 					type="button"
 					onClick={onRetry}
-					className="mt-6 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:opacity-90"
+					className={`mt-6 ${largeButtonClass}`}
 				>
 					Try again
 				</button>

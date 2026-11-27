@@ -21,7 +21,16 @@ import { APP_VERSION } from "../changelog";
 import { ChevronIcon, GearIcon } from "../components/icons";
 import { ListPage } from "../components/ListPage";
 import { PasswordInput } from "../components/PasswordInput";
+import { ActionRow, Field, Segmented } from "../components/SettingsRows";
 import { SignOutButton } from "../components/SignOutButton";
+import {
+	buttonClass,
+	dangerButtonClass,
+	dangerOutlineClass,
+	inputClass,
+	quietLinkClass,
+	secondaryButtonClass,
+} from "../components/ui";
 import {
 	confirmBody,
 	markUpgraded,
@@ -128,7 +137,7 @@ export function SettingsPage() {
 			)}
 
 			<Section id="appearance" title="Appearance">
-				<Field label="Theme">
+				<Field label="Theme" group>
 					{(ids) => (
 						<Segmented
 							ids={ids}
@@ -144,6 +153,7 @@ export function SettingsPage() {
 				</Field>
 				<TextSizeField />
 				<Field
+					group
 					label="Long task titles"
 					hint="How titles show in lists. An open task always shows the whole title and checklist."
 				>
@@ -177,7 +187,7 @@ export function SettingsPage() {
 							<button
 								type="button"
 								onClick={() => save({ tz: device })}
-								className="text-left text-accent hover:underline"
+								className={`text-left ${quietLinkClass} pointer-coarse:py-1.5`}
 							>
 								Use this device's time zone ({device.replaceAll("_", " ")})
 							</button>
@@ -234,6 +244,7 @@ export function SettingsPage() {
 					}
 				/>
 				<Field
+					group
 					label="Move completed tasks to the Logbook"
 					hint="Daily keeps them in their lists, checked, until the end of the day."
 				>
@@ -349,6 +360,7 @@ function TextSizeField() {
 	const [size, setSize] = useState<TextSize>(loadTextSize);
 	return (
 		<Field
+			group
 			label="Text size"
 			hint="This device only. On a computer you can also drag the sidebar's edge to resize it."
 		>
@@ -425,13 +437,21 @@ function DataSettings() {
 	};
 
 	return (
-		<div className="py-3">
-			<p className="text-sm">Export and import</p>
-			<p className="text-xs text-[var(--fg-muted)]">
-				Export everything as a JSON file. Importing a file adds copies of its
-				lists and tasks; nothing you have is changed.
-			</p>
-			<div className="mt-3 flex flex-wrap gap-2">
+		<ActionRow
+			text="Export and import"
+			hint="Export everything as a JSON file. Importing a file adds copies of its lists and tasks; nothing you have is changed."
+			note={
+				status && (
+					<p
+						role={status.error ? "alert" : "status"}
+						className={`mt-2 text-sm ${status.error ? "text-overdue" : "text-[var(--fg-muted)]"}`}
+					>
+						{status.text}
+					</p>
+				)
+			}
+		>
+			<span className="contents" aria-busy={busy}>
 				<button
 					type="button"
 					disabled={busy}
@@ -466,16 +486,8 @@ function DataSettings() {
 							);
 					}}
 				/>
-			</div>
-			{status && (
-				<p
-					role={status.error ? "alert" : "status"}
-					className={`mt-2 text-sm ${status.error ? "text-overdue" : "text-[var(--fg-muted)]"}`}
-				>
-					{status.text}
-				</p>
-			)}
-		</div>
+			</span>
+		</ActionRow>
 	);
 }
 
@@ -498,7 +510,7 @@ function NameSetting() {
 	};
 
 	return (
-		<form onSubmit={submit} className="flex flex-col gap-1.5 py-3 text-sm">
+		<form onSubmit={submit} className="flex flex-col gap-1 py-3 text-sm">
 			<label htmlFor={id}>Name</label>
 			<div className="flex gap-2">
 				<input
@@ -601,6 +613,7 @@ function ChangePassword() {
 	} | null>(null);
 	const currentId = useId();
 	const nextId = useId();
+	const nextHintId = useId();
 
 	const submit = async (e: FormEvent) => {
 		e.preventDefault();
@@ -689,8 +702,12 @@ function ChangePassword() {
 					minLength={8}
 					value={next}
 					onChange={(e) => setNext(e.target.value)}
+					aria-describedby={nextHintId}
 					className={inputClass}
 				/>
+				<p id={nextHintId} className="text-xs text-[var(--fg-muted)]">
+					At least 8 characters.
+				</p>
 			</div>
 			{status?.error && (
 				<p role="alert" className="text-sm text-overdue">
@@ -715,19 +732,6 @@ function ChangePassword() {
 		</form>
 	);
 }
-
-// ---------------------------------------------------------------------------
-// Building blocks
-
-const inputClass =
-	"w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:py-2.5";
-const buttonBase =
-	"inline-flex shrink-0 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed pointer-coarse:py-2.5";
-// Disabled buttons go grey instead of a faded colour, so they don't look pressable.
-const buttonClass = `${buttonBase} bg-accent text-on-accent hover:opacity-90 disabled:bg-[var(--segment)] disabled:text-[var(--fg-muted)] disabled:hover:opacity-100`;
-const secondaryButtonClass = `${buttonBase} border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--hover)] disabled:text-[var(--fg-muted)] disabled:hover:bg-[var(--bg)]`;
-const dangerButtonClass = `${buttonBase} bg-overdue text-on-overdue hover:opacity-90`;
-const dangerOutlineClass = `${buttonBase} border border-overdue/40 bg-[var(--bg)] text-overdue hover:bg-overdue/10`;
 
 /** Jump links to each section; stays under the top bar while scrolling, and marks where you are. */
 function SectionNav({
@@ -844,7 +848,7 @@ function SectionNav({
 		<nav
 			ref={bar}
 			aria-label="Settings sections"
-			className="sticky top-[calc(2.75rem+env(safe-area-inset-top))] z-[9] -mx-4 mb-6 flex gap-1 overflow-x-auto md:flex-wrap md:overflow-visible bg-[var(--bg)]/90 px-4 py-2 backdrop-blur [scrollbar-width:none]"
+			className="sticky top-[calc(2.75rem+env(safe-area-inset-top))] z-[9] -mx-4 mb-6 flex gap-1 overflow-x-auto md:flex-wrap md:overflow-visible bg-[var(--bg)]/90 px-4 py-2 backdrop-blur [scrollbar-width:none] max-md:[mask-image:linear-gradient(to_right,transparent,black_1rem,black_calc(100%-1rem),transparent)]"
 		>
 			{sections.map(([id, title]) => (
 				<a
@@ -856,7 +860,7 @@ function SectionNav({
 						e.preventDefault();
 						jumpTo(id);
 					}}
-					className="shrink-0 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent aria-[current=true]:bg-[var(--selected)] aria-[current=true]:text-[var(--fg)] pointer-coarse:py-2"
+					className="shrink-0 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent aria-[current=true]:bg-[var(--selected)] aria-[current=true]:text-[var(--fg)] pointer-coarse:py-2 relative pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1.5"
 				>
 					{title}
 				</a>
@@ -901,63 +905,6 @@ function Section({
 	);
 }
 
-type FieldIds = { id: string; labelId: string; hintId?: string };
-
-/** A setting with a control: side by side on wider screens, stacked on phones. */
-function Field({
-	label,
-	hint,
-	children,
-}: {
-	label: string;
-	hint?: ReactNode;
-	children: (ids: FieldIds) => ReactNode;
-}) {
-	const id = useId();
-	const labelId = useId();
-	const hintId = useId();
-	return (
-		<div className="grid min-h-12 gap-2 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,17rem)] sm:items-center sm:gap-6">
-			<div className="min-w-0">
-				<label id={labelId} htmlFor={id} className="text-sm">
-					{label}
-				</label>
-				{hint && (
-					<p id={hintId} className="mt-0.5 text-xs text-[var(--fg-muted)]">
-						{hint}
-					</p>
-				)}
-			</div>
-			{children({ id, labelId, hintId: hint ? hintId : undefined })}
-		</div>
-	);
-}
-
-/** Text (and a note) with buttons: side by side on wider screens; on phones the buttons go underneath. */
-function ActionRow({
-	text,
-	hint,
-	children,
-}: {
-	text: ReactNode;
-	hint?: ReactNode;
-	children?: ReactNode;
-}) {
-	return (
-		<div className="flex min-h-12 flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-			<div className="min-w-0 text-sm">
-				<div>{text}</div>
-				{hint && (
-					<div className="mt-0.5 text-xs text-[var(--fg-muted)]">{hint}</div>
-				)}
-			</div>
-			{children && (
-				<div className="flex shrink-0 flex-wrap gap-2">{children}</div>
-			)}
-		</div>
-	);
-}
-
 /** A row that opens another page. */
 function LinkRow({ href, children }: { href: string; children: ReactNode }) {
 	return (
@@ -968,47 +915,6 @@ function LinkRow({ href, children }: { href: string; children: ReactNode }) {
 			{children}
 			<ChevronIcon className="size-4 text-[var(--fg-muted)]" />
 		</a>
-	);
-}
-
-/** A row of mutually exclusive buttons (a radio group). */
-function Segmented<T extends string>({
-	ids,
-	value,
-	options,
-	onChange,
-}: {
-	ids: FieldIds;
-	value: T;
-	options: [T, string][];
-	onChange: (value: T) => void;
-}) {
-	const name = useId();
-	return (
-		<div
-			id={ids.id}
-			role="radiogroup"
-			aria-labelledby={ids.labelId}
-			aria-describedby={ids.hintId}
-			className="flex rounded-lg bg-[var(--segment)] p-0.5 text-sm ring-1 ring-[var(--border)] ring-inset"
-		>
-			{options.map(([option, label]) => (
-				<label
-					key={option}
-					className="relative flex-1 cursor-pointer rounded-md px-2 py-1 text-center text-[var(--fg-muted)] transition-colors duration-150 hover:text-[var(--fg)] has-[:checked]:bg-[var(--segment-on)] has-[:checked]:font-medium has-[:checked]:text-[var(--on-segment-on)] has-[:checked]:shadow-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent pointer-coarse:py-2"
-				>
-					<input
-						type="radio"
-						name={name}
-						value={option}
-						checked={value === option}
-						onChange={() => onChange(option)}
-						className="sr-only"
-					/>
-					{label}
-				</label>
-			))}
-		</div>
 	);
 }
 
@@ -1054,7 +960,7 @@ function Toggle({
 				aria-describedby={hint ? hintId : undefined}
 				checked={checked}
 				onChange={(e) => onChange(e.target.checked)}
-				className="relative h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full bg-[var(--checkbox)] transition-colors duration-150 before:absolute before:top-0.5 before:left-0.5 before:size-4 before:rounded-full before:bg-white before:shadow-sm before:transition-transform before:duration-150 checked:bg-accent checked:before:translate-x-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none motion-reduce:before:transition-none pointer-coarse:h-7 pointer-coarse:w-12 pointer-coarse:before:size-6 pointer-coarse:checked:before:translate-x-5"
+				className="relative h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full bg-[var(--checkbox)] transition-colors duration-150 before:absolute before:top-0.5 before:left-0.5 before:size-4 before:rounded-full before:bg-white before:shadow-sm before:transition-transform before:duration-150 checked:bg-accent checked:before:translate-x-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none motion-reduce:before:transition-none pointer-coarse:h-7 pointer-coarse:w-12 pointer-coarse:before:size-6 pointer-coarse:checked:before:translate-x-5 pointer-coarse:after:absolute pointer-coarse:after:-inset-2"
 			/>
 		</div>
 	);

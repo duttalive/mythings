@@ -1,10 +1,19 @@
 // Settings → Security: end-to-end encryption, the recovery key, and this
 // device's passcode (SPEC §8.5).
 
-import { type FormEvent, type ReactNode, useId, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { ApiError } from "../api";
 import { useAuth } from "../auth/AuthGate";
 import { PasswordInput } from "../components/PasswordInput";
+import { ActionRow, Field, Segmented } from "../components/SettingsRows";
+import {
+	secondaryButtonClass as buttonClass,
+	dangerButtonClass as dangerClass,
+	dangerOutlineClass,
+	errorClass,
+	inputClass,
+	buttonClass as primaryClass,
+} from "../components/ui";
 import {
 	disableEncryption,
 	enableEncryption,
@@ -22,14 +31,7 @@ import {
 } from "./autoLock";
 import { RecoveryKeyCard } from "./RecoveryKeyCard";
 
-const buttonClass =
-	"rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60 pointer-coarse:py-2.5";
-const primaryClass =
-	"rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-on-accent hover:opacity-90 disabled:opacity-60 pointer-coarse:py-2.5";
-const dangerClass =
-	"rounded-lg bg-overdue px-3 py-1.5 text-sm font-medium text-on-overdue hover:opacity-90 disabled:opacity-60 pointer-coarse:py-2.5";
-const inputClass =
-	"w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 outline-none focus:border-accent focus:ring-2 focus:ring-accent/25";
+const statusClass = "mt-1 text-xs text-[var(--fg-muted)]";
 
 export const MIN_PASSCODE_LENGTH = 6;
 
@@ -57,11 +59,23 @@ export function SecuritySettings() {
 
 	return (
 		<>
-			<Row
+			<ActionRow
 				text={
 					user.encrypted
-						? "End-to-end encryption is on. Your tasks, notes, checklists and list names are encrypted on your devices; only you can read them."
-						: "End-to-end encryption is off. Turn it on so your tasks are encrypted on your devices and only you can read them."
+						? "End-to-end encryption is on."
+						: "End-to-end encryption is off."
+				}
+				hint={
+					user.encrypted
+						? "Your tasks, notes, checklists and list names are encrypted on your devices; only you can read them."
+						: "Turn it on so your tasks are encrypted on your devices and only you can read them."
+				}
+				note={
+					status && (
+						<p role="status" className={statusClass}>
+							{status}
+						</p>
+					)
 				}
 			>
 				{panel === null &&
@@ -77,7 +91,7 @@ export function SecuritySettings() {
 							<button
 								type="button"
 								onClick={() => setPanel("disable")}
-								className={buttonClass}
+								className={dangerOutlineClass}
 							>
 								Turn off…
 							</button>
@@ -94,12 +108,7 @@ export function SecuritySettings() {
 							Turn on encryption…
 						</button>
 					))}
-			</Row>
-			{status && (
-				<p role="status" className="py-3 text-sm text-[var(--fg-muted)]">
-					{status}
-				</p>
-			)}
+			</ActionRow>
 			{panel === "enable" && (
 				<KeyPanel
 					intro="Before you turn it on, save your recovery key. If you forget your password, it's the only way to read your tasks: we can't reset encryption for you."
@@ -150,26 +159,17 @@ export function SecuritySettings() {
 	);
 }
 
-/** Text with buttons: side by side on wider screens; on phones the buttons go underneath, so the text keeps the full width. */
-function Row({ text, children }: { text: ReactNode; children?: ReactNode }) {
-	return (
-		<div className="flex min-h-12 flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-			<p className="min-w-0 text-sm sm:flex-1">{text}</p>
-			{children && (
-				<div className="flex shrink-0 flex-wrap gap-2">{children}</div>
-			)}
-		</div>
-	);
-}
-
 function PasswordField({
 	value,
 	onChange,
 	label = "Your password",
+	describedBy,
 }: {
 	value: string;
 	onChange: (value: string) => void;
 	label?: string;
+	/** The id of an error about this field, read out with it. */
+	describedBy?: string;
 }) {
 	const id = useId();
 	const { user } = useAuth();
@@ -188,6 +188,7 @@ function PasswordField({
 				autoComplete="current-password"
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
+				aria-describedby={describedBy}
 				className={inputClass}
 			/>
 		</div>
@@ -211,6 +212,7 @@ function KeyPanel({
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
+	const errorId = useId();
 
 	const submit = async (e: FormEvent) => {
 		e.preventDefault();
@@ -232,9 +234,13 @@ function KeyPanel({
 				saved={saved}
 				onSavedChange={setSaved}
 			/>
-			<PasswordField value={password} onChange={setPassword} />
+			<PasswordField
+				value={password}
+				onChange={setPassword}
+				describedBy={error ? errorId : undefined}
+			/>
 			{error && (
-				<p role="alert" className="text-sm text-overdue">
+				<p id={errorId} role="alert" className={errorClass}>
 					{error}
 				</p>
 			)}
@@ -242,9 +248,10 @@ function KeyPanel({
 				<button
 					type="submit"
 					disabled={busy || !saved || password === ""}
+					aria-busy={busy}
 					className={primaryClass}
 				>
-					{busy ? "…" : action}
+					{busy ? "Saving…" : action}
 				</button>
 				<button type="button" onClick={onCancel} className={buttonClass}>
 					Cancel
@@ -270,6 +277,7 @@ function PasswordPanel({
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
+	const errorId = useId();
 	const submit = async (e: FormEvent) => {
 		e.preventDefault();
 		setBusy(true);
@@ -284,9 +292,13 @@ function PasswordPanel({
 	return (
 		<form onSubmit={submit} className="flex flex-col gap-3 py-3">
 			<p className="text-sm text-[var(--fg-muted)]">{intro}</p>
-			<PasswordField value={password} onChange={setPassword} />
+			<PasswordField
+				value={password}
+				onChange={setPassword}
+				describedBy={error ? errorId : undefined}
+			/>
 			{error && (
-				<p role="alert" className="text-sm text-overdue">
+				<p id={errorId} role="alert" className={errorClass}>
 					{error}
 				</p>
 			)}
@@ -294,9 +306,10 @@ function PasswordPanel({
 				<button
 					type="submit"
 					disabled={busy || password === ""}
+					aria-busy={busy}
 					className={danger ? dangerClass : primaryClass}
 				>
-					{busy ? "…" : action}
+					{busy ? "Saving…" : action}
 				</button>
 				<button type="button" onClick={onCancel} className={buttonClass}>
 					Cancel
@@ -326,11 +339,14 @@ function PasscodeSettings({
 	const [autoLock, setAutoLock] = useState<AutoLock>(loadAutoLock);
 	const firstId = useId();
 	const secondId = useId();
-	const autoLockLabel = useId();
+	const errorId = useId();
 
 	if (!encrypted)
 		return (
-			<Row text="Passcode on this device: turn on encryption first, so a passcode can keep this device's copy unreadable while it's locked." />
+			<ActionRow
+				text="Passcode on this device"
+				hint="Turn on encryption first, so a passcode can keep this device's copy unreadable while it's locked."
+			/>
 		);
 
 	const submit = async (e: FormEvent) => {
@@ -354,11 +370,23 @@ function PasscodeSettings({
 
 	return (
 		<>
-			<Row
+			<ActionRow
 				text={
 					crypto.passcode
 						? "This device is protected by a passcode."
-						: "Add a passcode to lock mythings on this device. While it's locked, nothing on this device can be read without the passcode."
+						: "Add a passcode to lock mythings on this device."
+				}
+				hint={
+					crypto.passcode
+						? undefined
+						: "While it's locked, nothing on this device can be read without the passcode."
+				}
+				note={
+					status && (
+						<p role="status" className={statusClass}>
+							{status}
+						</p>
+					)
 				}
 			>
 				{!open && (
@@ -385,19 +413,14 @@ function PasscodeSettings({
 									await removePasscode(user.id);
 									setStatus("Passcode removed.");
 								}}
-								className={buttonClass}
+								className={dangerOutlineClass}
 							>
 								Remove
 							</button>
 						)}
 					</span>
 				)}
-			</Row>
-			{status && (
-				<p role="status" className="py-3 text-sm text-[var(--fg-muted)]">
-					{status}
-				</p>
-			)}
+			</ActionRow>
 			{open && (
 				<form onSubmit={submit} className="flex flex-col gap-3 py-3">
 					<p className="text-sm text-[var(--fg-muted)]">
@@ -421,11 +444,12 @@ function PasscodeSettings({
 							autoComplete="off"
 							value={second}
 							onChange={(e) => setSecond(e.target.value)}
+							aria-describedby={error ? errorId : undefined}
 							className={inputClass}
 						/>
 					</div>
 					{error && (
-						<p role="alert" className="text-sm text-overdue">
+						<p id={errorId} role="alert" className={errorClass}>
 							{error}
 						</p>
 					)}
@@ -440,36 +464,22 @@ function PasscodeSettings({
 				</form>
 			)}
 			{crypto.passcode && (
-				<div className="flex min-h-12 flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-					<p id={autoLockLabel} className="text-sm">
-						Lock after
-					</p>
-					<div
-						role="radiogroup"
-						aria-labelledby={autoLockLabel}
-						className="flex rounded-lg bg-[var(--segment)] p-0.5 text-sm ring-1 ring-[var(--border)] ring-inset"
-					>
-						{AUTO_LOCK_OPTIONS.map(([value, label]) => (
-							<label
-								key={value}
-								className="relative flex-1 cursor-pointer rounded-md px-2 py-1 text-center text-[var(--fg-muted)] hover:text-[var(--fg)] pointer-coarse:py-2 has-[:checked]:bg-[var(--segment-on)] has-[:checked]:font-medium has-[:checked]:text-[var(--on-segment-on)] has-[:checked]:shadow-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
-							>
-								<input
-									type="radio"
-									name={autoLockLabel}
-									value={value}
-									checked={autoLock === value}
-									onChange={() => {
-										setAutoLock(value);
-										saveAutoLock(value);
-									}}
-									className="sr-only"
-								/>
-								{label}
-							</label>
-						))}
-					</div>
-				</div>
+				<Field group wide label="Lock after">
+					{(ids) => (
+						<Segmented
+							ids={ids}
+							value={autoLock}
+							options={AUTO_LOCK_OPTIONS.map(([value, label]) => [
+								value,
+								label,
+							])}
+							onChange={(value) => {
+								setAutoLock(value);
+								saveAutoLock(value);
+							}}
+						/>
+					)}
+				</Field>
 			)}
 		</>
 	);

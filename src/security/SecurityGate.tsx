@@ -14,6 +14,13 @@ import { ApiError } from "../api";
 import { useAuth } from "../auth/AuthGate";
 import { PasswordInput } from "../components/PasswordInput";
 import {
+	errorClass,
+	focusRing,
+	largeButtonClass,
+	largeInputClass,
+	standaloneLinkClass,
+} from "../components/ui";
+import {
 	enableEncryption,
 	forgetKeys,
 	isRecoveryKey,
@@ -38,10 +45,8 @@ import {
 import { autoLockMs } from "./autoLock";
 import { RecoveryKeyCard } from "./RecoveryKeyCard";
 
-export const inputClass =
-	"w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accent/25";
-export const primaryClass =
-	"rounded-lg bg-accent px-3 py-2 font-medium text-on-accent transition-opacity hover:opacity-90 disabled:opacity-60";
+const inputClass = largeInputClass;
+const primaryClass = largeButtonClass;
 
 export function SecurityGate({ children }: { children: ReactNode }) {
 	const { user } = useAuth();
@@ -135,7 +140,7 @@ function SignOutLink() {
 			<button
 				type="button"
 				onClick={() => void signOut()}
-				className="font-medium text-accent"
+				className={standaloneLinkClass}
 			>
 				Sign out
 			</button>
@@ -194,16 +199,17 @@ function LockScreen() {
 					/>
 				</div>
 				{error && (
-					<p id={errorId} role="alert" className="text-sm text-overdue">
+					<p id={errorId} role="alert" className={errorClass}>
 						{error}
 					</p>
 				)}
 				<button
 					type="submit"
 					disabled={busy || passcode === ""}
+					aria-busy={busy}
 					className={primaryClass}
 				>
-					{busy ? "…" : "Unlock"}
+					{busy ? "Unlocking…" : "Unlock"}
 				</button>
 			</form>
 			<p className="mt-6 text-center text-sm text-[var(--fg-muted)]">
@@ -211,7 +217,7 @@ function LockScreen() {
 				<button
 					type="button"
 					onClick={() => void forgetKeys(user.id)}
-					className="font-medium text-accent"
+					className={standaloneLinkClass}
 				>
 					Use your password instead
 				</button>
@@ -328,7 +334,7 @@ function UnlockScreen() {
 					/>
 				</div>
 				{error && (
-					<p id={errorId} role="alert" className="text-sm text-overdue">
+					<p id={errorId} role="alert" className={errorClass}>
 						{error}
 					</p>
 				)}
@@ -340,9 +346,16 @@ function UnlockScreen() {
 						(mode === "recovery" && !isRecoveryKey(recovery)) ||
 						(mode === "startOver" && !saved)
 					}
+					aria-busy={busy}
 					className={primaryClass}
 				>
-					{busy ? "…" : mode === "startOver" ? "Start over" : "Unlock"}
+					{mode === "startOver"
+						? busy
+							? "Starting over…"
+							: "Start over"
+						: busy
+							? "Unlocking…"
+							: "Unlock"}
 				</button>
 			</form>
 			<div className="mt-6 flex flex-col items-center gap-2 text-sm">
@@ -350,7 +363,7 @@ function UnlockScreen() {
 					<button
 						type="button"
 						onClick={() => switchTo("password")}
-						className="font-medium text-accent"
+						className={standaloneLinkClass}
 					>
 						Use my password
 					</button>
@@ -359,7 +372,7 @@ function UnlockScreen() {
 					<button
 						type="button"
 						onClick={() => switchTo("recovery")}
-						className="font-medium text-accent"
+						className={standaloneLinkClass}
 					>
 						Use my recovery key
 					</button>
@@ -368,7 +381,7 @@ function UnlockScreen() {
 					<button
 						type="button"
 						onClick={() => switchTo("startOver")}
-						className="text-[var(--fg-muted)] underline"
+						className={`rounded text-[var(--fg-muted)] underline underline-offset-2 transition-colors duration-150 hover:text-[var(--fg)] pointer-coarse:py-2 ${focusRing}`}
 					>
 						I don't have it
 					</button>

@@ -2,6 +2,14 @@ import { type FormEvent, useEffect, useId, useState } from "react";
 import type { Me } from "../../shared/schema";
 import { ApiError, api } from "../api";
 import { PasswordInput } from "../components/PasswordInput";
+import {
+	errorClass,
+	focusRing,
+	largeButtonClass,
+	largeInputClass,
+	quietLinkClass,
+	standaloneLinkClass,
+} from "../components/ui";
 import { PasswordTooShort, signIn } from "../crypto/account";
 
 type Mode = "login" | "signup" | "forgot" | "sent";
@@ -42,8 +50,7 @@ function messageFor(err: unknown): string {
 
 export { messageFor };
 
-const inputClass =
-	"w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accent/25";
+const inputClass = largeInputClass;
 
 const timeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -100,7 +107,7 @@ function CheckEmail({
 					confirm your email and choose a password. It works for 24 hours.
 				</p>
 				{error && (
-					<p role="alert" className="mt-6 text-sm text-overdue">
+					<p role="alert" className={`mt-6 ${errorClass}`}>
 						{error}
 					</p>
 				)}
@@ -115,7 +122,7 @@ function CheckEmail({
 						type="button"
 						onClick={resend}
 						disabled={cooldown > 0}
-						className="font-medium text-accent disabled:text-[var(--fg-muted)]"
+						className={`${standaloneLinkClass} disabled:cursor-default disabled:text-[var(--fg-muted)] disabled:no-underline`}
 					>
 						{cooldown > 0 ? `resend in ${cooldown}s` : "send it again"}
 					</button>
@@ -125,7 +132,7 @@ function CheckEmail({
 					<button
 						type="button"
 						onClick={onBack}
-						className="font-medium text-accent"
+						className={standaloneLinkClass}
 					>
 						Use a different email
 					</button>
@@ -140,11 +147,17 @@ export function AgreementLine() {
 	return (
 		<p className="text-center text-xs text-[var(--fg-muted)]">
 			By creating an account you agree to the{" "}
-			<a href="/terms" className="underline hover:text-[var(--fg)]">
+			<a
+				href="/terms"
+				className={`underline underline-offset-2 transition-colors duration-150 hover:text-[var(--fg)] rounded ${focusRing}`}
+			>
 				Terms of Service
 			</a>{" "}
 			and{" "}
-			<a href="/privacy" className="underline hover:text-[var(--fg)]">
+			<a
+				href="/privacy"
+				className={`underline underline-offset-2 transition-colors duration-150 hover:text-[var(--fg)] rounded ${focusRing}`}
+			>
 				Privacy Policy
 			</a>
 			.
@@ -275,7 +288,7 @@ export function LoginPage({
 						<button
 							type="button"
 							onClick={() => switchMode("login")}
-							className="mt-6 font-medium text-accent"
+							className={`mt-6 ${standaloneLinkClass}`}
 						>
 							Back to sign in
 						</button>
@@ -327,7 +340,7 @@ export function LoginPage({
 									<button
 										type="button"
 										onClick={() => switchMode("forgot")}
-										className="text-sm text-accent"
+										className={`text-sm ${quietLinkClass}`}
 									>
 										Forgot password?
 									</button>
@@ -346,7 +359,7 @@ export function LoginPage({
 						)}
 
 						{error && (
-							<p id={errorId} role="alert" className="text-sm text-overdue">
+							<p id={errorId} role="alert" className={errorClass}>
 								{error}
 							</p>
 						)}
@@ -354,14 +367,19 @@ export function LoginPage({
 						<button
 							type="submit"
 							disabled={busy}
-							className="mt-2 rounded-lg bg-accent px-3 py-2 font-medium text-on-accent transition-opacity hover:opacity-90 disabled:opacity-60"
+							aria-busy={busy}
+							className={`mt-2 ${largeButtonClass}`}
 						>
-							{busy
-								? "…"
-								: mode === "login"
-									? "Sign in"
-									: mode === "signup"
-										? "Create account"
+							{mode === "login"
+								? busy
+									? "Signing in…"
+									: "Sign in"
+								: mode === "signup"
+									? busy
+										? "Creating account…"
+										: "Create account"
+									: busy
+										? "Sending…"
 										: "Send reset link"}
 						</button>
 						{mode === "signup" && <AgreementLine />}
@@ -373,7 +391,7 @@ export function LoginPage({
 						<button
 							type="button"
 							onClick={() => switchMode("login")}
-							className="font-medium text-accent"
+							className={standaloneLinkClass}
 						>
 							Back to sign in
 						</button>
@@ -385,7 +403,7 @@ export function LoginPage({
 						<button
 							type="button"
 							onClick={() => switchMode()}
-							className="font-medium text-accent"
+							className={standaloneLinkClass}
 						>
 							{mode === "login" ? "Create an account" : "Sign in"}
 						</button>
