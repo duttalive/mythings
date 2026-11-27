@@ -2,6 +2,16 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.9.0 — 2026-11-27
+
+Filter any list, choose your sidebar, and to-dos are now tasks.
+
+- A new filter bar at the top of Today, Upcoming, Anytime, Someday, Overdue, Deadlines, the Logbook, Trash and Task Notes: pick any Life Buckets, Areas, Projects and Tags to narrow the list. Within one dropdown any choice matches (two tags now show items with either tag); across dropdowns everything must match. Clear filters puts the whole list back. It replaces the row of tag chips; a project's, area's or Life Bucket's page offers the Tag dropdown.
+- Choose which views show in the sidebar, in Settings → Sidebar. Inbox, Today, Logbook and Trash always show; Deadlines and Task Notes can now be added to the sidebar too. Reset sidebar to default puts it back, and every view can still be opened from search.
+- Each view now says, under its title, what it's for.
+- To-dos are now called tasks everywhere in the app, emails and guide.
+- The Privacy Policy and Terms now say "tasks" too; nothing else in them changed.
+
 ## Version 2.8.0 — 2026-11-26
 
 Tabs on desktop, and a simpler Focus Mode.
