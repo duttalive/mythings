@@ -7,9 +7,11 @@ import {
 	daysUntilDeadline,
 	deadlines,
 	type Entry,
+	filterMatcher,
 	type GroupedList,
 	groupByProject,
 	inbox,
+	isFiltering,
 	isInToday,
 	type LogbookCursor,
 	lateness,
@@ -713,6 +715,93 @@ describe("tag filter", () => {
 		expect(view.buckets[0]?.areas[0]?.todos.map((t) => t.id)).toEqual([
 			inArea.id,
 		]);
+	});
+});
+
+describe("filter bar", () => {
+	const home = bucket();
+	const work = bucket();
+	const chores = area({ bucketId: home.id });
+	const launch = project({ areaId: work.id, when: "anytime" });
+	const errands = tag({ title: "errands" });
+	const shop = tag({ title: "shop", parentId: errands.id });
+	const urgent = tag({ title: "urgent" });
+	const inChores = todo({ when: "anytime", areaId: chores.id });
+	const inLaunch = todo({ when: "anytime", projectId: launch.id });
+	const shopping = todo({ when: "anytime", tagIds: [shop.id] });
+	const hurry = todo({ when: "anytime", tagIds: [urgent.id] });
+	const d = data({
+		buckets: [home, work],
+		areas: [chores],
+		projects: [launch],
+		tags: [errands, shop, urgent],
+		todos: [inChores, inLaunch, shopping, hurry],
+	});
+	const anytimeIds = (filter: Parameters<typeof isFiltering>[0]) => {
+		const list = anytime(d, { ...ctx, filter });
+		return [
+			...list.todos,
+			...list.buckets.flatMap((b) => [
+				...b.areas.flatMap((a) => a.todos),
+				...b.projects.flatMap((p) => p.todos),
+			]),
+		]
+			.map((t) => t.id)
+			.sort();
+	};
+
+	it("knows when nothing is chosen", () => {
+		expect(isFiltering(undefined)).toBe(false);
+		expect(isFiltering({ tags: [] })).toBe(false);
+		expect(isFiltering({ areas: [chores.id] })).toBe(true);
+	});
+
+	it("matches a Life Bucket through its areas and projects", () => {
+		expect(anytimeIds({ buckets: [home.id] })).toEqual([inChores.id]);
+		expect(anytimeIds({ buckets: [home.id, work.id] })).toEqual(
+			[inChores.id, inLaunch.id].sort(),
+		);
+	});
+
+	it("matches areas and projects", () => {
+		expect(anytimeIds({ areas: [chores.id] })).toEqual([inChores.id]);
+		expect(anytimeIds({ projects: [launch.id] })).toEqual([inLaunch.id]);
+	});
+
+	it("matches any chosen tag, nested tags included", () => {
+		expect(anytimeIds({ tags: [errands.id] })).toEqual([shopping.id]);
+		expect(anytimeIds({ tags: [errands.id, urgent.id] })).toEqual(
+			[shopping.id, hurry.id].sort(),
+		);
+	});
+
+	it("needs every kind with a choice to match", () => {
+		expect(anytimeIds({ buckets: [home.id], tags: [urgent.id] })).toEqual([]);
+		expect(anytimeIds({ buckets: [work.id], projects: [launch.id] })).toEqual([
+			inLaunch.id,
+		]);
+	});
+
+	it("filters the Trash, areas and headings included", () => {
+		const gone = todo({ areaId: chores.id, deletedAt: 5 });
+		const goneArea = area({ bucketId: work.id, deletedAt: 6 });
+		const goneHeading = heading({ projectId: launch.id, deletedAt: 7 });
+		const withTrash = data({
+			buckets: [home, work],
+			areas: [chores, goneArea],
+			projects: [launch],
+			headings: [goneHeading],
+			todos: [gone],
+		});
+		expect(
+			ids(trash(withTrash, { buckets: [work.id] }).map((e) => e.item)),
+		).toEqual([goneHeading.id, goneArea.id]);
+		expect(
+			ids(trash(withTrash, { areas: [chores.id] }).map((e) => e.item)),
+		).toEqual([gone.id]);
+		const matches = filterMatcher(withTrash, { projects: [launch.id] });
+		expect(matches({ kind: "heading", item: goneHeading })).toBe(true);
+		expect(matches({ kind: "todo", item: gone })).toBe(false);
 	});
 });
 

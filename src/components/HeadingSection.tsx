@@ -100,7 +100,7 @@ export function HeadingSection({
 					icon={<PlusIcon className="size-3.5" />}
 					onSelect={addTodo}
 				>
-					Add To-Do
+					Add Task
 				</PopoverOption>
 			)}
 			{!heading.archived && index > 0 && (
@@ -145,7 +145,7 @@ export function HeadingSection({
 				</PopoverOption>
 			) : (
 				<p className="px-2 py-1.5 text-xs text-[var(--fg-muted)]">
-					Complete its to-dos to archive it.
+					Complete its tasks to archive it.
 				</p>
 			)}
 			<PopoverOption

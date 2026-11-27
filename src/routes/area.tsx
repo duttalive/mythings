@@ -20,7 +20,7 @@ import { LoggedItems } from "../components/LoggedItems";
 import { Popover, PopoverOption, useFocusHandoff } from "../components/Popover";
 import { TagPicker } from "../components/pickers";
 import { RowList, TodoRow } from "../components/rows";
-import { useFilteredContext, useListData, useTagFilter } from "../data";
+import { useFilteredContext, useFiltering, useListData } from "../data";
 import { placed, SortableList } from "../dnd/sortable";
 import { areaRequest } from "../editing/deleteRequests";
 import { useTitleFocus } from "../editing/EditingProvider";
@@ -32,7 +32,7 @@ import { Missing } from "./not-found";
 export function AreaPage() {
 	const { areaId } = useParams({ strict: false });
 	const { data } = useListData();
-	const filtering = useTagFilter().length > 0;
+	const filtering = useFiltering();
 	const view = areaView(data, areaId ?? "", useFilteredContext());
 	if (!view) return <Missing what="area" />;
 	const readOnly = view.area.deletedAt !== null;
@@ -44,10 +44,11 @@ export function AreaPage() {
 			icon={<AreaIcon className="size-7 shrink-0 text-[var(--fg-muted)]" />}
 			header={<ListDetails list={view.area} bucket={view.bucket} />}
 			filterable
+			filterKinds={["tags"]}
 		>
 			{view.todos.length === 0 && view.logged.length === 0 && (
 				<Empty>
-					Nothing in this area yet. Add the to-dos that keep coming up here.
+					Nothing in this area yet. Add the tasks that keep coming up here.
 				</Empty>
 			)}
 			{view.todos.length > 0 && (
@@ -65,7 +66,7 @@ export function AreaPage() {
 						}),
 					}}
 				>
-					<RowList label="To-dos">
+					<RowList label="Tasks">
 						{view.todos.map((todo) => (
 							<TodoRow key={todo.id} todo={todo} showStar readOnly={readOnly} />
 						))}

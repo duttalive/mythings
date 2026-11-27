@@ -11,20 +11,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import {
-	AreaIcon,
-	BoxIcon,
-	BucketIcon,
-	CalendarIcon,
-	FlagIcon,
-	InboxIcon,
-	LayersIcon,
-	LogbookIcon,
-	NotesIcon,
-	StarIcon,
-	TagIcon,
-	TrashIcon,
-} from "../components/icons";
+import { AreaIcon, BucketIcon, TagIcon } from "../components/icons";
 import { Modal } from "../components/Modal";
 import { Checkbox, ProgressRing } from "../components/rows";
 import { useListData } from "../data";
@@ -32,6 +19,7 @@ import { useEditing } from "../editing/EditingProvider";
 import { routeFor } from "../editing/routeFor";
 import { useSelection } from "../editing/SelectionProvider";
 import { fuzzyScore } from "../lib/fuzzy";
+import { VIEW_ORDER, VIEWS } from "../lib/views";
 import { plainText, snippet } from "../notes/plain";
 
 type Result = {
@@ -43,58 +31,11 @@ type Result = {
 	open: () => void;
 };
 
-const LISTS: { title: string; to: string; icon: ReactNode }[] = [
-	{
-		title: "Inbox",
-		to: "/inbox",
-		icon: <InboxIcon className="size-4 text-accent" />,
-	},
-	{
-		title: "Today",
-		to: "/today",
-		icon: <StarIcon className="size-4 text-today" />,
-	},
-	{
-		title: "Upcoming",
-		to: "/upcoming",
-		icon: <CalendarIcon className="size-4 text-overdue" />,
-	},
-	{
-		title: "Anytime",
-		to: "/anytime",
-		icon: <LayersIcon className="size-4 text-teal-600" />,
-	},
-	{
-		title: "Someday",
-		to: "/someday",
-		icon: <BoxIcon className="size-4 text-amber-700" />,
-	},
-	{
-		title: "Overdue",
-		to: "/overdue",
-		icon: <FlagIcon className="size-4 text-overdue" />,
-	},
-	{
-		title: "Task Notes",
-		to: "/notes",
-		icon: <NotesIcon className="size-4 text-accent" />,
-	},
-	{
-		title: "Deadlines",
-		to: "/deadlines",
-		icon: <FlagIcon className="size-4 text-overdue" />,
-	},
-	{
-		title: "Logbook",
-		to: "/logbook",
-		icon: <LogbookIcon className="size-4 text-done" />,
-	},
-	{
-		title: "Trash",
-		to: "/trash",
-		icon: <TrashIcon className="size-4 text-[var(--fg-muted)]" />,
-	},
-];
+const LISTS = VIEW_ORDER.map((id) => ({
+	title: VIEWS[id].title,
+	to: VIEWS[id].to,
+	icon: VIEWS[id].icon("size-4"),
+}));
 
 // Lists and containers first when scores are close; to-dos are the long tail.
 const BOOST = { list: 60, project: 40, area: 40, tag: 20, todo: 0 };

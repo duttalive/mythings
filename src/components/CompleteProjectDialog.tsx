@@ -24,7 +24,7 @@ export function CompleteProjectDialog({
 					</Dialog.Title>
 					<Dialog.Description className="mt-1.5 text-sm text-[var(--fg-muted)]">
 						This project still has {remaining} open{" "}
-						{remaining === 1 ? "to-do" : "to-dos"}. What should happen to{" "}
+						{remaining === 1 ? "task" : "tasks"}. What should happen to{" "}
 						{remaining === 1 ? "it" : "them"}?
 					</Dialog.Description>
 					<div className="mt-5 flex flex-col gap-2">

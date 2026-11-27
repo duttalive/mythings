@@ -115,6 +115,24 @@ export const confirmPasswordSchema = z.object({
 /** Opening a reset link: whose account it is (the key is derived from the email). */
 export const resetLinkSchema = z.object({ token: tokenSchema });
 
+/** Built-in views the sidebar can show or hide (SPEC §10.9). */
+export const OPTIONAL_VIEWS = [
+	"upcoming",
+	"anytime",
+	"someday",
+	"overdue",
+	"deadlines",
+	"notes",
+] as const;
+export type OptionalView = (typeof OPTIONAL_VIEWS)[number];
+/** Shown in the sidebar until changed in Settings. */
+export const DEFAULT_SIDEBAR_VIEWS: OptionalView[] = [
+	"upcoming",
+	"anytime",
+	"someday",
+	"overdue",
+];
+
 /** User preferences (SPEC §10.9). Every key is optional; missing keys use defaults on the client. */
 export const settingsSchema = z
 	.object({
@@ -128,6 +146,11 @@ export const settingsSchema = z
 		tagsCollapsed: z.boolean(),
 		/** Lists use the whole width of the window instead of a centered column. */
 		fullWidth: z.boolean(),
+		/**
+		 * The optional views shown in the sidebar, in no particular order (Inbox,
+		 * Today, Logbook and Trash always show). Missing: the default set.
+		 */
+		sidebarViews: z.array(z.enum(OPTIONAL_VIEWS)).max(OPTIONAL_VIEWS.length),
 	})
 	.partial()
 	.strict();
@@ -480,14 +503,14 @@ export const todoSchema = todoFields.superRefine((row, ctx) => {
 		ctx.addIssue({
 			code: "custom",
 			path: ["areaId"],
-			message: "To-dos in a project take the project's area",
+			message: "Tasks in a project take the project's area",
 		});
 	}
 	if (row.when === "inbox" && (row.projectId || row.areaId)) {
 		ctx.addIssue({
 			code: "custom",
 			path: ["when"],
-			message: "Inbox to-dos can't belong to a project or area",
+			message: "Inbox tasks can't belong to a project or area",
 		});
 	}
 });

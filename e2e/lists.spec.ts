@@ -28,7 +28,7 @@ async function typeTitle(page: Page, placeholder: string, title: string) {
 }
 
 async function addTodo(page: Page, title: string) {
-	await page.getByRole("button", { name: "New To-Do" }).click();
+	await page.getByRole("button", { name: "New Task" }).click();
 	const input = page.locator("main").getByLabel("Title", { exact: true });
 	await expect(input).toBeFocused();
 	await input.fill(title);
@@ -277,7 +277,7 @@ test("deleting asks first: Cancel keeps it, permanent deletes need a tick", asyn
 	await page.getByRole("button", { name: "Project actions" }).click();
 	await page.getByRole("button", { name: "Delete Project" }).click();
 	await expect(dialog).toContainText("Delete project “Keep me”?");
-	await expect(dialog).toContainText("with its 1 to-do");
+	await expect(dialog).toContainText("with its 1 task");
 	// The safe choice has focus: Enter cancels.
 	await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
 	await page.keyboard.press("Enter");

@@ -7,6 +7,7 @@ import {
 	MAX_OPS_PER_PUSH,
 	opSchema,
 	projectSchema,
+	settingsSchema,
 	type Todo,
 	todoSchema,
 } from "../../shared/schema";
@@ -182,5 +183,24 @@ describe("localDateSchema", () => {
 	it("accepts real dates only", () => {
 		expect(localDateSchema.safeParse("2024-02-29").success).toBe(true);
 		expect(localDateSchema.safeParse("2026-02-29").success).toBe(false);
+	});
+});
+
+describe("settings", () => {
+	it("accepts the sidebar's optional views", () => {
+		expect(
+			settingsSchema.safeParse({ sidebarViews: ["deadlines", "notes"] })
+				.success,
+		).toBe(true);
+		expect(settingsSchema.safeParse({ sidebarViews: [] }).success).toBe(true);
+	});
+
+	it("rejects views that are always shown or unknown", () => {
+		expect(settingsSchema.safeParse({ sidebarViews: ["inbox"] }).success).toBe(
+			false,
+		);
+		expect(settingsSchema.safeParse({ sidebarViews: ["nope"] }).success).toBe(
+			false,
+		);
 	});
 });

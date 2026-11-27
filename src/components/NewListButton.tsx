@@ -109,7 +109,7 @@ export function NewListButton() {
 						<span>
 							New Area
 							<span className="block text-xs text-[var(--fg-muted)]">
-								To-dos for work that keeps going, like Health or Home. No
+								Tasks for work that keeps going, like Health or Home. No
 								deadline.
 							</span>
 						</span>

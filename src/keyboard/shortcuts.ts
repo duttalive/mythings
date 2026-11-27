@@ -17,7 +17,7 @@ export type Shortcut = {
 export const SHORTCUTS: Shortcut[] = [
 	{
 		combos: ["space", "alt+n"],
-		label: "New to-do (below the selection)",
+		label: "New task (below the selection)",
 		group: "Create",
 	},
 	{
@@ -34,7 +34,7 @@ export const SHORTCUTS: Shortcut[] = [
 	},
 	{
 		combos: ["enter", "escape"],
-		label: "Open / close the selected to-do",
+		label: "Open / close the selected task",
 		group: "Navigate",
 	},
 	{
@@ -70,7 +70,7 @@ export const SHORTCUTS: Shortcut[] = [
 	},
 	{ combos: ["mod+shift+m"], label: "Move to list…", group: "Edit" },
 	{ combos: ["mod+shift+t"], label: "Tags…", group: "Edit" },
-	{ combos: ["alt+f"], label: "Focus Mode (in an open to-do)", group: "Other" },
+	{ combos: ["alt+f"], label: "Focus Mode (in an open task)", group: "Other" },
 	{ combos: ["backspace"], label: "Delete", group: "Edit" },
 	{ combos: ["mod+s"], label: "When…", group: "Schedule" },
 	{ combos: ["mod+shift+d"], label: "Deadline…", group: "Schedule" },

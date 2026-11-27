@@ -18,7 +18,7 @@ A personal task manager in the spirit of Things 3, built entirely on Cloudflare.
 
 - Team collaboration / shared lists.
 - Native apps, Apple Watch, OS-global quick-entry hotkey.
-- Calendar integration (Upcoming shows to-dos only).
+- Calendar integration (Upcoming shows tasks only).
 - Email-to-inbox (listed as v2).
 
 ---
@@ -136,31 +136,31 @@ rev: number; // server sequence number of last change (for sync)
 
 Both are `area` rows: `title`, `sortKey`, `tagIds[]`, `collapsed`, `kind: "bucket"|"area"`, `bucketId|null`.
 
-- **Life Bucket** (`kind: "bucket"`, `bucketId: null`): a big part of life (Work, Family, Personal). Groups areas and projects; holds no to-dos itself. Route `/bucket/$id`.
-- **Area** (`kind: "area"`, `bucketId` = its bucket): an ongoing responsibility (Health, Home) holding to-dos. No deadline; never "completes". No projects.
-- Every live area and project sits in a live bucket. The server enforces it (`Applier.placeInBucket`): an area or project sent without a usable bucket (an older app version, an import, a restore whose bucket is gone) goes into the first live bucket, made as "Personal" if there's none; a project put into an area goes into that area's bucket. `kind` can't change after creation. A to-do's `areaId` must name an area, a project's a bucket (`invalid_reference` otherwise).
+- **Life Bucket** (`kind: "bucket"`, `bucketId: null`): a big part of life (Work, Family, Personal). Groups areas and projects; holds no tasks itself. Route `/bucket/$id`.
+- **Area** (`kind: "area"`, `bucketId` = its bucket): an ongoing responsibility (Health, Home) holding tasks. No deadline; never "completes". No projects.
+- Every live area and project sits in a live bucket. The server enforces it (`Applier.placeInBucket`): an area or project sent without a usable bucket (an older app version, an import, a restore whose bucket is gone) goes into the first live bucket, made as "Personal" if there's none; a project put into an area goes into that area's bucket. `kind` can't change after creation. A task's `areaId` must name an area, a project's a bucket (`invalid_reference` otherwise).
 - Kept in the old `areas` table and field names so ids, sync, Trash, undo and encrypted titles carry over: a project's `areaId` names its **bucket**.
-- **Conversion** (`shared/structure.ts`, run once per account by `worker/life-buckets.ts` when its UserStore starts, and on version-1 export files): an area that held projects becomes a bucket (same id, title, tags); if it also had loose to-dos they move into a new area of the same title inside it (same `deletedAt`, so they restore together). Other areas and projects outside areas go into a new "Personal" bucket (only if needed). Changed rows get new revs. Clients open a Dexie v2 that drops `lastRev`, so they fetch everything once.
+- **Conversion** (`shared/structure.ts`, run once per account by `worker/life-buckets.ts` when its UserStore starts, and on version-1 export files): an area that held projects becomes a bucket (same id, title, tags); if it also had loose tasks they move into a new area of the same title inside it (same `deletedAt`, so they restore together). Other areas and projects outside areas go into a new "Personal" bucket (only if needed). Changed rows get new revs. Clients open a Dexie v2 that drops `lastRev`, so they fetch everything once.
 - Tags: items inherit from their project or area and from that one's bucket.
 
 ### 5.2 Project
 
 `title`, `notes` (markdown), `areaId|null`, `status: "open"|"completed"|"canceled"`, `completedAt`,
 `when` (see 5.5), `startDate`, `evening`, `deadline`, `sortKey` (within its bucket), `todaySortKey`, `tagIds[]`, `repeat|null`, `repeatTemplateId|null`.
-Shows a progress ring = completed / (open + completed) to-dos.
-Completing a project with open to-dos prompts: "Mark remaining as completed / canceled".
+Shows a progress ring = completed / (open + completed) tasks.
+Completing a project with open tasks prompts: "Mark remaining as completed / canceled".
 
 ### 5.3 Heading
 
 `projectId`, `title`, `sortKey`, `archived: boolean`.
-Groups to-dos inside a project. "Archive heading" moves it and its done items to the bottom, collapsed.
+Groups tasks inside a project. "Archive heading" moves it and its done items to the bottom, collapsed.
 
 Implementation notes (milestone 9):
-- Completing a project from its progress ring asks what to do with any remaining open to-dos ("Mark remaining as Completed / Canceled"); one batch updates them and the project. "Cancel Project" cancels remaining to-dos without asking. Reopening a project leaves its to-dos as they are.
-- A heading can be archived only once nothing under it is open; archived headings sit collapsed at the bottom of the project and can be unarchived. Deleting a heading moves its to-dos to Trash with it.
+- Completing a project from its progress ring asks what to do with any remaining open tasks ("Mark remaining as Completed / Canceled"); one batch updates them and the project. "Cancel Project" cancels remaining tasks without asking. Reopening a project leaves its tasks as they are.
+- A heading can be archived only once nothing under it is open; archived headings sit collapsed at the bottom of the project and can be unarchived. Deleting a heading moves its tasks to Trash with it.
 - New projects, areas and Life Buckets come from the sidebar's "+ New List" (a project or area goes into the bucket on screen — its page, or the one holding the open area or project — else the first bucket) or a bucket's menu, and open with the title focused. Projects move between buckets from their menu (with more than one bucket); areas from theirs.
 
-### 5.4 To-do
+### 5.4 Task
 
 `title`, `notes` (markdown), `status`, `completedAt`,
 `projectId|null`, `headingId|null`, `areaId|null` (only when not in a project),
@@ -208,16 +208,16 @@ repeat: {
 ```
 Valid combinations: fixed daily has no `by*` fields; fixed weekly may have `byWeekday`; fixed monthly has exactly one of `byMonthDay`/`byNth`; fixed yearly has `byMonth` + `byMonthDay`; `afterCompletion` has none. Weeks for "every N weeks" begin on the user's `weekStart` setting.
 
-A to-do/project with `repeat` is a **template**: it is hidden from normal lists and shown under Upcoming with a ↻ icon. Instances are copies with `repeatTemplateId` set (title, notes, checklist, tags, project/heading/area copied).
+A task/project with `repeat` is a **template**: it is hidden from normal lists and shown under Upcoming with a ↻ icon. Instances are copies with `repeatTemplateId` set (title, notes, checklist, tags, project/heading/area copied).
 - `fixed`: the DO alarm materializes the instance on `nextDate`, then advances `nextDate`.
 - `afterCompletion`: when the current instance is completed or canceled, the template's `nextDate` becomes the completion date + interval; the instance itself is created when that date arrives, just like `fixed`, so a series never has more than one pending instance.
-- A project instance copies the template's headings and open to-dos (with their checklists).
+- A project instance copies the template's headings and open tasks (with their checklists).
 - An instance on a given date is never created twice, even if the earlier one was deleted. When a series passes `endsOn`, its `nextDate` is parked just past `endsOn`, which hides it from Upcoming.
 - Materialize at most one instance ahead. Missed days (server down / long offline) produce only the most recent instance, not a backlog.
 
 ### 5.9 Ordering
 
-Every orderable thing has a string `sortKey` from `fractional-indexing`. Moving an item writes one row. To-dos also have `todaySortKey` so Today has its own manual order independent of project order.
+Every orderable thing has a string `sortKey` from `fractional-indexing`. Moving an item writes one row. Tasks also have `todaySortKey` so Today has its own manual order independent of project order.
 
 ---
 
@@ -226,39 +226,78 @@ Every orderable thing has a string `sortKey` from `fractional-indexing`. Moving 
 `today` = user's local date. "Open" = `status === "open" && deletedAt === null && repeat === null`.
 An item whose project is `someday` (or whose project is not open) is excluded from Today/Anytime.
 
+### 6.1 Lists
+
 | List           | Membership                                                                                            | Grouping / order                                                                                                                                                                |
 | -------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Inbox**      | open, `when === "inbox"`                                                                              | `sortKey`                                                                                                                                                                       |
 | **Today**      | open, and (`when === "scheduled" && startDate <= today`) **or** `deadline === today`; an overdue item (`deadline < today`) only if `startDate === today` | Two sections: main, then **This Evening** (`evening`). Ordered by `todaySortKey`. Also includes open projects that meet the same rule. |
 | **Upcoming**   | open with `when === "scheduled" && startDate > today`, **plus** repeat templates by `repeat.nextDate` | Next 7 days as individual day headers ("Tomorrow", "Wed 29"), then rest of the month, then by month. Days with no items still render in the 7-day band.                         |
-| **Anytime**    | open, `when === "anytime"` or (`scheduled` and `startDate <= today`)                                  | Grouped by Area → Project; loose to-dos first. Items also in Today show a ★.                                                                                                    |
+| **Anytime**    | open, `when === "anytime"` or (`scheduled` and `startDate <= today`)                                  | Grouped by Area → Project; loose tasks first. Items also in Today show a ★.                                                                                                    |
 | **Someday**    | open, `when === "someday"`                                                                            | Grouped by Area → Project.                                                                                                                                                      |
-| **Overdue**    | open, `deadline < today` (to-dos in an open project only), any `when`                                   | One group per deadline day, oldest first, each showing "N days overdue". In the sidebar after Someday; `g o`.                    |
+| **Overdue**    | open, `deadline < today` (tasks in an open project only), any `when`                                   | One group per deadline day, oldest first, each showing "N days overdue". In the sidebar after Someday; `g o`.                    |
 | **Logbook**    | `status !== "open"`, not deleted                                                                      | Grouped by `completedAt` day, newest first. Paginate.                                                                                                                           |
 | **Trash**      | `deletedAt !== null`                                                                                  | "Empty Trash" button (confirm).                                                                                                                                                 |
-| **Project**    | to-dos with `projectId`                                                                               | Loose to-dos, then each heading; archived headings and repeat templates listed separately.                                                                                      |
-| **Area**       | loose to-dos in that area                                                                             | Its to-dos, then logged ones. A link to its Life Bucket.                                                                                                                        |
-| **Life Bucket**| its areas and projects                                                                                | Areas (with open to-do counts), then projects (with progress ring), then logged projects. No **+**.                                                                             |
-| **Deadlines**  | open to-dos and projects with a `deadline` (not inside a finished, deleted or repeating project)      | Not in the sidebar; opened from Quick Find (`/deadlines`). "Overdue" first, then one group per deadline day. A search field narrows it by title, notes, project, area and tags.  |
-| **Tag filter** | Any list can be filtered by one or more tags via a tag bar at the top                                 | Today's bar offers only the tags its items carry (directly, from their project or area, or as a parent tag), plus any selected.                                                 |
+| **Project**    | tasks with `projectId`                                                                               | Loose tasks, then each heading; archived headings and repeat templates listed separately.                                                                                      |
+| **Area**       | loose tasks in that area                                                                             | Its tasks, then logged ones. A link to its Life Bucket.                                                                                                                        |
+| **Life Bucket**| its areas and projects                                                                                | Areas (with open task counts), then projects (with progress ring), then logged projects. No **+**.                                                                             |
+| **Deadlines**  | open tasks and projects with a `deadline` (not inside a finished, deleted or repeating project)      | `/deadlines`; in the sidebar only when chosen (§6.5), always in Quick Find. "Overdue" first, then one group per deadline day. A search field narrows it by title, notes, project, area and tags.  |
+| **Filter bar** | Every built-in view but Inbox can be narrowed by Life Bucket, area, project and tag (§6.6)            | Today's and Overdue's Tag dropdown offers only the tags their items carry (directly, from their project or area, or as a parent tag), plus any chosen.                          |
+
+### 6.2 Sidebar badges
 
 Sidebar badge counts: Inbox = count; Today = count, plus a red count of Today items whose deadline is today or past (overdue ones only appear when scheduled for today); Overdue = red count of open overdue items.
 
+### 6.3 Details settled in implementation
+
 Details settled in implementation (`shared/views.ts`):
 - **Logbook timing** (setting `logbookTiming`): `"immediately"` (default) moves completed items straight to the Logbook. `"daily"` keeps items completed today in their lists, struck through, and moves them to the Logbook tomorrow.
-- **Today order:** items without a `todaySortKey` (never placed in Today) come first, oldest first, then by `todaySortKey`. Grouped by project, a to-do moves (drag or ⌘↑/↓) only within its own group.
+- **Today order:** items without a `todaySortKey` (never placed in Today) come first, oldest first, then by `todaySortKey`. Grouped by project, a task moves (drag or ⌘↑/↓) only within its own group.
 - **New day:** the client's `today` moves at local midnight, and is rechecked whenever the app regains focus or becomes visible (timers pause while a computer sleeps).
 - **Upcoming:** the "rest of the month" group covers the month containing the 7th day; repeat templates whose `nextDate` is today or earlier are awaiting materialization and are not shown.
-- **Anytime** includes active projects even when they have no visible to-dos.
-- **Someday** shows someday projects as entries without their to-dos, plus someday to-dos outside someday projects.
-- **Logbook** files a finished project's to-dos under the project, and paginates with a `{completedAt, id}` cursor.
-- **Trash** lists only top-level deleted items (a deleted project's to-dos are restored with it).
-- **Tag filter** requires every selected tag (or a descendant of it); items inherit tags from their project or area and its Life Bucket.
-- **Tag page** (`/tag/$id`, `tagView`) lists open to-dos and projects carrying the tag or a descendant, grouped like Anytime, then their repeating to-dos and projects (soonest next date first) and a "Show N logged items" toggle for their Logbook items.
+- **Anytime** includes active projects even when they have no visible tasks.
+- **Someday** shows someday projects as entries without their tasks, plus someday tasks outside someday projects.
+- **Logbook** files a finished project's tasks under the project, and paginates with a `{completedAt, id}` cursor.
+- **Trash** lists only top-level deleted items (a deleted project's tasks are restored with it).
+- **Tag page filter** (`ctx.tagIds`, the tag's own page) requires every given tag (or a descendant of it); items inherit tags from their project or area and its Life Bucket. The filter bar (§6.6) matches any chosen tag instead.
+- **Tag page** (`/tag/$id`, `tagView`) lists open tasks and projects carrying the tag or a descendant, grouped like Anytime, then their repeating tasks and projects (soonest next date first) and a "Show N logged items" toggle for their Logbook items.
 - **Sidebar** (`sidebarTree`) shows every live Life Bucket (even empty) with its areas and then its open projects; someday projects are dimmed. Anything not in a live bucket shows above them until the server places it.
-- **Anytime, Someday and tag pages** (`GroupedList`) show loose to-dos, then each bucket with its areas' and projects' to-dos.
+- **Anytime, Someday and tag pages** (`GroupedList`) show loose tasks, then each bucket with its areas' and projects' tasks.
 
 These functions take arrays of entities and return view models. They run on the client against Dexie data, and are unit-tested heavily.
+
+### 6.4 View descriptions (2.9.0)
+
+Every built-in view shows one line under its title saying what it is (`VIEWS` in `src/lib/views.tsx`, which also holds each view's title, path and icon):
+
+| View       | Line under the title                                               |
+| ---------- | ------------------------------------------------------------------ |
+| Inbox      | New tasks land here until you give them a day or a list.           |
+| Today      | Tasks planned for today.                                           |
+| Upcoming   | Tasks scheduled for a future day, by date.                         |
+| Anytime    | Tasks you could do now, with no set day.                           |
+| Someday    | Tasks and projects parked for later.                               |
+| Overdue    | Tasks whose planned day or deadline has passed.                    |
+| Deadlines  | Every open task and project with a deadline, soonest first.        |
+| Logbook    | Tasks and projects you've completed or canceled.                   |
+| Trash      | Deleted items. They're removed for good after 30 days.             |
+| Task Notes | Every task that has notes, in one place.                           |
+
+### 6.5 Sidebar views (2.9.0)
+
+- Inbox, Today, Logbook and Trash are always in the sidebar. The optional views (`OPTIONAL_VIEWS` in `shared/schema.ts`) are `upcoming`, `anytime`, `someday`, `overdue`, `deadlines` and `notes` (Task Notes); setting `sidebarViews` (§10.9) lists the shown ones, and a missing value means `DEFAULT_SIDEBAR_VIEWS` (the first four).
+- Sidebar order: Inbox, Today, Upcoming, Anytime, Someday, Overdue, Deadlines, Task Notes, Logbook, Trash (`VIEW_ORDER`, also Quick Find's order for lists). Hiding a view only removes its sidebar row: its route, any `g` shortcut and its Quick Find entry stay, so every view is always reachable.
+
+### 6.6 Filter bar (2.9.0)
+
+Replaces the tag bar (one row of tag chips, "must have every selected tag").
+
+- **Where:** at the top of every built-in view except Inbox: Today, Upcoming, Anytime, Someday, Overdue, Deadlines, Logbook, Trash and `/notes`. On a project's, area's or Life Bucket's page only the Tag dropdown is offered; a tag's page has none (`src/components/FilterBar.tsx`).
+- **Dropdowns:** Life Bucket, Area, Project, Tag, each a multi-select popover. A dropdown with no options and no choice is left out; with no dropdowns the bar isn't rendered. Over 8 options adds a "Find a …" field. The trigger reads "Tag", "Tag: shop" (one chosen) or "Tag · 2", highlighted (`bg-accent`) when anything is chosen. "Show all …" clears that dropdown; "Clear filters" (shown while filtering) clears all.
+- **Matching** (`ListFilter` and `filterMatcher` in `shared/views.ts`): within one kind any chosen id matches (OR); kinds combine (AND: an item must match every kind with a choice). An item's placement: a task's bucket is its project's bucket, or its area's bucket (or the bucket itself if filed directly in one); a project's bucket is its `areaId`. A Life Bucket therefore matches everything in its areas and projects. Tags match the chosen tags and their descendants (`withNested`) against the item's effective tags (own, plus inherited from project, area and bucket). Headings, areas and buckets that a view lists (Trash, a bucket page) are matched by the same placement.
+- **Options:** Today and Overdue offer only the tags their unfiltered items carry, plus any chosen; other views offer every live bucket, area, project (open ones first, then finished ones, dimmed, for the Logbook and Trash) and tag, in sidebar order.
+- **URL:** choices live in the search params `bucket`, `area`, `project`, `tags` (comma-separated ids, on the root route), so Back, bookmarks and desktop tabs (§10.14) keep them. Changing a choice replaces the history entry rather than adding one.
+- **Behaviour while filtering:** new tasks from **+** / Space get the chosen tags; reordering is off (rows can still be dragged to the sidebar); empty states read "Nothing in Today matches these filters." (per view). "Empty Trash" still purges the whole Trash, not just what's shown.
 
 ---
 
@@ -297,9 +336,9 @@ type Op = {
 - For each op: skip it if `opId` is already in `applied_ops` (keep the last 10k ops). Otherwise validate it with zod, apply it as a **field-level last-writer-wins merge in server arrival order**, set `rev = ++counter` and `updatedAt = now`, and record the opId. Use one SQLite transaction per batch.
 - Broadcast the changed rows to **all** of the user's sockets — including the sender, which gets the canonical (normalized) rows that way — whether the push came over a socket or HTTP. Send that push's errors and then its ack to the sender only.
 - Each op succeeds or is rejected on its own, with an error code: `invalid_op` (malformed), `invalid_row` (the merged row breaks a §5 invariant), `missing_reference` (points at a missing or deleted row), `invalid_reference` (a heading from another project), `cycle` (nested tags), `not_found` (delete/purge of an unknown row).
-- Normalization before validation, based on what the patch sets: setting `startDate` makes the item `scheduled`; any other `when` clears `startDate` and `evening`; `status` stamps or clears `completedAt` (using `clientTs`); moving a to-do to an area, project or heading clears the containers it left and takes it out of the Inbox; moving it to the Inbox clears its containers; moving a heading moves its to-dos.
-- Delete is a soft delete that cascades (bucket → areas and projects; area → loose to-dos; project → headings and to-dos; heading → to-dos; tag → child tags). Children share the parent's `deletedAt`, so restoring the parent (`deletedAt: null`) restores exactly the children deleted with it.
-- Purge removes rows permanently (to-dos take their checklist items; purged tags are removed from items' `tagIds`) and records a tombstone, so pulls report `purged: {entity, id}[]` alongside `rows`.
+- Normalization before validation, based on what the patch sets: setting `startDate` makes the item `scheduled`; any other `when` clears `startDate` and `evening`; `status` stamps or clears `completedAt` (using `clientTs`); moving a task to an area, project or heading clears the containers it left and takes it out of the Inbox; moving it to the Inbox clears its containers; moving a heading moves its tasks.
+- Delete is a soft delete that cascades (bucket → areas and projects; area → loose tasks; project → headings and tasks; heading → tasks; tag → child tags). Children share the parent's `deletedAt`, so restoring the parent (`deletedAt: null`) restores exactly the children deleted with it.
+- Purge removes rows permanently (tasks take their checklist items; purged tags are removed from items' `tagIds`) and records a tombstone, so pulls report `purged: {entity, id}[]` alongside `rows`.
 - After every batch, due repeat instances are materialized (§5.8) in the same transaction.
 
 ### 7.4 WebSocket messages
@@ -355,7 +394,7 @@ The Worker authenticates `GET /api/sync/ws` (session + same-origin `Origin`), th
 
 Opt-in per account (Settings → Security). Goal: the server, its backups and logs never hold the user's words in plain text, and a device can be locked so its local copy is unreadable.
 
-**What's encrypted.** Text fields only, per `shared/crypto/fields.ts`: `title` of every entity, `notes` of to-dos and projects. Everything the server needs to run repeats, reminders, cascades and the Trash (dates, `repeat`, `reminderAt`, status, ids, sort keys, `tagIds`, tag `shortcut`) stays readable.
+**What's encrypted.** Text fields only, per `shared/crypto/fields.ts`: `title` of every entity, `notes` of tasks and projects. Everything the server needs to run repeats, reminders, cascades and the Trash (dates, `repeat`, `reminderAt`, status, ids, sort keys, `tagIds`, tag `shortcut`) stays readable.
 
 **Envelope.** AES-256-GCM with a random 12-byte IV: `e1:<base64(iv ‖ ciphertext ‖ tag)>` (`shared/crypto/envelope.ts`). AAD is `"<entity>.<field>"`, not the row id, so the server can copy ciphertext into repeat instances and the client can import copies. Empty strings stay empty. The row schemas accept either plain text (old limits) or an envelope (cap sized for the plain limit × 3 UTF-8 bytes, base64); plain-text limits are checked on the device before encrypting.
 
@@ -408,10 +447,10 @@ Recompute the alarm after any op that touches `reminderAt`/`repeat`, and after a
 
 Implementation notes (milestone 12):
 - The alarm is recomputed after every push and `hello` (cheap), and the DO stores the user's `{userId, tz, weekStart}` from those requests so it can work later. Daily housekeeping runs on every wake (it's idempotent).
-- Sent reminders are recorded per to-do with their time, so moving a reminder makes it due again. Reminders missed by more than an hour (set in the past, or the DO couldn't run) are recorded but not sent.
-- Expired subscriptions (404/410 from the push service) are deleted. Notifications open the to-do's project, or Today.
+- Sent reminders are recorded per task with their time, so moving a reminder makes it due again. Reminders missed by more than an hour (set in the past, or the DO couldn't run) are recorded but not sent.
+- Expired subscriptions (404/410 from the push service) are deleted. Notifications open the task's project, or Today.
 - The client asks for notification permission only when a reminder is saved (the Save click carries the prompt), never on load; with permission already granted it re-registers its subscription on start. A small `public/sw.js` handles `push` and `notificationclick` until the PWA service worker (milestone 13) takes over.
-- A reminder moves with its to-do's start date (same local time) and is removed when the to-do loses its date. Repeat templates use the rule's `reminderTime`.
+- A reminder moves with its task's start date (same local time) and is removed when the task loses its date. Repeat templates use the rule's `reminderTime`.
 - Sync fix found here: a `changes` broadcast now lists the op ids it already includes (`opIds`), and the sender drops them from its outbox before rebasing. Otherwise a broadcast arriving before its ack replayed the op over fields the server had changed (e.g. a repeat's advanced `nextDate`). Send Web Push with VAPID using a Workers-compatible library (e.g. `@block65/webcrypto-web-push`).
 
 ---
@@ -420,14 +459,14 @@ Implementation notes (milestone 12):
 
 ### 10.1 Layout
 
-- **Sidebar** (collapsible; a drawer on mobile): Inbox, Today, Upcoming, Anytime, Someday, Overdue, Logbook, Trash; then Life Buckets with their areas and projects nested; then Tags, nested under their parents; an arrow on a Life Bucket or a tag with nested tags hides what's inside (synced; a count shows how many are hidden; visiting one inside opens it again); drag to reorder; "+ New List" button at the bottom (project, area or Life Bucket).
-- **Main pane:** list title (editable for projects/areas), project notes, then items.
+- **Sidebar** (collapsible; a drawer on mobile): Inbox, Today, then the optional views the user shows (by default Upcoming, Anytime, Someday, Overdue; Deadlines and Task Notes can be added, §6.5), Logbook, Trash; then Life Buckets with their areas and projects nested; then Tags, nested under their parents; an arrow on a Life Bucket or a tag with nested tags hides what's inside (synced; a count shows how many are hidden; visiting one inside opens it again); drag to reorder; "+ New List" button at the bottom (project, area or Life Bucket).
+- **Main pane:** list title (editable for projects/areas), the view's one-line description for built-in views (§6.4), project notes, the filter bar (§6.6), then items.
 - **Mobile:** bottom-right floating **+** button. Swipe right on a row to set When; swipe left to delete.
 
-### 10.2 To-do row
+### 10.2 Task row
 
 - Collapsed: checkbox, title, then right-aligned indicators — tags, checklist progress (2/5), notes icon, deadline flag (red when overdue), ★ when in Today (in non-Today lists), ↻ when repeating.
-- Click/Enter → **expands inline** (not a modal) into a card: title, checklist, and a footer with buttons: When (calendar icon), Move (or a chip naming its list), Tags, Checklist, Deadline, Focus (§10.13), Open in Task Notes, More. Notes are not shown in the card (since 2.7.0); they're edited on the to-do's Task Notes page (§10.10). Click outside or press Esc → collapse.
+- Click/Enter → **expands inline** (not a modal) into a card: title, checklist, and a footer with buttons: When (calendar icon), Move (or a chip naming its list), Tags, Checklist, Deadline, Focus (§10.13), Open in Task Notes, More. Notes are not shown in the card (since 2.7.0); they're edited on the task's Task Notes page (§10.10). Click outside or press Esc → collapse.
 - Completing: the checkbox animates; the item stays in place (struck through) for ~1.5s, then leaves Today/Anytime. In Projects it stays visible until the day ends.
 
 ### 10.3 "When" popover
@@ -435,8 +474,8 @@ Implementation notes (milestone 12):
 Options: Today ★, This Evening ☾, a mini calendar, Someday, plus a text field parsed by chrono ("next mon", "in 2 weeks", "dec 3"). Footer: "Add Reminder" (time picker), "Repeat…" (opens the repeat editor). The same popover is reused for Deadline (calendar + text only).
 
 Implementation notes (milestone 8):
-- The **+** button adds a to-do inline to the current list and opens it (Inbox, Today, Upcoming → tomorrow, Anytime, Someday, a project, area or tag; tags selected in the tag bar are applied). Quick Entry (§10.4) is separate.
-- A new to-do closed while still blank (no title, notes or checklist) is discarded, as in Things.
+- The **+** button adds a task inline to the current list and opens it (Inbox, Today, Upcoming → tomorrow, Anytime, Someday, a project, area or tag; tags chosen in the filter bar (§6.6) are applied). Quick Entry (§10.4) is separate.
+- A new task closed while still blank (no title, notes or checklist) is discarded, as in Things.
 - Return in the title closes the card; Escape or ⌘↵ anywhere in it does too. Title and notes save 400ms after typing stops and when the card closes.
 - Checklist: Return adds an item below, Backspace on an empty item removes it; items reorder by dragging a grip handle (its own dnd-kit context, `src/components/Checklist.tsx`; pointer + keyboard sensors) or ⌘↑/⌘↓ inside an item, writing only the moved item's `sortKey`.
 - Completing from a row or card waits 1.5s before saving (unchecking in that window cancels it); reopening from the Logbook is immediate. Pending completions are saved if the page is hidden.
@@ -455,7 +494,7 @@ Saving with no list goes to the Inbox, or to the current list if one is open. Al
 
 ### 10.5 Quick Find
 
-Typing any printable key while no input is focused opens a command palette that searches lists (including Deadlines, which isn't in the sidebar), projects, areas, tags and to-dos (title + notes). Search runs client-side with a simple fuzzy scorer over Dexie data. Enter opens the result.
+Typing any printable key while no input is focused opens a command palette that searches lists (every built-in view, including any hidden from the sidebar, §6.5), projects, areas, tags and tasks (title + notes). Search runs client-side with a simple fuzzy scorer over Dexie data. Enter opens the result.
 
 ### 10.6 Keyboard shortcuts
 
@@ -463,7 +502,7 @@ Typing any printable key while no input is focused opens a command palette that 
 
 | Action                                         | Key                                                                 |
 | ---------------------------------------------- | ------------------------------------------------------------------- |
-| New to-do (below selection)                    | `Space` or `Alt+N`                                                  |
+| New task (below selection)                    | `Space` or `Alt+N`                                                  |
 | New heading (in project)                       | `Alt+Shift+N`                                                       |
 | Quick Entry                                    | `Alt+Space`                                                         |
 | Open / collapse selected                       | `Enter` / `Esc`                                                     |
@@ -485,7 +524,7 @@ Typing any printable key while no input is focused opens a command palette that 
 Implementation notes (milestone 11):
 - Shortcuts don't fire while typing in a field (⌘Z there is the field's own undo), except Quick Entry's ⌥Space. Space/Enter on a focused button, link or checkbox keep their native behaviour. Browsers reserve some combos in a normal tab (e.g. Chrome's ⌘1…⌘8 and ⌘⇧T); they work in the installed app, and the `g` sequences cover navigation everywhere.
 - Quick Find vs. `g` sequences: after `g` the app waits 0.8s; `i t u a s l` navigate, anything else opens Quick Find with both characters.
-- Selection: a plain click selects and opens a to-do; ⌘/Ctrl-click toggles, Shift-click selects a range in page order; ↑/↓ move and Shift+↑/↓ extend it. With 2+ selected (or when a shortcut opens a panel) a bar offers When, Move, Tags, Deadline, Complete and Delete for all of them. The open card has its own ⌘K, ⌘⌥K, ⌘S, ⌘⇧D and ⌘⇧T.
+- Selection: a plain click selects and opens a task; ⌘/Ctrl-click toggles, Shift-click selects a range in page order; ↑/↓ move and Shift+↑/↓ extend it. With 2+ selected (or when a shortcut opens a panel) a bar offers When, Move, Tags, Deadline, Complete and Delete for all of them. The open card has its own ⌘K, ⌘⌥K, ⌘S, ⌘⇧D and ⌘⇧T.
 - Undo: every change records the previous values of whatever it changed (by comparing rows before and after), so cascades and normalization undo correctly; undoing a create moves it to Trash. Redo is the undo of the undo. Purges aren't undoable, and entries whose rows were purged since are skipped.
 - Quick Entry tokens: `#tag` is one word (new tags are created); `@…`, `!…` and `/…` phrases run to the next token, so tokens go after the title. Tokens that don't parse stay in the title; markers only count at the start or after a space (`a@b.com`, `and/or` are left alone).
 - Tag shortcut characters are set from the tag page's menu (along with renaming, nesting under another tag, and deleting with Undo; nesting, reordering and deleting also work from the sidebar, §10.7). In a tag picker, pressing a tag's key toggles it while the search field is empty; Shift types the letter instead. A key used by another tag moves to the new one.
@@ -497,11 +536,11 @@ Implementation notes (milestone 11):
 - Dropping into Today places the items at the top of the main section.
 
 Implementation notes (milestone 10):
-- Reorderable lists: Inbox, Today and This Evening (by `todaySortKey`), a project's loose to-dos and each heading, an area's to-dos, a bucket's areas and projects, and the sidebar's buckets, areas and projects. Dragging between lists on the same page moves the item (heading ↔ loose, Today ↔ This Evening, which schedules for today when needed). Rows in Anytime, Someday, Upcoming and tag pages can be dragged onto the sidebar but not reordered there.
+- Reorderable lists: Inbox, Today and This Evening (by `todaySortKey`), a project's loose tasks and each heading, an area's tasks, a bucket's areas and projects, and the sidebar's buckets, areas and projects. Dragging between lists on the same page moves the item (heading ↔ loose, Today ↔ This Evening, which schedules for today when needed). Rows in Anytime, Someday, Upcoming and tag pages can be dragged onto the sidebar but not reordered there.
 - Sidebar tags (`src/dnd/tagMoves.ts`): drag a tag onto the middle of another to nest it (end of its children; a collapsed parent opens), onto its top/bottom quarter to place it before/after it under the same parent, or onto Trash to delete it (asks, naming nested tags). Moves into itself or a descendant do nothing. Right-click a tag for **Move out of “parent”** and **Delete Tag…**.
-- Sidebar targets: Inbox, Today (top of the main section), Anytime, Someday, Logbook (completes a to-do), Trash, any project or area (to-dos go to the end), any Life Bucket (projects and areas go to the end). Upcoming is not a target. Projects can't be dropped onto the Logbook, which would skip the remaining-to-dos prompt.
+- Sidebar targets: Inbox, Today (top of the main section), Anytime, Someday, Logbook (completes a task), Trash, any project or area (tasks go to the end), any Life Bucket (projects and areas go to the end). Upcoming is not a target. Projects can't be dropped onto the Logbook, which would skip the remaining-tasks prompt.
 - Only the moved item gets a new key, unless the list's keys are missing, duplicated or not valid fractional keys; then the list is renumbered in one batch (`src/editing/reorder.ts`).
-- Reordering is off while a tag filter is active (items can still be dragged to the sidebar), since renumbering a filtered subset could scramble the hidden items.
+- Reordering is off while the filter bar (§6.6) has any choice (items can still be dragged to the sidebar), since renumbering a filtered subset could scramble the hidden items.
 - Mouse drags start after 6px of movement, touch drags after a 250ms press. Keyboard reordering is ⌘↑/⌘↓ (milestone 11).
 
 ### 10.8 Visual direction (original, not a copy)
@@ -516,12 +555,15 @@ Implementation notes (milestone 10):
 
 ### 10.9 Settings
 
-Time zone (auto-detected), week start day, theme, long to-do titles ("wrap" / "oneLine"), "Group to-dos in Today by project", Logbook move timing ("immediately" / "daily"), notification permission, export/import, change password, sign out of all devices.
+Time zone (auto-detected), week start day, theme, long task titles ("wrap" / "oneLine"), "Group tasks in Today by project", Logbook move timing ("immediately" / "daily"), sidebar views, notification permission, export/import, change password, sign out of all devices.
+
+Sections, top to bottom: Appearance, Date & time, Lists, Sidebar (2.9.0), Notifications, Data, Security, Account, About.
 
 _Implementation notes (milestone 14):_
 - `/settings` (sidebar gear, ⌘,), loaded on demand. Changes apply at once and are saved with `PATCH /me`, which also hands the new time zone and week start to the UserStore (alarms, repeats); the client re-sends `hello` with the new zone. Offline, a change is put back with a message.
 - Theme: `data-theme` on `<html>` overrides `prefers-color-scheme`; mirrored to `localStorage` (`mythings:theme`) and applied by an inline script in `index.html` before first paint. Colors that depend on the theme (accent, overdue) are CSS variables, with `--on-accent` / `--on-overdue` for text on them, picked for 4.5:1 contrast in both themes.
-- Long titles (setting `longTitles`, synced): `"wrap"` (default) or `"oneLine"`. `AuthGate` sets `data-titles="one-line"` on `<html>`, and `styles.css` truncates `.long-title` (to-do rows, area rows on a bucket page) with an ellipsis. The open to-do's title and checklist items are auto-growing textareas that always wrap.
+- Sidebar views (setting `sidebarViews`, synced, 2.9.0): an array of optional view ids, `upcoming | anytime | someday | overdue | deadlines | notes`; missing means the default first four (`DEFAULT_SIDEBAR_VIEWS`). Settings → Sidebar has a "Show …" switch per optional view (Inbox, Today, Logbook and Trash always show) and "Reset sidebar to default", which writes the default list. See §6.5.
+- Long titles (setting `longTitles`, synced): `"wrap"` (default) or `"oneLine"`. `AuthGate` sets `data-titles="one-line"` on `<html>`, and `styles.css` truncates `.long-title` (task rows, area rows on a bucket page) with an ellipsis. The open task's title and checklist items are auto-growing textareas that always wrap.
 - Export (`GET /api/export`) is every row, Trash included, as `{format: "mythings-export", version: 2, exportedAt, data: {tag, area, project, heading, todo, checklist}}`. Import (`POST /api/import`) adds copies with fresh ids (`shared/transfer.ts`): references are remapped, top-level tags are matched by title, and trashed rows (and rows that need them) are left out. It's applied in batches of 200 ops so each broadcast stays small. Version 1 files (before Life Buckets) are converted first (§5.1).
 - Swipes (touch only): right opens When for the row, left moves it to the Trash with an Undo toast. Decided after 10px; mostly vertical moves scroll, long presses still drag.
 - Animations: cards, popovers, dialogs, toasts and page changes fade or slide in over 150–180ms; `prefers-reduced-motion` turns all motion off.
@@ -530,12 +572,12 @@ _Implementation notes (milestone 14):_
 
 ### 10.10 Task Notes (2.4.0; called Scratch Pad until 2.4.1)
 
-A to-do's `notes` is its Task Notes: a Notion-style editor (TipTap 3, `src/notes/`) whose document is stored as **Markdown**, so the data model, sync, encryption (notes are an encrypted field), export, import and repeats are unchanged.
+A task's `notes` is its Task Notes: a Notion-style editor (TipTap 3, `src/notes/`) whose document is stored as **Markdown**, so the data model, sync, encryption (notes are an encrypted field), export, import and repeats are unchanged.
 
 - Blocks: paragraphs, headings 1–3, bulleted/numbered lists, task lists (`- [ ]`), quotes, code blocks, dividers, GFM tables, and two Pandoc-style blocks: `:::toggle` (first child is the summary; `{open="false"}` when collapsed) and `:::callout`. Marks: bold, italic, strike, code, links (autolinked).
 - Insert with Markdown input rules or the "/" menu (`src/notes/slash.ts`, `@tiptap/suggestion`). Tables get a row/column bar while the cursor is in one.
 - The editor only writes back when the user edits, so existing notes aren't rewritten by opening them. Saving: 400 ms after typing stops, when the card closes or the page unmounts, and on `pagehide`.
-- `/notes` lists to-dos with notes (not in Trash), newest `updatedAt` first, with a search over title + plain text of the notes (`src/notes/plain.ts`, client-side so it works with encryption). `/notes/$todoId` shows one to-do's notes full-page, with its checklist above them as a separate section (same component as the card; "N of M" done, "+ Add item", or "Add checklist" when empty). Opened from the top bar, Quick Find ("Task Notes"; notes-only matches show a snippet) and `g n`; not in the sidebar.
+- `/notes` lists tasks with notes (not in Trash), newest `updatedAt` first, with a search over title + plain text of the notes (`src/notes/plain.ts`, client-side so it works with encryption). `/notes/$todoId` shows one task's notes full-page, with its checklist above them as a separate section (same component as the card; "N of M" done, "+ Add item", or "Add checklist" when empty). Opened from the top bar, Quick Find ("Task Notes"; notes-only matches show a snippet) and `g n`; in the sidebar only when chosen (§6.5, since 2.9.0). The list has the filter bar (§6.6).
 - Project notes stay a Markdown textarea.
 - `/scratch` and `/scratch/$todoId` (2.4.0 links) redirect to `/notes`.
 
@@ -554,18 +596,18 @@ A to-do's `notes` is its Task Notes: a Notion-style editor (TipTap 3, `src/notes
 
 ### 10.13 Focus Mode (2.7.0; a single countdown since 2.8.0)
 
-- One focus session per device, on one to-do, kept in localStorage (`mythings:focus:<userId>`; the last length in `mythings:focus-minutes`). Never synced and no history is stored. Timer logic is DOM-free in `src/focus/timer.ts`; `FocusProvider` ticks it and shares it across browser tabs via `storage` events. Sessions stored by 2.7.0 (Normal/Pomodoro) are dropped.
-- Always a countdown: before starting, pick 15/25/45/60/90 min or 1–240 custom; while running, Pause/Resume and +5 min. At zero it stops (`finish`), chimes if visible (Web Audio, `src/focus/chime.ts`), and offers Complete to-do, +5 min (runs again), Start again (same length; earlier time is banked in the total) and End focus.
-- UI (`src/focus/FocusScreen.tsx`): a full-screen Radix dialog (title, clock, progress, length picker before start, controls, checklist, read-only notes with "Edit in Task Notes", "Complete to-do and end focus"). Escape or Minimize → a pill at the bottom (left on phones, centred from md). The browser tab title is prefixed with the time left while running. Started from the card's Focus button / ⌥F and from the Task Notes page; ends if the to-do is deleted.
-- Push alerts: while the countdown runs, the client `PUT /api/push/focus {endpoint, at, kind: "focus"}` for its own subscription (checked against `push_subscriptions`, `at` within 3 h); pause/finish/end sends `DELETE`. The Durable Object keeps one row per endpoint in `focus_alerts`, includes `MIN(at)` in its alarm, sends a fixed text push ("Focus time's up", no to-do text) to that endpoint only, and drops alerts more than 15 minutes late. Unsubscribing deletes the endpoint's alert. (`kind: "break"` is still accepted from 2.7.0 clients.)
-- The open to-do card (2.7.0) no longer shows notes; notes are written on `/notes/$todoId`.
+- One focus session per device, on one task, kept in localStorage (`mythings:focus:<userId>`; the last length in `mythings:focus-minutes`). Never synced and no history is stored. Timer logic is DOM-free in `src/focus/timer.ts`; `FocusProvider` ticks it and shares it across browser tabs via `storage` events. Sessions stored by 2.7.0 (Normal/Pomodoro) are dropped.
+- Always a countdown: before starting, pick 15/25/45/60/90 min or 1–240 custom; while running, Pause/Resume and +5 min. At zero it stops (`finish`), chimes if visible (Web Audio, `src/focus/chime.ts`), and offers Complete task, +5 min (runs again), Start again (same length; earlier time is banked in the total) and End focus.
+- UI (`src/focus/FocusScreen.tsx`): a full-screen Radix dialog (title, clock, progress, length picker before start, controls, checklist, read-only notes with "Edit in Task Notes", "Complete task and end focus"). Escape or Minimize → a pill at the bottom (left on phones, centred from md). The browser tab title is prefixed with the time left while running. Started from the card's Focus button / ⌥F and from the Task Notes page; ends if the task is deleted.
+- Push alerts: while the countdown runs, the client `PUT /api/push/focus {endpoint, at, kind: "focus"}` for its own subscription (checked against `push_subscriptions`, `at` within 3 h); pause/finish/end sends `DELETE`. The Durable Object keeps one row per endpoint in `focus_alerts`, includes `MIN(at)` in its alarm, sends a fixed text push ("Focus time's up", no task text) to that endpoint only, and drops alerts more than 15 minutes late. Unsubscribing deletes the endpoint's alert. (`kind: "break"` is still accepted from 2.7.0 clients.)
+- The open task card (2.7.0) no longer shows notes; notes are written on `/notes/$todoId`.
 - Rows (2.7.0): the title block has a minimum width (~12rem) and the indicators wrap onto a line below it on narrow screens.
 
 ### 10.14 Tabs (desktop, 2.8.0)
 
 - At ≥ 1024px a tab strip (`src/tabs/TabStrip.tsx`) sits above the page. Each tab is an app path; the URL is always the active tab's path, and navigating changes only the active tab (`TabsProvider`). Pure state helpers in `src/tabs/tabs.ts` (open next to the active tab, close → neighbour, last tab stays, wrap-around stepping, max 12). Stored per device in `mythings:tabs:<userId>`; on load the current URL becomes the active tab's path. Only same-origin, non-`/api/` paths are kept.
-- Opening in a new tab: ⌘/Ctrl-click or middle-click on any same-app link (a document capture listener), middle-click on a to-do row (`/notes/:id`) or project row (`/project/:id`), and "Open in New Tab" in the card's ⋯ menu. ⌘-click on rows still selects.
-- Shortcuts (capture phase, desktop only): ⌘T / Ctrl+T (browsers usually keep it in a normal tab), ⌥⌘T / Ctrl+Alt+T new tab (Today); ⌥⌘W close; ⌥⌘← / ⌥⌘→ previous/next. Tab names come from the page (list name, or the project/area/bucket/tag/to-do title).
+- Opening in a new tab: ⌘/Ctrl-click or middle-click on any same-app link (a document capture listener), middle-click on a task row (`/notes/:id`) or project row (`/project/:id`), and "Open in New Tab" in the card's ⋯ menu. ⌘-click on rows still selects.
+- Shortcuts (capture phase, desktop only): ⌘T / Ctrl+T (browsers usually keep it in a normal tab), ⌥⌘T / Ctrl+Alt+T new tab (Today); ⌥⌘W close; ⌥⌘← / ⌥⌘→ previous/next. Tab names come from the page (list name, or the project/area/bucket/tag/task title).
 - Below 1024px there's no strip and "open in new tab" just navigates; stored tabs are kept for when the window is wide again.
 
 ---
@@ -602,14 +644,14 @@ _Implementation notes (milestone 13):_
 
 **E2E (Playwright):**
 - Sign up → add to Inbox via Quick Entry with `#tag @tomorrow` → appears in Upcoming under Tomorrow.
-- Create area → project → heading → to-dos; drag to reorder; reload; order persists.
+- Create area → project → heading → tasks; drag to reorder; reload; order persists.
 - Two browser contexts: a change in one appears in the other in under 2s.
 - Go offline, make 5 edits, go online → all synced, no duplicates.
 - Keyboard-only run through the core flow.
 
 _Implementation notes (pre-deploy):_
 - `pnpm e2e` runs Playwright (`e2e/`) in the installed Google Chrome against a production build served by `scripts/e2e-server.sh`, which starts from empty local state in `.wrangler/e2e` (dev data is never touched). Each test signs up its own account.
-- Specs: Quick Entry tokens → Upcoming; area → project → heading → to-dos with drag reordering across a reload; realtime between two devices (<2s); 50 offline edits (creates, a rename, a completion) with no loss or duplicates; keyboard-only flow; theme and export/import; tag editing and shortcuts; mobile drawer and swipes; Background Sync after the app is closed.
+- Specs: Quick Entry tokens → Upcoming; area → project → heading → tasks with drag reordering across a reload; realtime between two devices (<2s); 50 offline edits (creates, a rename, a completion) with no loss or duplicates; keyboard-only flow; theme and export/import; tag editing and shortcuts; mobile drawer and swipes; Background Sync after the app is closed.
 - Background Sync (§7.2): when changes are stuck offline the page registers `mythings-outbox`; if no app window is open when the connection returns, the service worker pushes the outbox itself (same code as the engine, `src/sync/outbox.ts`), under the same Web Lock, and only for the user the session cookie belongs to.
 
 ---
@@ -640,10 +682,10 @@ Build in this order; each milestone ends green on tests.
 
 - [ ] All lists in §6 behave per the table, verified by unit tests.
 - [ ] Every action in §10.6 works from the keyboard.
-- [ ] Creating, editing and completing a to-do re-renders in <16ms locally (no network wait).
+- [ ] Creating, editing and completing a task re-renders in <16ms locally (no network wait).
 - [ ] An edit on device A is visible on device B in <2s on a normal connection.
 - [ ] 50 offline edits sync without loss or duplication after reconnecting.
-- [ ] Repeating to-dos appear on the correct local date across a DST change.
+- [ ] Repeating tasks appear on the correct local date across a DST change.
 - [ ] Reminders arrive as push notifications within 1 minute of `reminderAt`.
 - [ ] Lighthouse PWA installable; accessibility score ≥ 95.
 - [ ] `pnpm test` and `pnpm e2e` pass; `wrangler deploy` succeeds from a clean clone using the README steps.
@@ -652,4 +694,4 @@ Build in this order; each milestone ends green on tests.
 
 ## 15. v2 ideas
 
-Email-to-Inbox (Cloudflare Email Routing → Worker → Inbox), attachments in R2, calendar overlay in Today/Upcoming (ICS subscription), Things 3 import, shared projects (multiple users per DO), AI "brain-dump to to-dos" via Workers AI, a Raycast/Alfred extension using a personal API token.
+Email-to-Inbox (Cloudflare Email Routing → Worker → Inbox), attachments in R2, calendar overlay in Today/Upcoming (ICS subscription), Things 3 import, shared projects (multiple users per DO), AI "brain-dump to tasks" via Workers AI, a Raycast/Alfred extension using a personal API token.

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UNREADABLE } from "../../shared/crypto/fields";
 import { localDateOf } from "../../shared/dates";
 import type { Todo } from "../../shared/schema";
+import { filterMatcher } from "../../shared/views";
 import { Checklist, useAddChecklistItem } from "../components/Checklist";
 import { EditableTitle } from "../components/controls";
 import {
@@ -17,11 +18,12 @@ import {
 } from "../components/icons";
 import { Empty, ListPage } from "../components/ListPage";
 import { Checkbox } from "../components/rows";
-import { useListData } from "../data";
+import { useFiltering, useListData, useListFilter } from "../data";
 import { useEditing } from "../editing/EditingProvider";
 import { routeFor } from "../editing/routeFor";
 import { useFocus } from "../focus/FocusProvider";
 import { shortDate } from "../lib/format";
+import { VIEWS } from "../lib/views";
 import { NotesEditor } from "../notes";
 import { matchesNotes, plainText, snippet } from "../notes/plain";
 import { useChecklist, useOps } from "../sync/hooks";
@@ -58,23 +60,27 @@ export function TaskNotesPage() {
 	const { data, ctx } = useListData();
 	const where = useWhere();
 	const [query, setQuery] = useState("");
-	const pages = useMemo(
-		() =>
-			data.todos
-				.filter(
-					(t) =>
-						t.deletedAt === null &&
-						t.notes.trim() !== "" &&
-						(!query.trim() || matchesNotes(query, t)),
-				)
-				.sort((a, b) => b.updatedAt - a.updatedAt),
-		[data.todos, query],
-	);
+	const filter = useListFilter();
+	const filtering = useFiltering();
+	const pages = useMemo(() => {
+		const matches = filterMatcher(data, filter);
+		return data.todos
+			.filter(
+				(t) =>
+					t.deletedAt === null &&
+					t.notes.trim() !== "" &&
+					matches({ kind: "todo", item: t }) &&
+					(!query.trim() || matchesNotes(query, t)),
+			)
+			.sort((a, b) => b.updatedAt - a.updatedAt);
+	}, [data, filter, query]);
 
 	return (
 		<ListPage
 			title="Task Notes"
 			icon={<NotesIcon className="size-7 shrink-0 text-accent" />}
+			description={VIEWS.notes.description}
+			filterable
 		>
 			<label className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 focus-within:border-accent">
 				<SearchIcon className="size-4 shrink-0 text-[var(--fg-muted)]" />
@@ -89,9 +95,9 @@ export function TaskNotesPage() {
 			</label>
 			{pages.length === 0 ? (
 				<Empty>
-					{query.trim()
+					{query.trim() || filtering
 						? "No notes match."
-						: "Notes you write on a to-do show up here. Open a to-do and write in its notes, or open it here with the notes icon at the bottom of the to-do."}
+						: "Notes you write on a task show up here. Open a task and write in its notes, or open it here with the notes icon at the bottom of the task."}
 				</Empty>
 			) : (
 				<ul aria-label="Notes" className="flex flex-col gap-1">
@@ -113,7 +119,7 @@ export function TaskNotesPage() {
 													: "text-[var(--fg-muted)] line-through"
 											}`}
 										>
-											{todo.title || "New To-Do"}
+											{todo.title || "New Task"}
 										</span>
 										<span className="shrink-0 text-xs text-[var(--fg-muted)]">
 											{shortDate(
@@ -145,7 +151,7 @@ export function TaskNotePage() {
 	const { todoId } = useParams({ strict: false });
 	const { data, ctx } = useListData();
 	const todo = data.todos.find((t) => t.id === todoId);
-	if (!todo) return <Missing what="to-do" />;
+	if (!todo) return <Missing what="task" />;
 	// Re-mount per to-do so each page starts from its own notes.
 	return <TaskNoteEditor key={todo.id} todo={todo} today={ctx.today} />;
 }
@@ -194,7 +200,7 @@ function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 
 	return (
 		<ListPage
-			title={todo.title || "New To-Do"}
+			title={todo.title || "New Task"}
 			titleNode={
 				readOnly ? undefined : (
 					<EditableTitle
@@ -202,15 +208,15 @@ function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 						onSave={(title) =>
 							void ops.update("todo", todo.id, { title }).catch(console.error)
 						}
-						placeholder="New To-Do"
-						label="To-do title"
+						placeholder="New Task"
+						label="Task title"
 					/>
 				)
 			}
 			icon={
 				<Checkbox
 					status={displayStatus(todo.id, todo.status)}
-					label={todo.title || "New To-Do"}
+					label={todo.title || "New Task"}
 					onToggle={() => toggleComplete(todo.id, todo.status)}
 				/>
 			}

@@ -81,7 +81,7 @@ function FocusPill({ todo }: { todo: Todo }) {
 	if (!session) return null;
 	const running = session.runningSince !== null;
 	const done = isFinished(session);
-	const title = todo.title === UNREADABLE ? "🔒" : todo.title || "New To-Do";
+	const title = todo.title === UNREADABLE ? "🔒" : todo.title || "New Task";
 	return (
 		<section
 			aria-label="Focus"
@@ -143,7 +143,7 @@ function FocusScreen({ todo }: { todo: Todo }) {
 	const progress = Math.min(1, elapsedMs(session, now) / session.length);
 	const minutes = Math.round(session.length / 60_000);
 	const unreadable = todo.title === UNREADABLE || todo.notes === UNREADABLE;
-	const title = todo.title === UNREADABLE ? "🔒" : todo.title || "New To-Do";
+	const title = todo.title === UNREADABLE ? "🔒" : todo.title || "New Task";
 	const open = todo.status === "open";
 
 	const complete = () => {
@@ -258,7 +258,7 @@ function FocusScreen({ todo }: { todo: Todo }) {
 												onClick={complete}
 												className={PRIMARY}
 											>
-												Complete to-do
+												Complete task
 											</button>
 										)}
 										<button
@@ -358,7 +358,7 @@ function FocusScreen({ todo }: { todo: Todo }) {
 						{!done && open && (
 							<div className="mt-auto flex justify-center pt-10">
 								<button type="button" onClick={complete} className={SECONDARY}>
-									Complete to-do and end focus
+									Complete task and end focus
 								</button>
 							</div>
 						)}

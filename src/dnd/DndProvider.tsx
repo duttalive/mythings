@@ -289,7 +289,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
 
 	const title = active?.id
 		? active.kind === "todo"
-			? data.todos.find((t) => t.id === active.id)?.title || "New To-Do"
+			? data.todos.find((t) => t.id === active.id)?.title || "New Task"
 			: active.kind === "project"
 				? data.projects.find((p) => p.id === active.id)?.title || "New Project"
 				: active.kind === "heading"

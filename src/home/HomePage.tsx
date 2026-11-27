@@ -151,7 +151,7 @@ export function HomePage({ go }: Props) {
 						</Feature>
 						<Feature icon={<CalendarIcon />} title="Plans in plain words">
 							Type “tomorrow”, “next fri” or “in 2 weeks”. Deadlines and
-							repeating to-dos are built in.
+							repeating tasks are built in.
 						</Feature>
 						<Feature icon={<SearchIcon />} title="Keyboard first">
 							Quick Entry and Quick Find from anywhere, and shortcuts for nearly
@@ -162,11 +162,11 @@ export function HomePage({ go }: Props) {
 							what keeps going; projects run to a finish.
 						</Feature>
 						<Feature icon={<NotesIcon />} title="Task Notes">
-							Notion-style notes on any to-do: headings, checklists, toggles and
+							Notion-style notes on any task: headings, checklists, toggles and
 							tables. Open them full page and search them all.
 						</Feature>
 						<Feature icon={<EyeOffIcon />} title="End-to-end encryption">
-							Turn it on and your to-dos are locked on your devices before they
+							Turn it on and your tasks are locked on your devices before they
 							sync. Only you can read them.
 						</Feature>
 						<Feature icon={<BellIcon />} title="Reminders that arrive">

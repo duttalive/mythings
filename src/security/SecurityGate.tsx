@@ -278,10 +278,10 @@ function UnlockScreen() {
 		>
 			<p className="mt-2 text-center text-sm text-[var(--fg-muted)]">
 				{mode === "password"
-					? "Your to-dos are end-to-end encrypted. Enter your password to read them on this device."
+					? "Your tasks are end-to-end encrypted. Enter your password to read them on this device."
 					: mode === "recovery"
 						? "Enter the recovery key you saved when you turned on encryption, and your current password."
-						: "Without your old password or recovery key, your encrypted to-dos can't be read by anyone, including us. You can keep using mythings with a new key; anything that can't be read will show a lock."}
+						: "Without your old password or recovery key, your encrypted tasks can't be read by anyone, including us. You can keep using mythings with a new key; anything that can't be read will show a lock."}
 			</p>
 			<form onSubmit={submit} className="mt-8 flex flex-col gap-4" noValidate>
 				<input

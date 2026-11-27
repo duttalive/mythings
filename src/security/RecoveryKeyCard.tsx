@@ -15,7 +15,7 @@ export function RecoveryKeyCard({
 	const checkId = useId();
 
 	const download = () => {
-		const text = `mythings recovery key\n\n${recoveryKey}\n\nYou need this key to read your encrypted to-dos if you forget your password. Keep it somewhere safe, like a password manager.\n`;
+		const text = `mythings recovery key\n\n${recoveryKey}\n\nYou need this key to read your encrypted tasks if you forget your password. Keep it somewhere safe, like a password manager.\n`;
 		const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
 		const link = Object.assign(document.createElement("a"), {
 			href: url,
@@ -45,7 +45,7 @@ export function RecoveryKeyCard({
 			</p>
 			<p className="text-xs text-[var(--fg-muted)]">
 				If you forget your password, this key is the only way to read your
-				to-dos. We can't recover them for you. Keep it somewhere safe, like a
+				tasks. We can't recover them for you. Keep it somewhere safe, like a
 				password manager.
 			</p>
 			<div className="flex flex-wrap gap-2">

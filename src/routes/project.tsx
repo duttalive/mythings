@@ -10,17 +10,17 @@ import {
 	ProjectTitle,
 } from "../components/ProjectHeader";
 import { RowList, TodoRow } from "../components/rows";
-import { useFilteredContext, useListData, useTagFilter } from "../data";
+import { useFilteredContext, useFiltering, useListData } from "../data";
 import { placed, SortableList } from "../dnd/sortable";
 import { Missing } from "./not-found";
 
 export function ProjectPage() {
 	const { projectId } = useParams({ strict: false });
 	const { data } = useListData();
-	const filtering = useTagFilter().length > 0;
+	const filtering = useFiltering();
 	const view = projectView(data, projectId ?? "", useFilteredContext());
 	if (!view) return <Missing what="project" />;
-	// While filtering by tag, headings with no matching to-dos are noise.
+	// While filtering, headings with no matching to-dos are noise.
 	const shown = (group: { todos: unknown[] }) =>
 		!filtering || group.todos.length > 0;
 
@@ -42,9 +42,10 @@ export function ProjectPage() {
 			titleNode={readOnly ? undefined : <ProjectTitle project={project} />}
 			icon={<ProjectStatusButton project={project} progress={progress} />}
 			filterable
+			filterKinds={["tags"]}
 			header={<ProjectDetails project={project} />}
 		>
-			{empty && <Empty>No to-dos in this project.</Empty>}
+			{empty && <Empty>No tasks in this project.</Empty>}
 			{/* Always rendered (it may be empty) so to-dos can be dragged out of headings into it. */}
 			<SortableList
 				disabled={!reorderable}

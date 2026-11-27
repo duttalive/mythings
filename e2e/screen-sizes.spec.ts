@@ -128,7 +128,7 @@ for (const size of SIZES) {
 			await expect(screen).toBeVisible();
 			await expect(screen).toContainText("You focused for 10 min");
 			for (const name of [
-				"Complete to-do",
+				"Complete task",
 				"+5 min",
 				"Start again",
 				"End focus",
@@ -144,7 +144,7 @@ for (const size of SIZES) {
 
 			// Completing from Focus Mode ends it.
 			await screen
-				.getByRole("button", { name: "Complete to-do", exact: true })
+				.getByRole("button", { name: "Complete task", exact: true })
 				.click();
 			await expect(screen).toBeHidden();
 			await expect(

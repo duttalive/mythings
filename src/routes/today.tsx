@@ -11,9 +11,10 @@ import { useAuth } from "../auth/AuthGate";
 import { StarIcon } from "../components/icons";
 import { Empty, ListPage } from "../components/ListPage";
 import { EntryRow, ProgressRing, RowList } from "../components/rows";
-import { useFilteredContext, useListData, useTagFilter } from "../data";
+import { useFilteredContext, useFiltering, useListData } from "../data";
 import { SortableList } from "../dnd/sortable";
 import type { Placed } from "../editing/reorder";
+import { VIEWS } from "../lib/views";
 
 const placedEntries = (entries: Entry[]): Placed[] =>
 	entries.map((e) => ({
@@ -25,7 +26,7 @@ const placedEntries = (entries: Entry[]): Placed[] =>
 export function TodayPage() {
 	const { data, ctx, projects } = useListData();
 	const view = today(data, useFilteredContext());
-	// The tag bar offers the tags of what's in Today, filtered or not.
+	// The filter bar offers the tags of what's in Today, filtered or not.
 	const filterTags = useMemo(() => {
 		const all = today(data, ctx);
 		return tagsInUse(data, all.main);
@@ -34,7 +35,7 @@ export function TodayPage() {
 	const groups = grouped ? groupByProject(view.main, projects) : null;
 	// Grouped, the rows (and the order dragging works in) follow the groups.
 	const main = groups ? groups.flatMap((g) => g.entries) : view.main;
-	const filtering = useTagFilter().length > 0;
+	const filtering = useFiltering();
 	const empty = view.main.length === 0;
 	// Grouped, a to-do moves only among its own group's rows: it can't leave
 	// its project's group, and moving it past the group would change the
@@ -52,13 +53,14 @@ export function TodayPage() {
 		<ListPage
 			title="Today"
 			icon={<StarIcon className="size-7 text-today" />}
+			description={VIEWS.today.description}
 			filterable
 			filterTags={filterTags}
 		>
 			{empty && (
 				<Empty>
 					{filtering
-						? "Nothing in Today has these tags."
+						? "Nothing in Today matches these filters."
 						: "Nothing planned for today."}
 				</Empty>
 			)}

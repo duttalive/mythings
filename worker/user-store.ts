@@ -373,7 +373,7 @@ export class UserStore extends DurableObject<Env> {
 			fresh.map((t) => {
 				const { body, bodyEntity } = container(t);
 				return {
-					title: fitPush(t.title) || "New To-Do",
+					title: fitPush(t.title) || "New Task",
 					body: fitPush(body) || "Reminder",
 					bodyEntity,
 					url: t.project_id ? `/project/${t.project_id}` : "/today",

@@ -1,18 +1,21 @@
 // Deadlines (as in Things): every open to-do and project with a deadline,
-// soonest first. Not in the sidebar; found by typing "Deadlines" in Quick Find.
+// soonest first. In the sidebar if turned on in Settings; always in Quick Find.
 
 import { useState } from "react";
 import { type DeadlineGroup, deadlines } from "../../shared/views";
 import { FlagIcon, SearchIcon } from "../components/icons";
 import { Empty, ListPage, Section } from "../components/ListPage";
 import { EntryRow, RowList } from "../components/rows";
-import { useListData } from "../data";
+import { useFilteredContext, useFiltering, useListData } from "../data";
 import { dayLabel } from "../lib/format";
+import { VIEWS } from "../lib/views";
 
 export function DeadlinesPage() {
 	const { data, ctx } = useListData();
+	const filtered = useFilteredContext();
+	const filtering = useFiltering();
 	const [query, setQuery] = useState("");
-	const groups = deadlines(data, ctx, query);
+	const groups = deadlines(data, filtered, query);
 
 	const title = (group: DeadlineGroup) =>
 		group.kind === "overdue" ? (
@@ -25,6 +28,8 @@ export function DeadlinesPage() {
 		<ListPage
 			title="Deadlines"
 			icon={<FlagIcon className="size-7 text-overdue" />}
+			description={VIEWS.deadlines.description}
+			filterable
 			header={
 				<div className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--border)] px-2.5 focus-within:border-accent">
 					<SearchIcon className="size-4 shrink-0 text-[var(--fg-muted)]" />
@@ -50,7 +55,9 @@ export function DeadlinesPage() {
 				<Empty>
 					{query.trim()
 						? `No deadlines match “${query.trim()}”.`
-						: "Nothing has a deadline."}
+						: filtering
+							? "No deadlines match these filters."
+							: "Nothing has a deadline."}
 				</Empty>
 			)}
 			{groups.map((group, i) => (

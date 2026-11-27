@@ -60,8 +60,8 @@ export function SecuritySettings() {
 			<Row
 				text={
 					user.encrypted
-						? "End-to-end encryption is on. Your to-dos, notes, checklists and list names are encrypted on your devices; only you can read them."
-						: "End-to-end encryption is off. Turn it on so your to-dos are encrypted on your devices and only you can read them."
+						? "End-to-end encryption is on. Your tasks, notes, checklists and list names are encrypted on your devices; only you can read them."
+						: "End-to-end encryption is off. Turn it on so your tasks are encrypted on your devices and only you can read them."
 				}
 			>
 				{panel === null &&
@@ -102,13 +102,13 @@ export function SecuritySettings() {
 			)}
 			{panel === "enable" && (
 				<KeyPanel
-					intro="Before you turn it on, save your recovery key. If you forget your password, it's the only way to read your to-dos: we can't reset encryption for you."
+					intro="Before you turn it on, save your recovery key. If you forget your password, it's the only way to read your tasks: we can't reset encryption for you."
 					action="Turn on encryption"
 					onCancel={() => setPanel(null)}
 					onSubmit={async (password, recovery) => {
 						updateUser(await enableEncryption(user, password, recovery));
 						done(
-							"Encryption is on. Your to-dos are being encrypted; your other devices will ask for your password once.",
+							"Encryption is on. Your tasks are being encrypted; your other devices will ask for your password once.",
 						);
 					}}
 				/>
@@ -128,14 +128,14 @@ export function SecuritySettings() {
 			)}
 			{panel === "disable" && (
 				<PasswordPanel
-					intro="Your to-dos will be stored without end-to-end encryption again. Any passcode on this device is removed."
+					intro="Your tasks will be stored without end-to-end encryption again. Any passcode on this device is removed."
 					action="Turn off encryption"
 					danger
 					onCancel={() => setPanel(null)}
 					onSubmit={async (password) => {
 						if (crypto.passcode) await removePasscode(user.id);
 						updateUser(await disableEncryption(user, password));
-						done("Encryption is off. Your to-dos are being decrypted.");
+						done("Encryption is off. Your tasks are being decrypted.");
 					}}
 				/>
 			)}

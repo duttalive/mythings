@@ -5,6 +5,7 @@ import { ListPage, Section } from "../components/ListPage";
 import { EntryRow, RowList } from "../components/rows";
 import { useFilteredContext, useListData } from "../data";
 import { monthLabel, rangeLabel, weekdayName } from "../lib/format";
+import { VIEWS } from "../lib/views";
 
 export function UpcomingPage() {
 	const { data } = useListData();
@@ -34,6 +35,7 @@ export function UpcomingPage() {
 		<ListPage
 			title="Upcoming"
 			icon={<CalendarIcon className="size-7 text-overdue" />}
+			description={VIEWS.upcoming.description}
 			filterable
 		>
 			{groups.map((group, i) => (

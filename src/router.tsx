@@ -24,16 +24,27 @@ import { TodayPage } from "./routes/today";
 import { TrashPage } from "./routes/trash";
 import { UpcomingPage } from "./routes/upcoming";
 
+/** The filter bar's choices: comma-separated ids per kind (see FILTER_PARAMS). */
 type ListSearch = {
-	/** Comma-separated tag ids for the tag bar filter. */
+	bucket?: string;
+	area?: string;
+	project?: string;
 	tags?: string;
 };
+
+const LIST_SEARCH_KEYS = ["bucket", "area", "project", "tags"] as const;
 
 const rootRoute = createRootRoute({
 	component: Shell,
 	notFoundComponent: NotFound,
-	validateSearch: (search: Record<string, unknown>): ListSearch =>
-		typeof search.tags === "string" && search.tags ? { tags: search.tags } : {},
+	validateSearch: (search: Record<string, unknown>): ListSearch => {
+		const out: ListSearch = {};
+		for (const key of LIST_SEARCH_KEYS) {
+			const value = search[key];
+			if (typeof value === "string" && value) out[key] = value;
+		}
+		return out;
+	},
 });
 
 const page = <P extends string>(path: P, component: () => ReactNode) =>

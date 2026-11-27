@@ -15,9 +15,9 @@ mythings follows the Things 3 way of working (Inbox → Today → Upcoming → A
 ## Features
 
 - **Lists that match how you plan:** Inbox, Today (with This Evening), Upcoming, Anytime, Someday, Overdue and Logbook, plus Life Buckets that group Areas and Projects, Headings, checklists and nested tags.
-- **Task Notes:** Notion-style notes on every to-do (headings, lists, checkboxes, toggles, callouts, tables), stored as Markdown, with a full-page view and a searchable Task Notes page.
-- **End-to-end encryption (optional):** to-do text is encrypted on your devices before it syncs.
-- **Natural scheduling:** type "tomorrow", "next fri" or "in 2 weeks"; deadlines, reminders and repeating to-dos (fixed or after completion).
+- **Task Notes:** Notion-style notes on every task (headings, lists, checkboxes, toggles, callouts, tables), stored as Markdown, with a full-page view and a searchable Task Notes page.
+- **End-to-end encryption (optional):** task text is encrypted on your devices before it syncs.
+- **Natural scheduling:** type "tomorrow", "next fri" or "in 2 weeks"; deadlines, reminders and repeating tasks (fixed or after completion).
 - **Keyboard first:** Quick Entry, Quick Find and shortcuts for nearly everything, with multi-select and drag and drop.
 - **Offline and installable:** a PWA for desktop and phone. Changes made offline are queued and synced when the connection returns, even after the tab is closed (Background Sync, where supported).
 - **Real time across devices:** edits stream over a WebSocket.

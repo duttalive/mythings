@@ -28,11 +28,11 @@ export function todosRequest(todos: Todo[]): DeleteRequest {
 	const [only] = todos;
 	if (todos.length === 1 && only)
 		return {
-			title: `Delete ${quoted(only.title, "this to-do")}?`,
+			title: `Delete ${quoted(only.title, "this task")}?`,
 			body: `It moves to Trash. ${TRASH}`,
 		};
 	return {
-		title: `Delete ${count(todos.length, "to-do")}?`,
+		title: `Delete ${count(todos.length, "task")}?`,
 		body: `They move to Trash. ${TRASH_THEM}`,
 	};
 }
@@ -44,7 +44,7 @@ export function headingRequest(
 	const todos = live(data.todos).filter((t) => t.headingId === heading.id);
 	return {
 		title: `Delete heading ${quoted(heading.title, "“New Heading”")}?`,
-		body: withContents(todos.length ? [count(todos.length, "to-do")] : []),
+		body: withContents(todos.length ? [count(todos.length, "task")] : []),
 	};
 }
 
@@ -59,7 +59,7 @@ export function projectRequest(
 	return {
 		title: `Delete project ${quoted(project.title, "“New Project”")}?`,
 		body: withContents([
-			...(todos.length ? [count(todos.length, "to-do")] : []),
+			...(todos.length ? [count(todos.length, "task")] : []),
 			...(headings.length ? [count(headings.length, "heading")] : []),
 		]),
 	};
@@ -91,7 +91,7 @@ export function areaRequest(area: Area, data: ViewData): DeleteRequest {
 		body: withContents([
 			...(inner ? [count(inner, "area")] : []),
 			...(projects.length ? [count(projects.length, "project")] : []),
-			...(todos.length ? [count(todos.length, "to-do")] : []),
+			...(todos.length ? [count(todos.length, "task")] : []),
 		]),
 	};
 }
@@ -103,7 +103,7 @@ export function tagRequest(tag: Tag, data: ViewData): DeleteRequest {
 	const nested = tagDescendants(live(data.tags), tag.id).size - 1;
 	return {
 		title: `Delete tag ${quoted(tag.title, "this tag")}?`,
-		body: `${nested ? `${count(nested, "tag")} inside it ${nested === 1 ? "goes" : "go"} too. ` : ""}${tagged ? `It comes off ${count(tagged, "to-do or project", "to-dos and projects")}; they stay. ` : ""}Tags don't go to Trash, so you can only undo this straight away.`,
+		body: `${nested ? `${count(nested, "tag")} inside it ${nested === 1 ? "goes" : "go"} too. ` : ""}${tagged ? `It comes off ${count(tagged, "task or project", "tasks and projects")}; they stay. ` : ""}Tags don't go to Trash, so you can only undo this straight away.`,
 		confirmLabel: "Delete Tag",
 	};
 }

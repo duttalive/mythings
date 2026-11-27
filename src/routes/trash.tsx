@@ -8,12 +8,13 @@ import {
 } from "../components/icons";
 import { Empty, ListPage } from "../components/ListPage";
 import { ProjectRow, RowList, TodoRow } from "../components/rows";
-import { useListData } from "../data";
+import { useListData, useListFilter } from "../data";
 import { emptyTrashRequest } from "../editing/deleteRequests";
+import { VIEWS } from "../lib/views";
 import { useOps } from "../sync/hooks";
 
 const UNTITLED: Record<TrashEntry["kind"], string> = {
-	todo: "New To-Do",
+	todo: "New Task",
 	project: "New Project",
 	heading: "New Heading",
 	area: "New Area",
@@ -24,13 +25,17 @@ function label(entry: TrashEntry): string {
 	if (entry.kind === "heading") return "Heading";
 	if (entry.kind === "area")
 		return entry.item.kind === "bucket" ? "Life Bucket" : "Area";
-	return entry.kind === "project" ? "Project" : "To-Do";
+	return entry.kind === "project" ? "Project" : "Task";
 }
 
 export function TrashPage() {
 	const { data } = useListData();
 	const ops = useOps();
-	const entries = trash(data);
+	// Empty Trash always empties all of it, whatever the filter bar shows.
+	const all = trash(data);
+	const filter = useListFilter();
+	const entries = trash(data, filter);
+	const filtering = Object.keys(filter).length > 0;
 	const confirmDelete = useConfirmDelete();
 
 	const restore = (entry: TrashEntry) => {
@@ -38,11 +43,11 @@ export function TrashPage() {
 	};
 
 	const emptyTrash = async () => {
-		if (!(await confirmDelete(emptyTrashRequest(entries.length)))) return;
+		if (!(await confirmDelete(emptyTrashRequest(all.length)))) return;
 		// Top-level entries only: purging a parent takes its children with it.
 		await ops
 			.apply(
-				entries.map((entry) => ({
+				all.map((entry) => ({
 					type: "purge" as const,
 					entity: entry.kind,
 					id: entry.item.id,
@@ -67,8 +72,10 @@ export function TrashPage() {
 		<ListPage
 			title="Trash"
 			icon={<TrashIcon className="size-7 text-[var(--fg-muted)]" />}
+			description={VIEWS.trash.description}
+			filterable
 			header={
-				entries.length > 0 && (
+				all.length > 0 && (
 					<div className="mt-3 flex items-center gap-2 text-sm">
 						<button
 							type="button"
@@ -82,7 +89,11 @@ export function TrashPage() {
 			}
 		>
 			{entries.length === 0 ? (
-				<Empty>Trash is empty.</Empty>
+				<Empty>
+					{filtering
+						? "Nothing in Trash matches these filters."
+						: "Trash is empty."}
+				</Empty>
 			) : (
 				<RowList label="Trash">
 					{entries.map((entry) => {

@@ -2,24 +2,24 @@ import { inbox } from "../../shared/views";
 import { InboxIcon } from "../components/icons";
 import { Empty, ListPage } from "../components/ListPage";
 import { RowList, TodoRow } from "../components/rows";
-import { useFilteredContext, useListData, useTagFilter } from "../data";
+import { useListData } from "../data";
 import { placed, SortableList } from "../dnd/sortable";
+import { VIEWS } from "../lib/views";
 
 export function InboxPage() {
-	const { data } = useListData();
-	const todos = inbox(data, useFilteredContext());
-	const filtering = useTagFilter().length > 0;
+	// The Inbox has no filter bar: it's where everything starts.
+	const { data, ctx } = useListData();
+	const todos = inbox(data, ctx);
 	return (
 		<ListPage
 			title="Inbox"
 			icon={<InboxIcon className="size-7 text-accent" />}
-			filterable
+			description={VIEWS.inbox.description}
 		>
 			{todos.length === 0 ? (
 				<Empty>Your Inbox is empty.</Empty>
 			) : (
 				<SortableList
-					disabled={filtering}
 					list={{
 						id: "inbox",
 						accepts: ["todo"],

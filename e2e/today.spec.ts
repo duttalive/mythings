@@ -34,7 +34,7 @@ test("grouped by project, Today moves a to-do only within its project's group", 
 	await quickEntry(page, "Label /Move @today");
 	await open(page, "/settings");
 	await page
-		.getByRole("switch", { name: "Group to-dos in Today by project" })
+		.getByRole("switch", { name: "Group tasks in Today by project" })
 		.check();
 	await expectSynced(page);
 
@@ -57,7 +57,7 @@ test("grouped by project, Today moves a to-do only within its project's group", 
 
 	await open(page, "/settings");
 	await page
-		.getByRole("switch", { name: "Group to-dos in Today by project" })
+		.getByRole("switch", { name: "Group tasks in Today by project" })
 		.uncheck();
 	await open(page, "/today");
 	await expect
@@ -65,16 +65,57 @@ test("grouped by project, Today moves a to-do only within its project's group", 
 		.toEqual(["Dentist", "Label", "Pack"]);
 });
 
-test("Today's tag bar offers only the tags of what's in Today", async ({
+test("Today's filter bar offers only the tags of what's in Today", async ({
 	page,
 }) => {
 	await signUp(page);
 	await quickEntry(page, "Buy milk #shop @today");
 	await quickEntry(page, "Plan week #work @someday");
+	await quickEntry(page, "Call mum @today");
 	await open(page, "/today");
-	const bar = page.getByRole("toolbar", { name: "Filter by tag" });
-	await expect(bar.getByRole("button", { name: "shop" })).toBeVisible();
-	await expect(bar.getByRole("button", { name: "work" })).toHaveCount(0);
+	const bar = page.getByRole("toolbar", { name: "Filters" });
+	await bar.getByRole("button", { name: "Filter by Tag" }).click();
+	const menu = page.getByRole("dialog", { name: "Filter by Tag" });
+	await expect(menu.getByRole("button", { name: "shop" })).toBeVisible();
+	await expect(menu.getByRole("button", { name: "work" })).toHaveCount(0);
+
+	await menu.getByRole("button", { name: "shop" }).click();
+	await expect(page).toHaveURL(/tags=/);
+	await expect.poll(() => rowTitles(page)).toEqual(["Buy milk"]);
+	await page.keyboard.press("Escape");
+	await bar.getByRole("button", { name: "Clear filters" }).click();
+	await expect.poll(() => rowTitles(page)).toEqual(["Buy milk", "Call mum"]);
+});
+
+test("the sidebar shows the views chosen in Settings; search finds them all", async ({
+	page,
+}) => {
+	await signUp(page);
+	await open(page, "/settings");
+	const lists = page.getByRole("navigation", { name: "Lists" });
+	await expect(lists.getByRole("link", { name: "Deadlines" })).toHaveCount(0);
+	await page.getByRole("switch", { name: "Show Deadlines" }).check();
+	await page.getByRole("switch", { name: "Show Someday" }).uncheck();
+	await expect(lists.getByRole("link", { name: "Deadlines" })).toBeVisible();
+	await expect(lists.getByRole("link", { name: "Someday" })).toHaveCount(0);
+	await expect(lists.getByRole("link", { name: "Inbox" })).toBeVisible();
+
+	await page.reload();
+	await expect(lists.getByRole("link", { name: "Deadlines" })).toBeVisible();
+
+	await page.keyboard.press("d");
+	const find = page.getByRole("combobox", { name: "Quick Find" });
+	await find.fill("someday");
+	await find.press("Enter");
+	await expect(page).toHaveURL(/\/someday$/);
+	await expect(
+		page.getByText("Tasks and projects parked for later."),
+	).toBeVisible();
+
+	await open(page, "/settings");
+	await page.getByRole("button", { name: "Reset sidebar to default" }).click();
+	await expect(lists.getByRole("link", { name: "Someday" })).toBeVisible();
+	await expect(lists.getByRole("link", { name: "Deadlines" })).toHaveCount(0);
 });
 
 test("Today moves on to the new day when the app comes back after sleeping", async ({

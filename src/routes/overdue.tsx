@@ -8,8 +8,9 @@ import { overdue, tagsInUse } from "../../shared/views";
 import { FlagIcon } from "../components/icons";
 import { Empty, ListPage, Section } from "../components/ListPage";
 import { EntryRow, RowList } from "../components/rows";
-import { useFilteredContext, useListData, useTagFilter } from "../data";
+import { useFilteredContext, useFiltering, useListData } from "../data";
 import { dayLabel } from "../lib/format";
+import { VIEWS } from "../lib/views";
 
 function lateBy(days: number): string {
 	return days === 1 ? "1 day overdue" : `${days} days overdue`;
@@ -18,7 +19,7 @@ function lateBy(days: number): string {
 export function OverduePage() {
 	const { data, ctx } = useListData();
 	const groups = overdue(data, useFilteredContext());
-	// The tag bar offers the tags of what's overdue, filtered or not.
+	// The filter bar offers the tags of what's overdue, filtered or not.
 	const filterTags = useMemo(
 		() =>
 			tagsInUse(
@@ -27,19 +28,20 @@ export function OverduePage() {
 			),
 		[data, ctx],
 	);
-	const filtering = useTagFilter().length > 0;
+	const filtering = useFiltering();
 
 	return (
 		<ListPage
 			title="Overdue"
 			icon={<FlagIcon className="size-7 text-overdue" />}
+			description={VIEWS.overdue.description}
 			filterable
 			filterTags={filterTags}
 		>
 			{groups.length === 0 ? (
 				<Empty>
 					{filtering
-						? "Nothing overdue has these tags."
+						? "Nothing overdue matches these filters."
 						: "Nothing is overdue. Nice work."}
 				</Empty>
 			) : (

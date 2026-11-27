@@ -308,7 +308,7 @@ export function TodoCard({ todo }: { todo: Todo }) {
 			<div className="flex items-start gap-3 px-1">
 				<Checkbox
 					status={status}
-					label={title || "New To-Do"}
+					label={title || "New Task"}
 					onToggle={() => toggleComplete(todo.id, todo.status)}
 				/>
 				{/* A one-line title that wraps onto more lines as it grows. */}
@@ -326,7 +326,7 @@ export function TodoCard({ todo }: { todo: Todo }) {
 							collapse();
 						}
 					}}
-					placeholder="New To-Do"
+					placeholder="New Task"
 					aria-label="Title"
 					className={`min-w-0 flex-1 resize-none overflow-hidden bg-transparent text-[0.9375rem] font-medium break-words outline-none placeholder:text-[var(--fg-muted)] ${
 						status !== "open" ? "text-[var(--fg-muted)] line-through" : ""
@@ -501,7 +501,7 @@ export function TodoCard({ todo }: { todo: Todo }) {
 								void ops.remove("todo", todo.id).catch(console.error);
 							}}
 						>
-							<span className="text-overdue">Delete To-Do</span>
+							<span className="text-overdue">Delete Task</span>
 						</PopoverOption>
 					</Popover>
 				</div>

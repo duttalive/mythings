@@ -201,29 +201,38 @@ test("guide screenshots", async ({ page, browser }) => {
 		await shot(page, list);
 	}
 
-	await step(page, "tag filter", async () => {
+	await step(page, "filter bar", async () => {
 		await open(page, "/anytime");
+		const bar = page.getByRole("toolbar", { name: "Filters" });
+		await bar.getByRole("button", { name: "Filter by Tag" }).click();
 		await page
-			.getByRole("toolbar", { name: "Filter by tag" })
+			.getByRole("dialog", { name: "Filter by Tag" })
 			.getByRole("button", { name: "home" })
 			.click();
+		await shot(page, "filter-menu");
+		await page.keyboard.press("Escape");
 		await shot(page, "tag-filter");
+		await bar.getByRole("button", { name: "Clear filters" }).click();
+	});
+
+	await step(page, "sidebar settings", async () => {
+		await open(page, "/settings");
 		await page
-			.getByRole("toolbar", { name: "Filter by tag" })
-			.getByRole("button", { name: "home" })
-			.click();
+			.getByRole("heading", { name: "Sidebar" })
+			.scrollIntoViewIfNeeded();
+		await shot(page, "settings-sidebar");
 	});
 
 	await step(page, "today grouped", async () => {
 		await open(page, "/settings");
 		await page
-			.getByRole("switch", { name: "Group to-dos in Today by project" })
+			.getByRole("switch", { name: "Group tasks in Today by project" })
 			.click();
 		await open(page, "/today");
 		await shot(page, "today-grouped");
 		await open(page, "/settings");
 		await page
-			.getByRole("switch", { name: "Group to-dos in Today by project" })
+			.getByRole("switch", { name: "Group tasks in Today by project" })
 			.click();
 	});
 
@@ -266,7 +275,7 @@ test("guide screenshots", async ({ page, browser }) => {
 		await page.getByRole("link", { name: "Open in Task Notes" }).click();
 		const pad = page.getByRole("textbox", { name: "Task Notes" });
 		await expect(pad.locator("table")).toBeVisible();
-		await page.getByRole("textbox", { name: "To-do title" }).blur();
+		await page.getByRole("textbox", { name: "Task title" }).blur();
 		await shot(page, "task-notes-page");
 		// The / menu, on a new line at the end (undone afterwards).
 		await pad.locator("p", { hasText: "parking permit" }).click();
@@ -319,7 +328,7 @@ test("guide screenshots", async ({ page, browser }) => {
 		await expect(
 			page.getByRole("textbox", { name: "Task Notes" }),
 		).toBeVisible();
-		await page.getByRole("textbox", { name: "To-do title" }).blur();
+		await page.getByRole("textbox", { name: "Task title" }).blur();
 		await shot(page, "tabs");
 		// Back to one tab for the other screenshots.
 		await page.keyboard.press("ControlOrMeta+Alt+w");

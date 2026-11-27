@@ -185,7 +185,7 @@ export function QuickEntry({
 					autoFocus
 					value={title}
 					onChange={(e) => setTitle(e.target.value)}
-					placeholder="New To-Do"
+					placeholder="New Task"
 					aria-label="Title"
 					aria-describedby="quick-entry-hint"
 					className="w-full bg-transparent text-base font-medium outline-none placeholder:text-[var(--fg-muted)]"
@@ -301,7 +301,7 @@ export function QuickEntry({
 						disabled={saving || (!parsed.title && !notes.trim())}
 						className="ml-auto rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-on-accent hover:opacity-90 disabled:opacity-40"
 					>
-						Add To-Do
+						Add Task
 					</button>
 				</div>
 				<p

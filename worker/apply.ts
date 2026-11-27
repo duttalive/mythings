@@ -220,7 +220,7 @@ export class Applier {
 				throw new OpRejected(
 					"invalid_reference",
 					entity === "todo"
-						? "To-dos go in an area or a project, not a Life Bucket"
+						? "Tasks go in an area or a project, not a Life Bucket"
 						: "Projects go in a Life Bucket",
 					[
 						{

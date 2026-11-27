@@ -9,7 +9,12 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { Me, Settings } from "../../shared/schema";
+import {
+	DEFAULT_SIDEBAR_VIEWS,
+	type Me,
+	OPTIONAL_VIEWS,
+	type Settings,
+} from "../../shared/schema";
 import { ApiError, api } from "../api";
 import { useAuth } from "../auth/AuthGate";
 import { APP_VERSION } from "../changelog";
@@ -31,6 +36,7 @@ import {
 	type TextSize,
 } from "../lib/textSize";
 import { downloadExport, importFile } from "../lib/transfer";
+import { sidebarViews, VIEWS } from "../lib/views";
 import { useNotificationState } from "../push/notifications";
 import { SecuritySettings } from "../security/SecuritySettings";
 import { useSyncContext } from "../sync/SyncProvider";
@@ -80,6 +86,7 @@ function useSaveProfile() {
 export function SettingsPage() {
 	const { user, save, error } = useSaveProfile();
 	const settings = user.settings;
+	const shownViews = sidebarViews(settings);
 	const device = deviceTimeZone();
 	const zones = useMemo(() => allTimeZones(user.tz), [user.tz]);
 
@@ -114,8 +121,8 @@ export function SettingsPage() {
 				</Field>
 				<TextSizeField />
 				<Field
-					label="Long to-do titles"
-					hint="How titles show in lists. An open to-do always shows the whole title and checklist."
+					label="Long task titles"
+					hint="How titles show in lists. An open task always shows the whole title and checklist."
 				>
 					{(ids) => (
 						<Segmented
@@ -194,14 +201,14 @@ export function SettingsPage() {
 
 			<Section title="Lists">
 				<Toggle
-					label="Group to-dos in Today by project"
+					label="Group tasks in Today by project"
 					checked={settings.groupTodayByProject ?? false}
 					onChange={(groupTodayByProject) =>
 						save({ settings: { groupTodayByProject } })
 					}
 				/>
 				<Field
-					label="Move completed to-dos to the Logbook"
+					label="Move completed tasks to the Logbook"
 					hint="Daily keeps them in their lists, checked, until the end of the day."
 				>
 					{(ids) => (
@@ -218,6 +225,44 @@ export function SettingsPage() {
 						/>
 					)}
 				</Field>
+			</Section>
+
+			<Section title="Sidebar">
+				<p className="py-2 text-xs text-[var(--fg-muted)]">
+					Inbox, Today, Logbook and Trash always show. Every view can be found
+					with search, shown here or not.
+				</p>
+				{OPTIONAL_VIEWS.map((view) => (
+					<Toggle
+						key={view}
+						label={`Show ${VIEWS[view].title}`}
+						checked={shownViews.has(view)}
+						onChange={(on) =>
+							save({
+								settings: {
+									sidebarViews: OPTIONAL_VIEWS.filter((v) =>
+										v === view ? on : shownViews.has(v),
+									),
+								},
+							})
+						}
+					/>
+				))}
+				<div className="py-3">
+					<button
+						type="button"
+						disabled={
+							DEFAULT_SIDEBAR_VIEWS.every((v) => shownViews.has(v)) &&
+							shownViews.size === DEFAULT_SIDEBAR_VIEWS.length
+						}
+						onClick={() =>
+							save({ settings: { sidebarViews: [...DEFAULT_SIDEBAR_VIEWS] } })
+						}
+						className={secondaryButtonClass}
+					>
+						Reset sidebar to default
+					</button>
+				</div>
 			</Section>
 
 			<Section title="Notifications">
@@ -349,7 +394,7 @@ function DataSettings() {
 		<div className="py-2">
 			<p className="text-sm text-[var(--fg-muted)]">
 				Export everything as a JSON file. Importing a file adds copies of its
-				lists and to-dos; nothing you have is changed.
+				lists and tasks; nothing you have is changed.
 			</p>
 			<div className="mt-3 flex flex-wrap gap-2">
 				<button

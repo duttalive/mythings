@@ -5,6 +5,7 @@ import { Empty, ListPage, Section } from "../components/ListPage";
 import { EntryRow, RowList } from "../components/rows";
 import { useFilteredContext, useListData } from "../data";
 import { dayLabel } from "../lib/format";
+import { VIEWS } from "../lib/views";
 
 const PAGE_SIZE = 100;
 
@@ -17,10 +18,11 @@ export function LogbookPage() {
 		<ListPage
 			title="Logbook"
 			icon={<LogbookIcon className="size-7 text-done" />}
+			description={VIEWS.logbook.description}
 			filterable
 		>
 			{groups.length === 0 ? (
-				<Empty>Completed to-dos show up here.</Empty>
+				<Empty>Completed tasks show up here.</Empty>
 			) : (
 				groups.map((group, i) => (
 					<Section

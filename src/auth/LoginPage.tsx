@@ -253,7 +253,7 @@ export function LoginPage({
 				</h1>
 				{mode === "signup" && (
 					<p className="mt-2 text-center text-sm text-[var(--fg-muted)]">
-						Free. Your to-dos sync across all your devices and work offline.
+						Free. Your tasks sync across all your devices and work offline.
 					</p>
 				)}
 				{mode === "forgot" && !sentTo && (

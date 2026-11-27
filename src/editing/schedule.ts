@@ -27,4 +27,4 @@ export function whenPatch(choice: WhenChoice, today: LocalDate): WhenFields {
 
 /** Shown when an overdue item can't be planned for today. */
 export const OVERDUE_STAYS =
-	"Overdue to-dos stay in Overdue. Change the deadline to plan one for today.";
+	"Overdue tasks stay in Overdue. Change the deadline to plan one for today.";

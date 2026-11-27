@@ -31,7 +31,7 @@ export function useTabTitle(): (path: string) => string {
 		if (id) {
 			switch (first) {
 				case "notes":
-					return text(data.todos.find((t) => t.id === id)?.title, "New To-Do");
+					return text(data.todos.find((t) => t.id === id)?.title, "New Task");
 				case "project":
 					return text(projects.get(id)?.title, "New Project");
 				case "area":

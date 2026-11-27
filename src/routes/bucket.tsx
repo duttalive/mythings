@@ -8,7 +8,7 @@ import { Empty, ListPage, Section } from "../components/ListPage";
 import { LoggedItems } from "../components/LoggedItems";
 import { PopoverOption } from "../components/Popover";
 import { ProjectRow, RowList } from "../components/rows";
-import { useFilteredContext, useListData, useTagFilter } from "../data";
+import { useFilteredContext, useFiltering, useListData } from "../data";
 import { DragItem, placed, SortableList } from "../dnd/sortable";
 import { useCreateList } from "../editing/useCreateList";
 import { ListDetails, ListTitle } from "./area";
@@ -17,7 +17,7 @@ import { Missing } from "./not-found";
 export function BucketPage() {
 	const { bucketId } = useParams({ strict: false });
 	const { data } = useListData();
-	const filtering = useTagFilter().length > 0;
+	const filtering = useFiltering();
 	const { createArea, createProject } = useCreateList();
 	const view = bucketView(data, bucketId ?? "", useFilteredContext());
 	if (!view) return <Missing what="Life Bucket" />;
@@ -65,6 +65,7 @@ export function BucketPage() {
 				/>
 			}
 			filterable
+			filterKinds={["tags"]}
 		>
 			{readOnly && empty && <Empty>Nothing in this Life Bucket.</Empty>}
 			{(view.areas.length > 0 || !readOnly) && (
@@ -111,7 +112,7 @@ export function BucketPage() {
 						<AddButton
 							hint={
 								view.areas.length === 0
-									? "For to-dos that keep coming, like Health or Home."
+									? "For tasks that keep coming, like Health or Home."
 									: undefined
 							}
 							onClick={() => void createArea(bucket.id).catch(console.error)}

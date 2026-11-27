@@ -103,7 +103,7 @@ test("the Delete key asks before moving selected to-dos to Trash", async ({
 	await row(page, "Second").click({ modifiers: ["ControlOrMeta"] });
 	await page.keyboard.press("Delete");
 	const dialog = page.getByRole("alertdialog");
-	await expect(dialog).toContainText("Delete 2 to-dos?");
+	await expect(dialog).toContainText("Delete 2 tasks?");
 	await dialog.getByRole("button", { name: "Cancel" }).click();
 	await expect(row(page, "First")).toBeVisible();
 

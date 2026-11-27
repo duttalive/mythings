@@ -88,7 +88,7 @@ export function Checkbox({
 				checked={status !== "open"}
 				onChange={onToggle}
 				onClick={(e) => e.stopPropagation()}
-				aria-label={`${status === "canceled" ? "Canceled — reopen" : "Complete"} ${label || "to-do"}`}
+				aria-label={`${status === "canceled" ? "Canceled — reopen" : "Complete"} ${label || "task"}`}
 				// On touch screens the tap area reaches well beyond the 18px box.
 				className="absolute inset-0 m-0 cursor-pointer appearance-none rounded-[5px] focus-visible:outline-none pointer-coarse:-inset-3"
 			/>
@@ -488,7 +488,7 @@ export function TodoRow({
 					? undefined
 					: { kind: "todo", id: todo.id }
 			}
-			title={todo.title || "New To-Do"}
+			title={todo.title || "New Task"}
 			done={!open}
 			struck={!open && (!logbook || todo.status === "canceled")}
 			notes={todo.notes.trim() !== ""}

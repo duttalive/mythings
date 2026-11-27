@@ -6,7 +6,7 @@ import { type ReactNode, useEffect } from "react";
 
 export const LEGAL_CONTACT = "dutta@dynocoder.com";
 /** When the policies last changed. Update it with any change to their text. */
-export const LEGAL_UPDATED = "2026-11-26";
+export const LEGAL_UPDATED = "2026-11-27";
 
 const updated = new Date(`${LEGAL_UPDATED}T12:00:00Z`).toLocaleDateString(
 	undefined,
@@ -88,7 +88,7 @@ export function PrivacyPage() {
 			<h2>The short version</h2>
 			<ul>
 				<li>
-					We store what the app needs to work: your account and your to-dos.
+					We store what the app needs to work: your account and your tasks.
 				</li>
 				<li>
 					No ads, no analytics or tracking scripts, no selling or sharing of
@@ -114,14 +114,13 @@ export function PrivacyPage() {
 					hidden), and when you signed up.
 				</li>
 				<li>
-					<strong>Your to-dos:</strong> everything you put into mythings
-					(to-dos, Task Notes, checklists, projects, areas, Life Buckets,
-					headings, tags, dates, reminders and repeat rules), and items in Trash
-					until they're deleted permanently (after 30 days, or sooner if you
-					empty Trash).
+					<strong>Your tasks:</strong> everything you put into mythings (tasks,
+					Task Notes, checklists, projects, areas, Life Buckets, headings, tags,
+					dates, reminders and repeat rules), and items in Trash until they're
+					deleted permanently (after 30 days, or sooner if you empty Trash).
 				</li>
 				<li>
-					<strong>If you turn on end-to-end encryption:</strong> your to-do
+					<strong>If you turn on end-to-end encryption:</strong> your task
 					titles and Task Notes, checklist items, and the names of your
 					projects, areas, Life Buckets, headings and tags are encrypted on your
 					devices, and we store only the encrypted form, which we can't read. We
@@ -151,7 +150,7 @@ export function PrivacyPage() {
 				<li>
 					<strong>Focus Mode alerts:</strong> while a Focus Mode countdown is
 					running on a device with notifications on, the time it ends, so we can
-					notify that device. It holds no to-do text and is deleted once the
+					notify that device. It holds no task text and is deleted once the
 					alert is sent or the timer is paused or ended.
 				</li>
 			</ul>
@@ -159,13 +158,13 @@ export function PrivacyPage() {
 			<h2>What stays on your device</h2>
 			<p>
 				mythings works offline, so each browser you use keeps a full copy of
-				your to-dos in its local database (IndexedDB), plus changes waiting to
+				your tasks in its local database (IndexedDB), plus changes waiting to
 				sync. It also keeps a few preferences for that device in local storage
 				(your profile for starting offline, theme, text size, sidebar width,
 				passcode lock timing, your open tabs, and Focus Mode's timer and last
 				length) and a cached copy of the app. Focus Mode's timer isn't synced,
 				and time you spend focusing isn't recorded anywhere. With end-to-end
-				encryption on, the copy of your to-dos on the device is encrypted too,
+				encryption on, the copy of your tasks on the device is encrypted too,
 				and the key to read it is kept in the browser (locked behind your
 				passcode, if you set one). This data stays in your browser; signing out
 				removes the key, and clearing the site's data in your browser removes
@@ -180,7 +179,7 @@ export function PrivacyPage() {
 			<h2>Why we use it</h2>
 			<ul>
 				<li>
-					To provide the service you asked for: storing and syncing your to-dos,
+					To provide the service you asked for: storing and syncing your tasks,
 					signing you in, and sending the reminders and Focus Mode alerts you
 					set.
 				</li>
@@ -229,27 +228,27 @@ export function PrivacyPage() {
 
 			<h2>How long we keep it</h2>
 			<p>
-				We keep your account and to-dos for as long as you have an account.
+				We keep your account and tasks for as long as you have an account.
 				Sign-in sessions end after a while without use, and a few months after
 				sign-in at most. When you ask us to delete your account, we delete it
-				and your to-dos within 30 days; copies in backups or logs held by our
+				and your tasks within 30 days; copies in backups or logs held by our
 				providers expire on their own schedule. That also applies when you turn
-				on end-to-end encryption: copies of your to-dos from before it was on
-				may remain in our providers' backups until those expire.
+				on end-to-end encryption: copies of your tasks from before it was on may
+				remain in our providers' backups until those expire.
 			</p>
 
 			<h2>Your choices and rights</h2>
 			<ul>
 				<li>
 					<strong>Access and export:</strong> Settings → Data → Export downloads
-					all your to-dos as a file.
+					all your tasks as a file.
 				</li>
 				<li>
 					<strong>Correct:</strong> change your name, time zone and settings in
 					Settings. To change your email address, write to us.
 				</li>
 				<li>
-					<strong>Delete:</strong> delete to-dos at any time, or email us from
+					<strong>Delete:</strong> delete tasks at any time, or email us from
 					your account's address to delete your whole account.
 				</li>
 				<li>
@@ -336,7 +335,7 @@ export function TermsPage() {
 			<p>
 				What you put into mythings, including your Task Notes, stays yours. You
 				give us only the permission we need to store, sync and show it to you,
-				and to send the reminders you set. We don't look at your to-dos except
+				and to send the reminders you set. We don't look at your tasks except
 				when you ask us to for support, or when the law requires it (and with
 				end-to-end encryption on, we can't read them at all).
 			</p>

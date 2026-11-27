@@ -220,7 +220,7 @@ export function DeadlinePicker({
 }
 
 /** Tags with nesting depth, parents before their children. */
-function flattenTags(tags: Tag[]): { tag: Tag; depth: number }[] {
+export function flattenTags(tags: Tag[]): { tag: Tag; depth: number }[] {
 	const live = tags.filter((t) => t.deletedAt === null);
 	const ids = new Set(live.map((t) => t.id));
 	const children = new Map<string | null, Tag[]>();

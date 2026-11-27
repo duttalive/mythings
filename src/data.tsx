@@ -4,7 +4,12 @@
 import { useSearch } from "@tanstack/react-router";
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 import type { Area, Project, Tag } from "../shared/schema";
-import type { ViewContext, ViewData } from "../shared/views";
+import {
+	FILTER_KINDS,
+	type ListFilter,
+	type ViewContext,
+	type ViewData,
+} from "../shared/views";
 import {
 	type ChecklistProgress,
 	useChecklistProgress,
@@ -32,19 +37,48 @@ export function useListData(): ListData {
 	return value;
 }
 
-/** Tag ids selected in the tag bar (the `tags` search param). */
-export function useTagFilter(): string[] {
-	const { tags } = useSearch({ strict: false });
-	return useMemo(() => (tags ? tags.split(",").filter(Boolean) : []), [tags]);
+/** The filter bar's search params, one per kind of list (comma-separated ids). */
+export const FILTER_PARAMS = {
+	buckets: "bucket",
+	areas: "area",
+	projects: "project",
+	tags: "tags",
+} as const satisfies Record<keyof ListFilter, string>;
+
+const split = (value: string | undefined) =>
+	value ? value.split(",").filter(Boolean) : [];
+
+/** What's chosen in the filter bar (from the page's search params). */
+export function useListFilter(): ListFilter {
+	const { bucket, area, project, tags } = useSearch({ strict: false });
+	return useMemo(() => {
+		const values = { buckets: bucket, areas: area, projects: project, tags };
+		const filter: ListFilter = {};
+		for (const kind of FILTER_KINDS) {
+			const ids = split(values[kind]);
+			if (ids.length) filter[kind] = ids;
+		}
+		return filter;
+	}, [bucket, area, project, tags]);
 }
 
-/** The view context with the tag bar's filter applied. */
+/** Tag ids chosen in the filter bar (new tasks get them). */
+export function useTagFilter(): string[] {
+	return useListFilter().tags ?? [];
+}
+
+/** Whether anything is chosen in the filter bar. */
+export function useFiltering(): boolean {
+	return Object.keys(useListFilter()).length > 0;
+}
+
+/** The view context with the filter bar's choices applied. */
 export function useFilteredContext(): ViewContext {
 	const { ctx } = useListData();
-	const tagIds = useTagFilter();
+	const filter = useListFilter();
 	return useMemo(
-		() => (tagIds.length ? { ...ctx, tagIds } : ctx),
-		[ctx, tagIds],
+		() => (Object.keys(filter).length ? { ...ctx, filter } : ctx),
+		[ctx, filter],
 	);
 }
 

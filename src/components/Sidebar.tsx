@@ -36,17 +36,14 @@ import {
 } from "../dnd/tagMoves";
 import { useCreateTag } from "../editing/useCreateTag";
 import { useDeleteTag } from "../editing/useDeleteTag";
+import { sidebarViews, VIEWS } from "../lib/views";
 import { useOps } from "../sync/hooks";
 import {
 	AreaIcon,
-	BoxIcon,
 	BucketIcon,
-	CalendarIcon,
 	ChevronIcon,
-	FlagIcon,
 	GearIcon,
 	InboxIcon,
-	LayersIcon,
 	LogbookIcon,
 	PlusIcon,
 	StarIcon,
@@ -570,6 +567,7 @@ export function Sidebar() {
 	}, [pathname, showTags]);
 	const counts = useMemo(() => sidebarCounts(data, ctx), [data, ctx]);
 	const tree = useMemo(() => sidebarTree(data), [data]);
+	const shown = sidebarViews(user.settings);
 	const tags = useMemo(() => tagTree(data.tags), [data.tags]);
 	const liveTagCount = useMemo(
 		() => data.tags.filter((t) => t.deletedAt === null).length,
@@ -689,35 +687,44 @@ export function Sidebar() {
 							Today
 						</NavItem>
 					</DropTarget>
-					<NavItem
-						to="/upcoming"
-						icon={<CalendarIcon className="size-[18px] text-overdue" />}
-					>
-						Upcoming
-					</NavItem>
-					<DropTarget type="anytime">
-						<NavItem
-							to="/anytime"
-							icon={<LayersIcon className="size-[18px] text-teal-600" />}
-						>
-							Anytime
+					{shown.has("upcoming") && (
+						<NavItem to="/upcoming" icon={VIEWS.upcoming.icon("size-[18px]")}>
+							Upcoming
 						</NavItem>
-					</DropTarget>
-					<DropTarget type="someday">
+					)}
+					{shown.has("anytime") && (
+						<DropTarget type="anytime">
+							<NavItem to="/anytime" icon={VIEWS.anytime.icon("size-[18px]")}>
+								Anytime
+							</NavItem>
+						</DropTarget>
+					)}
+					{shown.has("someday") && (
+						<DropTarget type="someday">
+							<NavItem to="/someday" icon={VIEWS.someday.icon("size-[18px]")}>
+								Someday
+							</NavItem>
+						</DropTarget>
+					)}
+					{shown.has("overdue") && (
 						<NavItem
-							to="/someday"
-							icon={<BoxIcon className="size-[18px] text-amber-700" />}
+							to="/overdue"
+							icon={VIEWS.overdue.icon("size-[18px]")}
+							badge={<Badge count={counts.overdue} tone="red" />}
 						>
-							Someday
+							Overdue
 						</NavItem>
-					</DropTarget>
-					<NavItem
-						to="/overdue"
-						icon={<FlagIcon className="size-[18px] text-overdue" />}
-						badge={<Badge count={counts.overdue} tone="red" />}
-					>
-						Overdue
-					</NavItem>
+					)}
+					{shown.has("deadlines") && (
+						<NavItem to="/deadlines" icon={VIEWS.deadlines.icon("size-[18px]")}>
+							Deadlines
+						</NavItem>
+					)}
+					{shown.has("notes") && (
+						<NavItem to="/notes" icon={VIEWS.notes.icon("size-[18px]")}>
+							Task Notes
+						</NavItem>
+					)}
 				</div>
 				<div className="mt-4 flex flex-col gap-px">
 					<DropTarget type="logbook">

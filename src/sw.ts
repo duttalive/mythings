@@ -76,7 +76,7 @@ async function readable(notice: Notice): Promise<Notice> {
 	);
 	return {
 		...notice,
-		title: title ?? "To-do reminder",
+		title: title ?? "Task reminder",
 		body: body ?? (title ? "" : "Open mythings to see it."),
 	};
 }
@@ -90,7 +90,7 @@ self.addEventListener("push", (event) => {
 	}
 	event.waitUntil(
 		readable(data)
-			.catch(() => ({ ...data, title: "To-do reminder", body: "" }))
+			.catch(() => ({ ...data, title: "Task reminder", body: "" }))
 			.then((notice) =>
 				self.registration.showNotification(notice.title || "Reminder", {
 					body: notice.body || "",

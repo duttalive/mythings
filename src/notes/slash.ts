@@ -54,9 +54,9 @@ export const BLOCKS: BlockCommand[] = [
 		run: (e, r) => chain(e, r).toggleOrderedList().run(),
 	},
 	{
-		title: "To-do list",
+		title: "Task list",
 		hint: "Checkboxes to tick off",
-		keywords: "task checkbox check []",
+		keywords: "task todo to-do checkbox check []",
 		run: (e, r) => chain(e, r).toggleTaskList().run(),
 	},
 	{

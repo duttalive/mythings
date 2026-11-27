@@ -7,6 +7,7 @@ import {
 	ListPage,
 } from "../components/ListPage";
 import { useFilteredContext, useListData } from "../data";
+import { VIEWS } from "../lib/views";
 
 export function AnytimePage() {
 	const { data } = useListData();
@@ -15,6 +16,7 @@ export function AnytimePage() {
 		<ListPage
 			title="Anytime"
 			icon={<LayersIcon className="size-7 text-teal-600" />}
+			description={VIEWS.anytime.description}
 			filterable
 		>
 			{isEmptyGroupedList(list) ? (

@@ -1,31 +1,39 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useId } from "react";
 import {
-	bySortKey,
+	type FilterKind,
 	type GroupedList,
 	projectProgress,
 } from "../../shared/views";
-import { useListData, useTagFilter } from "../data";
+import { useListData } from "../data";
+import { FilterBar } from "./FilterBar";
 import { AreaIcon, BucketIcon } from "./icons";
 import { ProgressRing, RowList, TodoRow } from "./rows";
 
-/** A list's page: title, optional header content and tag bar, then the items. */
+/** A list's page: title, what the view is, header content and filter bar, then the items. */
 export function ListPage({
 	title,
 	titleNode,
 	icon,
+	description,
 	header,
 	filterable = false,
+	filterKinds,
 	filterTags,
 	children,
 }: {
 	title: string;
+	/** One line saying what this view is (built-in views). */
+	description?: string;
 	/** Replaces the visible title, e.g. with an editable field. */
 	titleNode?: ReactNode;
 	icon?: ReactNode;
 	header?: ReactNode;
+	/** Shows the filter bar (Life Buckets, Areas, Projects, Tags). */
 	filterable?: boolean;
-	/** Only these tags (and any selected) show in the tag bar; all if omitted. */
+	/** The dropdowns the filter bar offers; all four if omitted. */
+	filterKinds?: FilterKind[];
+	/** Only these tags (and any chosen) are offered in the filter bar; all if omitted. */
 	filterTags?: Set<string>;
 	children: ReactNode;
 }) {
@@ -55,9 +63,12 @@ export function ListPage({
 						<span className="min-w-0 break-words">{title}</span>
 					)}
 				</h1>
+				{description && (
+					<p className="mt-1 text-sm text-[var(--fg-muted)]">{description}</p>
+				)}
 				{header}
 			</header>
-			{filterable && <TagBar only={filterTags} />}
+			{filterable && <FilterBar kinds={filterKinds} onlyTags={filterTags} />}
 			{children}
 		</article>
 	);
@@ -91,62 +102,6 @@ export function Section({
 			</h2>
 			{children}
 		</section>
-	);
-}
-
-/** Toggle chips for every tag; the selection lives in the `tags` search param. */
-function TagBar({ only }: { only?: Set<string> }) {
-	const { data } = useListData();
-	const selected = useTagFilter();
-	const navigate = useNavigate();
-	const tags = data.tags
-		.filter(
-			(t) =>
-				t.deletedAt === null &&
-				(!only || only.has(t.id) || selected.includes(t.id)),
-		)
-		.sort(bySortKey);
-	if (tags.length === 0) return null;
-
-	const toggle = (id: string) => {
-		const next = selected.includes(id)
-			? selected.filter((t) => t !== id)
-			: [...selected, id];
-		navigate({
-			to: ".",
-			search: (prev: { tags?: string }) => ({
-				...prev,
-				tags: next.length ? next.join(",") : undefined,
-			}),
-			replace: true,
-		});
-	};
-
-	return (
-		<div
-			role="toolbar"
-			aria-label="Filter by tag"
-			className="mb-4 flex flex-wrap gap-1.5"
-		>
-			{tags.map((tag) => {
-				const on = selected.includes(tag.id);
-				return (
-					<button
-						key={tag.id}
-						type="button"
-						aria-pressed={on}
-						onClick={() => toggle(tag.id)}
-						className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors duration-150 pointer-coarse:px-3 pointer-coarse:py-2 ${
-							on
-								? "border-accent bg-accent text-on-accent"
-								: "border-[var(--border)] text-[var(--fg-muted)] hover:bg-[var(--hover)]"
-						}`}
-					>
-						{tag.title}
-					</button>
-				);
-			})}
-		</div>
 	);
 }
 

@@ -33,7 +33,28 @@ export type ViewContext = {
 	logbookTiming?: "immediately" | "daily";
 	/** Only include items carrying all of these tags (or a descendant of each). */
 	tagIds?: string[];
+	/** The filter bar's choices (see `ListFilter`). */
+	filter?: ListFilter;
 };
+
+/**
+ * The filter bar at the top of a list (SPEC §6.6). Within one kind any of the
+ * chosen ones matches; the kinds combine (an item must match every kind that
+ * has a choice). A tag also matches its nested tags.
+ */
+export type ListFilter = {
+	buckets?: string[];
+	areas?: string[];
+	projects?: string[];
+	tags?: string[];
+};
+
+export const FILTER_KINDS = ["buckets", "areas", "projects", "tags"] as const;
+export type FilterKind = (typeof FILTER_KINDS)[number];
+
+export function isFiltering(filter: ListFilter | undefined): boolean {
+	return !!filter && FILTER_KINDS.some((k) => (filter[k]?.length ?? 0) > 0);
+}
 
 type Item = Todo | Project;
 
@@ -242,17 +263,136 @@ function tagMatcher(
 		withDescendants.every((set) => tagIds.some((t) => set.has(t)));
 }
 
-/** The index (over all data) and the to-dos and projects that pass the tag filter. */
+/** The tag ids with every tag nested inside them. */
+function withNested(tags: Tag[], selected: string[]): Set<string> {
+	const children = new Map<string, string[]>();
+	for (const tag of tags) {
+		if (tag.parentId && tag.deletedAt === null) {
+			children.set(tag.parentId, [
+				...(children.get(tag.parentId) ?? []),
+				tag.id,
+			]);
+		}
+	}
+	const set = new Set<string>();
+	const stack = [...selected];
+	while (stack.length > 0) {
+		const next = stack.pop() as string;
+		if (set.has(next)) continue;
+		set.add(next);
+		stack.push(...(children.get(next) ?? []));
+	}
+	return set;
+}
+
+/** Something a list can show, as the filter bar sees it. */
+export type FilterableEntry =
+	| { kind: "todo"; item: Todo }
+	| { kind: "project"; item: Project }
+	| { kind: "area"; item: Area }
+	| { kind: "heading"; item: Heading };
+
+type Placement = {
+	bucketId: string | null;
+	areaId: string | null;
+	projectId: string | null;
+	tags: string[];
+};
+
+function placementOf(entry: FilterableEntry, idx: Index): Placement {
+	switch (entry.kind) {
+		case "todo": {
+			const todo = entry.item;
+			const project = projectOf(todo, idx);
+			const area =
+				!project && todo.areaId ? idx.areas.get(todo.areaId) : undefined;
+			return {
+				bucketId: project
+					? project.areaId
+					: area?.kind === "bucket"
+						? area.id
+						: (area?.bucketId ?? null),
+				areaId: area?.kind === "area" ? area.id : null,
+				projectId: project?.id ?? null,
+				tags: effectiveTags(todo, idx),
+			};
+		}
+		case "project":
+			return {
+				bucketId: entry.item.areaId,
+				areaId: null,
+				projectId: entry.item.id,
+				tags: effectiveTags(entry.item, idx),
+			};
+		case "heading": {
+			const project = idx.projects.get(entry.item.projectId);
+			return {
+				bucketId: project?.areaId ?? null,
+				areaId: null,
+				projectId: entry.item.projectId,
+				tags: project ? effectiveTags(project, idx) : [],
+			};
+		}
+		case "area": {
+			const area = entry.item;
+			if (area.kind === "bucket")
+				return {
+					bucketId: area.id,
+					areaId: null,
+					projectId: null,
+					tags: area.tagIds,
+				};
+			const bucket = area.bucketId ? idx.areas.get(area.bucketId) : undefined;
+			return {
+				bucketId: area.bucketId,
+				areaId: area.id,
+				projectId: null,
+				tags: [...area.tagIds, ...(bucket?.tagIds ?? [])],
+			};
+		}
+	}
+}
+
+/** Whether an entry passes the filter bar's choices. */
+export function filterMatcher(
+	data: ViewData,
+	filter: ListFilter | undefined,
+	idx: Index = buildIndex(data),
+): (entry: FilterableEntry) => boolean {
+	if (!isFiltering(filter)) return () => true;
+	const f = filter as ListFilter;
+	const pick = (ids: string[] | undefined) =>
+		ids?.length ? new Set(ids) : null;
+	const buckets = pick(f.buckets);
+	const areas = pick(f.areas);
+	const projects = pick(f.projects);
+	const tags = f.tags?.length ? withNested(data.tags, f.tags) : null;
+	return (entry) => {
+		const p = placementOf(entry, idx);
+		return (
+			(!buckets || (p.bucketId !== null && buckets.has(p.bucketId))) &&
+			(!areas || (p.areaId !== null && areas.has(p.areaId))) &&
+			(!projects || (p.projectId !== null && projects.has(p.projectId))) &&
+			(!tags || p.tags.some((t) => tags.has(t)))
+		);
+	};
+}
+
+/** The index (over all data) and the to-dos and projects that pass the tag filter and filter bar. */
 function prepare(data: ViewData, ctx: ViewContext) {
 	const idx = buildIndex(data);
-	if (!ctx.tagIds?.length)
-		return { idx, todos: data.todos, projects: data.projects };
-	const matches = tagMatcher(data.tags, ctx.tagIds);
-	return {
-		idx,
-		todos: data.todos.filter((t) => matches(effectiveTags(t, idx))),
-		projects: data.projects.filter((p) => matches(effectiveTags(p, idx))),
-	};
+	let { todos, projects } = data;
+	if (ctx.tagIds?.length) {
+		const matches = tagMatcher(data.tags, ctx.tagIds);
+		todos = todos.filter((t) => matches(effectiveTags(t, idx)));
+		projects = projects.filter((p) => matches(effectiveTags(p, idx)));
+	}
+	if (isFiltering(ctx.filter)) {
+		const matches = filterMatcher(data, ctx.filter, idx);
+		todos = todos.filter((item) => matches({ kind: "todo", item }));
+		projects = projects.filter((item) => matches({ kind: "project", item }));
+	}
+	return { idx, todos, projects };
 }
 
 // ---------------------------------------------------------------------------
@@ -824,8 +964,9 @@ export type TrashEntry =
 	| { kind: "todo"; item: Todo };
 
 /** Deleted items, newest first. Children of a deleted parent are restored with it, so only the parent is listed. */
-export function trash(data: ViewData): TrashEntry[] {
+export function trash(data: ViewData, filter?: ListFilter): TrashEntry[] {
 	const idx = buildIndex(data);
+	const matches = filterMatcher(data, filter, idx);
 	const deleted = (x: { deletedAt: number | null } | undefined) =>
 		x !== undefined && x.deletedAt !== null;
 	const area = (id: string | null) => (id ? idx.areas.get(id) : undefined);
@@ -853,11 +994,13 @@ export function trash(data: ViewData): TrashEntry[] {
 			})
 			.map((item) => ({ kind: "todo" as const, item })),
 	];
-	return entries.sort(
-		(a, b) =>
-			(b.item.deletedAt as number) - (a.item.deletedAt as number) ||
-			compareStrings(a.item.id, b.item.id),
-	);
+	return entries
+		.filter(matches)
+		.sort(
+			(a, b) =>
+				(b.item.deletedAt as number) - (a.item.deletedAt as number) ||
+				compareStrings(a.item.id, b.item.id),
+		);
 }
 
 export type Progress = { completed: number; total: number };

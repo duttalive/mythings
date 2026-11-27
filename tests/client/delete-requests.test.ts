@@ -15,9 +15,9 @@ describe("delete confirmations", () => {
 			title: "Delete “Call Mum”?",
 			body: expect.stringContaining("restore it from Trash"),
 		});
-		expect(todosRequest([todo(), todo()]).title).toBe("Delete 2 to-dos?");
+		expect(todosRequest([todo(), todo()]).title).toBe("Delete 2 tasks?");
 		expect(todosRequest([todo({ title: " " })]).title).toBe(
-			"Delete this to-do?",
+			"Delete this task?",
 		);
 	});
 
@@ -42,13 +42,13 @@ describe("delete confirmations", () => {
 		});
 		expect(projectRequest(p, d)).toMatchObject({
 			title: "Delete project “Taxes”?",
-			body: expect.stringContaining("with its 2 to-dos and 1 heading"),
+			body: expect.stringContaining("with its 2 tasks and 1 heading"),
 		});
-		expect(headingRequest(h, d).body).toContain("with its 1 to-do.");
-		expect(areaRequest(a, d).body).toContain("with its 1 to-do.");
+		expect(headingRequest(h, d).body).toContain("with its 1 task.");
+		expect(areaRequest(a, d).body).toContain("with its 1 task.");
 		expect(areaRequest(b, d)).toMatchObject({
 			title: "Delete Life Bucket “Life”?",
-			body: expect.stringContaining("with its 1 area, 1 project and 2 to-dos"),
+			body: expect.stringContaining("with its 1 area, 1 project and 2 tasks"),
 		});
 		expect(areaRequest(area(), data()).body).toBe(
 			"It moves to Trash. You can restore it from Trash for 30 days.",
@@ -58,7 +58,7 @@ describe("delete confirmations", () => {
 	it("warns that tags and an emptied Trash can't be restored", () => {
 		const t = tag({ title: "work" });
 		const d = data({ tags: [t], todos: [todo({ tagIds: [t.id] })] });
-		expect(tagRequest(t, d).body).toContain("comes off 1 to-do or project");
+		expect(tagRequest(t, d).body).toContain("comes off 1 task or project");
 		expect(tagRequest(t, d).permanent).toBeUndefined();
 		expect(tagRequest(t, d).body).not.toContain("inside it");
 		const child = tag({ parentId: t.id });
