@@ -47,7 +47,9 @@ test("the changelog is public and the app shows its version", async ({
 
 	await signUp(page);
 	await open(page, "/settings");
-	await expect(page.getByText(/mythings version \d+/)).toBeVisible();
+	await expect(
+		page.getByRole("region", { name: "About" }).getByText(/^\d+\.\d+\.\d+$/),
+	).toBeVisible();
 	await expect(page.getByRole("link", { name: "What's new" })).toHaveAttribute(
 		"href",
 		"/changelog",

@@ -18,7 +18,7 @@ import {
 import { ApiError, api } from "../api";
 import { useAuth } from "../auth/AuthGate";
 import { APP_VERSION } from "../changelog";
-import { GearIcon } from "../components/icons";
+import { ChevronIcon, GearIcon } from "../components/icons";
 import { ListPage } from "../components/ListPage";
 import { PasswordInput } from "../components/PasswordInput";
 import { SignOutButton } from "../components/SignOutButton";
@@ -83,18 +83,41 @@ function useSaveProfile() {
 	return { user, save, error };
 }
 
+/** The sections, in page order, for the jump bar. Security shows only with password sign-in. */
+const SECTIONS = [
+	["appearance", "Appearance"],
+	["date-time", "Date & time"],
+	["lists", "Lists"],
+	["sidebar", "Sidebar"],
+	["notifications", "Notifications"],
+	["data", "Data"],
+	["security", "Security"],
+	["account", "Account"],
+	["about", "About"],
+] as const;
+type SectionId = (typeof SECTIONS)[number][0];
+
 export function SettingsPage() {
 	const { user, save, error } = useSaveProfile();
 	const settings = user.settings;
 	const shownViews = sidebarViews(settings);
 	const device = deviceTimeZone();
 	const zones = useMemo(() => allTimeZones(user.tz), [user.tz]);
+	const passwordMode = usePasswordMode();
+	const sections = useMemo(
+		() => SECTIONS.filter(([id]) => id !== "security" || passwordMode),
+		[passwordMode],
+	);
+	const isDefaultSidebar =
+		DEFAULT_SIDEBAR_VIEWS.every((v) => shownViews.has(v)) &&
+		shownViews.size === DEFAULT_SIDEBAR_VIEWS.length;
 
 	return (
 		<ListPage
 			title="Settings"
 			icon={<GearIcon className="size-7 text-[var(--fg-muted)]" />}
 		>
+			<SectionNav sections={sections} />
 			{error && (
 				<p
 					role="alert"
@@ -104,7 +127,7 @@ export function SettingsPage() {
 				</p>
 			)}
 
-			<Section title="Appearance">
+			<Section id="appearance" title="Appearance">
 				<Field label="Theme">
 					{(ids) => (
 						<Segmented
@@ -136,14 +159,17 @@ export function SettingsPage() {
 						/>
 					)}
 				</Field>
+				{/* Phones always use the whole width, so it only matters on bigger screens. */}
 				<Toggle
 					label="Full width"
+					hint="Lists use the whole window instead of a centered column."
+					className="max-md:hidden"
 					checked={settings.fullWidth ?? false}
 					onChange={(fullWidth) => save({ settings: { fullWidth } })}
 				/>
 			</Section>
 
-			<Section title="Date & time">
+			<Section id="date-time" title="Date & time">
 				<Field
 					label="Time zone"
 					hint={
@@ -151,7 +177,7 @@ export function SettingsPage() {
 							<button
 								type="button"
 								onClick={() => save({ tz: device })}
-								className="text-accent hover:underline"
+								className="text-left text-accent hover:underline"
 							>
 								Use this device's time zone ({device.replaceAll("_", " ")})
 							</button>
@@ -199,7 +225,7 @@ export function SettingsPage() {
 				</Field>
 			</Section>
 
-			<Section title="Lists">
+			<Section id="lists" title="Lists">
 				<Toggle
 					label="Group tasks in Today by project"
 					checked={settings.groupTodayByProject ?? false}
@@ -227,15 +253,16 @@ export function SettingsPage() {
 				</Field>
 			</Section>
 
-			<Section title="Sidebar">
-				<p className="py-2 text-xs text-[var(--fg-muted)]">
-					Inbox, Today, Logbook and Trash always show. Every view can be found
-					with search, shown here or not.
-				</p>
+			<Section
+				id="sidebar"
+				title="Sidebar"
+				footer="Inbox, Today, Logbook and Trash always show. Every view can be found with search, shown in the sidebar or not."
+			>
 				{OPTIONAL_VIEWS.map((view) => (
 					<Toggle
 						key={view}
 						label={`Show ${VIEWS[view].title}`}
+						icon={VIEWS[view].icon("size-4")}
 						checked={shownViews.has(view)}
 						onChange={(on) =>
 							save({
@@ -248,55 +275,56 @@ export function SettingsPage() {
 						}
 					/>
 				))}
-				<div className="py-3">
+				<ActionRow
+					text="Reset sidebar to default"
+					hint={
+						isDefaultSidebar
+							? "The sidebar shows the default views."
+							: "Shows Upcoming, Anytime, Someday and Overdue again."
+					}
+				>
 					<button
 						type="button"
-						disabled={
-							DEFAULT_SIDEBAR_VIEWS.every((v) => shownViews.has(v)) &&
-							shownViews.size === DEFAULT_SIDEBAR_VIEWS.length
-						}
+						aria-label="Reset sidebar to default"
+						disabled={isDefaultSidebar}
 						onClick={() =>
 							save({ settings: { sidebarViews: [...DEFAULT_SIDEBAR_VIEWS] } })
 						}
 						className={secondaryButtonClass}
 					>
-						Reset sidebar to default
+						Reset
 					</button>
-				</div>
+				</ActionRow>
 			</Section>
 
-			<Section title="Notifications">
+			<Section id="notifications" title="Notifications">
 				<NotificationsSetting />
 			</Section>
 
-			<Section title="Data">
+			<Section id="data" title="Data">
 				<DataSettings />
 			</Section>
 
-			<SecuritySection />
+			{passwordMode && (
+				<Section id="security" title="Security">
+					<SecuritySettings />
+				</Section>
+			)}
 
-			<Section title="Account">
-				<AccountSettings />
+			<Section id="account" title="Account">
+				<AccountSettings passwordMode={passwordMode} />
 			</Section>
 
-			<Section title="About">
-				<div className="flex items-center justify-between gap-4 py-2">
-					<p className="text-sm">mythings version {APP_VERSION}</p>
-					<a href="/changelog" className={secondaryButtonClass}>
-						What's new
-					</a>
-				</div>
-				<div className="flex items-center justify-between gap-4 py-2">
-					<p className="text-sm">Legal</p>
-					<span className="flex flex-wrap justify-end gap-2">
-						<a href="/privacy" className={secondaryButtonClass}>
-							Privacy Policy
-						</a>
-						<a href="/terms" className={secondaryButtonClass}>
-							Terms of Service
-						</a>
+			<Section id="about" title="About">
+				<div className="flex min-h-12 items-center justify-between gap-4 py-2 text-sm">
+					<span>Version</span>
+					<span className="text-[var(--fg-muted)] tabular-nums">
+						{APP_VERSION}
 					</span>
 				</div>
+				<LinkRow href="/changelog">What's new</LinkRow>
+				<LinkRow href="/privacy">Privacy Policy</LinkRow>
+				<LinkRow href="/terms">Terms of Service</LinkRow>
 			</Section>
 		</ListPage>
 	);
@@ -305,20 +333,15 @@ export function SettingsPage() {
 // ---------------------------------------------------------------------------
 // Sections
 
-/** Encryption and passcode (SPEC §8.5); only with password sign-in. */
-function SecuritySection() {
+/** Password sign-in (not single sign-on): Security and the password rows show. */
+function usePasswordMode(): boolean {
 	const [passwordMode, setPasswordMode] = useState(false);
 	useEffect(() => {
 		api<{ mode: string }>("/auth/config")
 			.then((config) => setPasswordMode(config.mode === "password"))
 			.catch(() => {});
 	}, []);
-	if (!passwordMode) return null;
-	return (
-		<Section title="Security">
-			<SecuritySettings />
-		</Section>
-	);
+	return passwordMode;
 }
 
 /** Per device (so a phone and a laptop can differ); applies instantly. */
@@ -353,15 +376,26 @@ function NotificationsSetting() {
 		denied:
 			"Notifications are blocked. Allow them for this site in your browser's settings.",
 	}[state];
+	const on = state === "granted";
 	return (
-		<div className="flex items-center justify-between gap-4 py-2">
-			<p className="text-sm">{text}</p>
+		<ActionRow
+			text={
+				<span className="flex items-center gap-2">
+					<span
+						aria-hidden
+						className={`size-2 shrink-0 rounded-full ${on ? "bg-done" : state === "denied" ? "bg-overdue" : "bg-[var(--checkbox)]"}`}
+					/>
+					Reminders on this device
+				</span>
+			}
+			hint={text}
+		>
 			{state === "default" && (
 				<button type="button" onClick={enable} className={buttonClass}>
 					Turn on
 				</button>
 			)}
-		</div>
+		</ActionRow>
 	);
 }
 
@@ -391,8 +425,9 @@ function DataSettings() {
 	};
 
 	return (
-		<div className="py-2">
-			<p className="text-sm text-[var(--fg-muted)]">
+		<div className="py-3">
+			<p className="text-sm">Export and import</p>
+			<p className="text-xs text-[var(--fg-muted)]">
 				Export everything as a JSON file. Importing a file adds copies of its
 				lists and tasks; nothing you have is changed.
 			</p>
@@ -463,10 +498,8 @@ function NameSetting() {
 	};
 
 	return (
-		<form onSubmit={submit} className="flex flex-col gap-1 py-2 text-sm">
-			<label htmlFor={id} className="font-medium">
-				Name
-			</label>
+		<form onSubmit={submit} className="flex flex-col gap-1.5 py-3 text-sm">
+			<label htmlFor={id}>Name</label>
 			<div className="flex gap-2">
 				<input
 					id={id}
@@ -495,16 +528,9 @@ function NameSetting() {
 	);
 }
 
-function AccountSettings() {
+function AccountSettings({ passwordMode }: { passwordMode: boolean }) {
 	const { user, sessionExpired } = useAuth();
-	const [passwordMode, setPasswordMode] = useState(false);
 	const [confirming, setConfirming] = useState(false);
-
-	useEffect(() => {
-		api<{ mode: string }>("/auth/config")
-			.then((config) => setPasswordMode(config.mode === "password"))
-			.catch(() => {});
-	}, []);
 
 	const signOutEverywhere = async () => {
 		await api("/auth/logout-all", { method: "POST" });
@@ -513,20 +539,24 @@ function AccountSettings() {
 
 	return (
 		<>
-			<div className="flex items-center justify-between gap-4 py-2">
-				<p className="min-w-0 truncate text-sm">
-					Signed in as <span className="font-medium">{user.email}</span>
-				</p>
+			<ActionRow
+				text="Signed in as"
+				hint={
+					<span className="block truncate font-medium text-[var(--fg)]">
+						{user.email}
+					</span>
+				}
+			>
 				<SignOutButton className={secondaryButtonClass} />
-			</div>
+			</ActionRow>
 			<NameSetting />
 			{passwordMode && (
 				<>
 					<ChangePassword />
-					<div className="flex flex-wrap items-center justify-between gap-2 py-2">
-						<p className="text-sm">
-							Sign out of all devices, including this one.
-						</p>
+					<ActionRow
+						text="Sign out of all devices"
+						hint="Including this one. You'll need to sign in again everywhere."
+					>
 						{confirming ? (
 							<span className="flex gap-2">
 								<button
@@ -548,12 +578,12 @@ function AccountSettings() {
 							<button
 								type="button"
 								onClick={() => setConfirming(true)}
-								className={secondaryButtonClass}
+								className={dangerOutlineClass}
 							>
-								Sign out of all devices…
+								Sign out everywhere…
 							</button>
 						)}
-					</div>
+					</ActionRow>
 				</>
 			)}
 		</>
@@ -613,10 +643,19 @@ function ChangePassword() {
 
 	if (!open) {
 		return (
-			<div className="flex flex-wrap items-center justify-between gap-2 py-2">
-				<p role={status?.error ? "alert" : "status"} className="text-sm">
-					{status?.text ?? "Password"}
-				</p>
+			<ActionRow
+				text="Password"
+				hint={
+					status && (
+						<span
+							role={status.error ? "alert" : "status"}
+							className={status.error ? "text-overdue" : undefined}
+						>
+							{status.text}
+						</span>
+					)
+				}
+			>
 				<button
 					type="button"
 					onClick={() => setOpen(true)}
@@ -624,11 +663,12 @@ function ChangePassword() {
 				>
 					Change password…
 				</button>
-			</div>
+			</ActionRow>
 		);
 	}
 	return (
-		<form onSubmit={submit} className="flex flex-col gap-3 py-2">
+		<form onSubmit={submit} className="flex flex-col gap-3 py-3">
+			<p className="text-sm font-medium">Change password</p>
 			<div className="flex flex-col gap-1 text-sm">
 				<label htmlFor={currentId}>Current password</label>
 				<PasswordInput
@@ -680,30 +720,131 @@ function ChangePassword() {
 // Building blocks
 
 const inputClass =
-	"w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-accent";
+	"w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:py-2.5";
 const buttonBase =
-	"shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50";
-const buttonClass = `${buttonBase} bg-accent text-on-accent hover:opacity-90`;
-const secondaryButtonClass = `${buttonBase} border border-[var(--border)] hover:bg-[var(--hover)]`;
+	"inline-flex shrink-0 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed pointer-coarse:py-2.5";
+// Disabled buttons go grey instead of a faded colour, so they don't look pressable.
+const buttonClass = `${buttonBase} bg-accent text-on-accent hover:opacity-90 disabled:bg-[var(--segment)] disabled:text-[var(--fg-muted)] disabled:hover:opacity-100`;
+const secondaryButtonClass = `${buttonBase} border border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--hover)] disabled:text-[var(--fg-muted)] disabled:hover:bg-[var(--bg)]`;
 const dangerButtonClass = `${buttonBase} bg-overdue text-on-overdue hover:opacity-90`;
+const dangerOutlineClass = `${buttonBase} border border-overdue/40 bg-[var(--bg)] text-overdue hover:bg-overdue/10`;
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-	const id = useId();
+/** Jump links to each section; stays under the top bar while scrolling, and marks where you are. */
+function SectionNav({
+	sections,
+}: {
+	sections: readonly (readonly [SectionId, string])[];
+}) {
+	const [active, setActive] = useState<SectionId>(
+		sections[0]?.[0] ?? "appearance",
+	);
+	const bar = useRef<HTMLElement>(null);
+	// The current section is the last one whose heading has passed under the bars;
+	// at the very bottom it's the last section, however short.
+	useEffect(() => {
+		const scroller = bar.current?.closest("main");
+		if (!scroller) return;
+		const update = () => {
+			const navBottom = bar.current?.getBoundingClientRect().bottom ?? 0;
+			const atEnd =
+				scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4;
+			let current = sections[0]?.[0];
+			for (const [id] of sections) {
+				const el = document.getElementById(`settings-${id}`);
+				if (el && el.getBoundingClientRect().top <= navBottom + 24)
+					current = id;
+			}
+			if (atEnd) current = sections.at(-1)?.[0];
+			if (current) setActive(current);
+		};
+		update();
+		scroller.addEventListener("scroll", update, { passive: true });
+		return () => scroller.removeEventListener("scroll", update);
+	}, [sections]);
+	// Keep the current link in view when the bar scrolls sideways (phones).
+	// Only the bar moves: scrollIntoView here would stop the page's own scroll.
+	useEffect(() => {
+		const nav = bar.current;
+		const link = nav?.querySelector<HTMLElement>(`[data-section="${active}"]`);
+		if (!nav || !link || nav.scrollWidth <= nav.clientWidth) return;
+		const left = link.offsetLeft - nav.offsetLeft;
+		if (
+			left < nav.scrollLeft ||
+			left + link.offsetWidth > nav.scrollLeft + nav.clientWidth
+		)
+			nav.scrollTo({ left: left - 16, behavior: "smooth" });
+	}, [active]);
+
 	return (
-		<section aria-labelledby={id} className="mb-8">
+		<nav
+			ref={bar}
+			aria-label="Settings sections"
+			className="sticky top-[calc(2.75rem+env(safe-area-inset-top))] z-[9] -mx-4 mb-6 flex gap-1 overflow-x-auto md:flex-wrap md:overflow-visible bg-[var(--bg)]/90 px-4 py-2 backdrop-blur [scrollbar-width:none]"
+		>
+			{sections.map(([id, title]) => (
+				<a
+					key={id}
+					href={`#settings-${id}`}
+					data-section={id}
+					aria-current={active === id ? "true" : undefined}
+					onClick={(e) => {
+						e.preventDefault();
+						setActive(id);
+						document.getElementById(`settings-${id}`)?.scrollIntoView({
+							behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+								? "auto"
+								: "smooth",
+							block: "start",
+						});
+					}}
+					className="shrink-0 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent aria-[current=true]:bg-[var(--selected)] aria-[current=true]:text-[var(--fg)] pointer-coarse:py-2"
+				>
+					{title}
+				</a>
+			))}
+		</nav>
+	);
+}
+
+/** A titled group of settings in a rounded panel, with an optional note under it. */
+function Section({
+	id,
+	title,
+	footer,
+	children,
+}: {
+	id: SectionId;
+	title: string;
+	footer?: ReactNode;
+	children: ReactNode;
+}) {
+	const headingId = useId();
+	return (
+		<section
+			id={`settings-${id}`}
+			aria-labelledby={headingId}
+			// Clears the top bar and the jump bar when jumped to.
+			className="mb-8 scroll-mt-28 md:scroll-mt-36"
+		>
 			<h2
-				id={id}
-				className="mb-1 border-b border-[var(--border)] pb-1.5 text-sm font-semibold text-[var(--fg-muted)]"
+				id={headingId}
+				className="mb-2 px-1 text-xs font-semibold tracking-wide text-[var(--fg-muted)] uppercase"
 			>
 				{title}
 			</h2>
-			<div className="divide-y divide-[var(--border)]">{children}</div>
+			<div className="divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4">
+				{children}
+			</div>
+			{footer && (
+				<p className="mt-2 px-1 text-xs text-[var(--fg-muted)]">{footer}</p>
+			)}
 		</section>
 	);
 }
 
 type FieldIds = { id: string; labelId: string; hintId?: string };
 
+/** A setting with a control: side by side on wider screens, stacked on phones. */
 function Field({
 	label,
 	hint,
@@ -717,19 +858,57 @@ function Field({
 	const labelId = useId();
 	const hintId = useId();
 	return (
-		<div className="grid gap-1.5 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] sm:items-center sm:gap-4">
-			<div>
+		<div className="grid min-h-12 gap-2 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,17rem)] sm:items-center sm:gap-6">
+			<div className="min-w-0">
 				<label id={labelId} htmlFor={id} className="text-sm">
 					{label}
 				</label>
 				{hint && (
-					<p id={hintId} className="text-xs text-[var(--fg-muted)]">
+					<p id={hintId} className="mt-0.5 text-xs text-[var(--fg-muted)]">
 						{hint}
 					</p>
 				)}
 			</div>
 			{children({ id, labelId, hintId: hint ? hintId : undefined })}
 		</div>
+	);
+}
+
+/** Text (and a note) with buttons: side by side on wider screens; on phones the buttons go underneath. */
+function ActionRow({
+	text,
+	hint,
+	children,
+}: {
+	text: ReactNode;
+	hint?: ReactNode;
+	children?: ReactNode;
+}) {
+	return (
+		<div className="flex min-h-12 flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+			<div className="min-w-0 text-sm">
+				<div>{text}</div>
+				{hint && (
+					<div className="mt-0.5 text-xs text-[var(--fg-muted)]">{hint}</div>
+				)}
+			</div>
+			{children && (
+				<div className="flex shrink-0 flex-wrap gap-2">{children}</div>
+			)}
+		</div>
+	);
+}
+
+/** A row that opens another page. */
+function LinkRow({ href, children }: { href: string; children: ReactNode }) {
+	return (
+		<a
+			href={href}
+			className="-mx-4 flex min-h-12 items-center justify-between gap-4 px-4 py-2 text-sm transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl hover:bg-[var(--hover)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+		>
+			{children}
+			<ChevronIcon className="size-4 text-[var(--fg-muted)]" />
+		</a>
 	);
 }
 
@@ -757,7 +936,7 @@ function Segmented<T extends string>({
 			{options.map(([option, label]) => (
 				<label
 					key={option}
-					className="relative flex-1 cursor-pointer rounded-md px-2 py-1 text-center text-[var(--fg-muted)] hover:text-[var(--fg)] has-[:checked]:bg-[var(--segment-on)] has-[:checked]:font-medium has-[:checked]:text-[var(--on-segment-on)] has-[:checked]:shadow-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
+					className="relative flex-1 cursor-pointer rounded-md px-2 py-1 text-center text-[var(--fg-muted)] transition-colors duration-150 hover:text-[var(--fg)] has-[:checked]:bg-[var(--segment-on)] has-[:checked]:font-medium has-[:checked]:text-[var(--on-segment-on)] has-[:checked]:shadow-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent pointer-coarse:py-2"
 				>
 					<input
 						type="radio"
@@ -776,27 +955,47 @@ function Segmented<T extends string>({
 
 function Toggle({
 	label,
+	hint,
+	icon,
+	className = "",
 	checked,
 	onChange,
 }: {
 	label: string;
+	hint?: string;
+	icon?: ReactNode;
+	className?: string;
 	checked: boolean;
 	onChange: (checked: boolean) => void;
 }) {
 	const id = useId();
+	const hintId = useId();
 	return (
-		<div className="flex items-center justify-between gap-4 py-3">
-			<label htmlFor={id} className="text-sm">
-				{label}
-			</label>
+		<div
+			className={`flex min-h-12 items-center justify-between gap-4 py-3 ${className}`}
+		>
+			<div className="flex min-w-0 items-center gap-2.5">
+				{icon && <span className="flex shrink-0">{icon}</span>}
+				<div className="min-w-0">
+					<label htmlFor={id} className="text-sm">
+						{label}
+					</label>
+					{hint && (
+						<p id={hintId} className="mt-0.5 text-xs text-[var(--fg-muted)]">
+							{hint}
+						</p>
+					)}
+				</div>
+			</div>
 			<input
 				id={id}
 				type="checkbox"
 				role="switch"
 				aria-checked={checked}
+				aria-describedby={hint ? hintId : undefined}
 				checked={checked}
 				onChange={(e) => onChange(e.target.checked)}
-				className="relative h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full bg-[var(--checkbox)] transition-colors duration-150 before:absolute before:top-0.5 before:left-0.5 before:size-4 before:rounded-full before:bg-white before:transition-transform before:duration-150 checked:bg-accent checked:before:translate-x-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none motion-reduce:before:transition-none"
+				className="relative h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full bg-[var(--checkbox)] transition-colors duration-150 before:absolute before:top-0.5 before:left-0.5 before:size-4 before:rounded-full before:bg-white before:shadow-sm before:transition-transform before:duration-150 checked:bg-accent checked:before:translate-x-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none motion-reduce:before:transition-none pointer-coarse:h-7 pointer-coarse:w-12 pointer-coarse:before:size-6 pointer-coarse:checked:before:translate-x-5"
 			/>
 		</div>
 	);

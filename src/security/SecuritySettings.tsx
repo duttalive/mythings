@@ -23,7 +23,7 @@ import {
 import { RecoveryKeyCard } from "./RecoveryKeyCard";
 
 const buttonClass =
-	"rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60 pointer-coarse:py-2.5";
+	"rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60 pointer-coarse:py-2.5";
 const primaryClass =
 	"rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-on-accent hover:opacity-90 disabled:opacity-60 pointer-coarse:py-2.5";
 const dangerClass =
@@ -66,7 +66,7 @@ export function SecuritySettings() {
 			>
 				{panel === null &&
 					(user.encrypted ? (
-						<span className="flex flex-wrap justify-end gap-2">
+						<span className="flex flex-wrap gap-2">
 							<button
 								type="button"
 								onClick={() => setPanel("recovery")}
@@ -96,7 +96,7 @@ export function SecuritySettings() {
 					))}
 			</Row>
 			{status && (
-				<p role="status" className="py-2 text-sm text-[var(--fg-muted)]">
+				<p role="status" className="py-3 text-sm text-[var(--fg-muted)]">
 					{status}
 				</p>
 			)}
@@ -150,11 +150,14 @@ export function SecuritySettings() {
 	);
 }
 
+/** Text with buttons: side by side on wider screens; on phones the buttons go underneath, so the text keeps the full width. */
 function Row({ text, children }: { text: ReactNode; children?: ReactNode }) {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2 py-2">
-			<p className="min-w-0 flex-1 text-sm sm:min-w-[16rem]">{text}</p>
-			{children}
+		<div className="flex min-h-12 flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+			<p className="min-w-0 text-sm sm:flex-1">{text}</p>
+			{children && (
+				<div className="flex shrink-0 flex-wrap gap-2">{children}</div>
+			)}
 		</div>
 	);
 }
@@ -222,7 +225,7 @@ function KeyPanel({
 	};
 
 	return (
-		<form onSubmit={submit} className="flex flex-col gap-3 py-2">
+		<form onSubmit={submit} className="flex flex-col gap-3 py-3">
 			<p className="text-sm text-[var(--fg-muted)]">{intro}</p>
 			<RecoveryKeyCard
 				recoveryKey={recovery}
@@ -279,7 +282,7 @@ function PasswordPanel({
 		}
 	};
 	return (
-		<form onSubmit={submit} className="flex flex-col gap-3 py-2">
+		<form onSubmit={submit} className="flex flex-col gap-3 py-3">
 			<p className="text-sm text-[var(--fg-muted)]">{intro}</p>
 			<PasswordField value={password} onChange={setPassword} />
 			{error && (
@@ -359,7 +362,7 @@ function PasscodeSettings({
 				}
 			>
 				{!open && (
-					<span className="flex flex-wrap justify-end gap-2">
+					<span className="flex flex-wrap gap-2">
 						{crypto.passcode && (
 							<button type="button" onClick={lockNow} className={buttonClass}>
 								Lock now
@@ -391,12 +394,12 @@ function PasscodeSettings({
 				)}
 			</Row>
 			{status && (
-				<p role="status" className="py-2 text-sm text-[var(--fg-muted)]">
+				<p role="status" className="py-3 text-sm text-[var(--fg-muted)]">
 					{status}
 				</p>
 			)}
 			{open && (
-				<form onSubmit={submit} className="flex flex-col gap-3 py-2">
+				<form onSubmit={submit} className="flex flex-col gap-3 py-3">
 					<p className="text-sm text-[var(--fg-muted)]">
 						This device only. A longer passcode is harder to guess. If you
 						forget it, sign in with your password instead.
@@ -437,7 +440,7 @@ function PasscodeSettings({
 				</form>
 			)}
 			{crypto.passcode && (
-				<div className="flex flex-wrap items-center justify-between gap-2 py-2">
+				<div className="flex min-h-12 flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
 					<p id={autoLockLabel} className="text-sm">
 						Lock after
 					</p>
@@ -449,7 +452,7 @@ function PasscodeSettings({
 						{AUTO_LOCK_OPTIONS.map(([value, label]) => (
 							<label
 								key={value}
-								className="relative cursor-pointer rounded-md px-2 py-1 text-center text-[var(--fg-muted)] hover:text-[var(--fg)] has-[:checked]:bg-[var(--segment-on)] has-[:checked]:font-medium has-[:checked]:text-[var(--on-segment-on)] has-[:checked]:shadow-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
+								className="relative flex-1 cursor-pointer rounded-md px-2 py-1 text-center text-[var(--fg-muted)] hover:text-[var(--fg)] pointer-coarse:py-2 has-[:checked]:bg-[var(--segment-on)] has-[:checked]:font-medium has-[:checked]:text-[var(--on-segment-on)] has-[:checked]:shadow-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
 							>
 								<input
 									type="radio"

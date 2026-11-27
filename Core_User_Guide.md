@@ -116,7 +116,7 @@ Go to `/login` (or choose **Sign in** on the home page), enter your **Email** an
 
 **Sign out** is at the very bottom of the sidebar, next to your email and the Settings gear (and in **Settings → Account**). It always asks you to confirm. Signing out stops reminders being sent to this browser, and with encryption on it removes this device's ability to read your tasks until you sign in again.
 
-To sign out everywhere at once, use **Settings → Account → Sign out of all devices…**.
+To sign out everywhere at once, use **Settings → Account → Sign out everywhere…**.
 
 ### 1.4 Forgot your password
 
@@ -1108,7 +1108,9 @@ mythings works just as well on a phone. Install it to your home screen for the b
 
 Open with the gear at the bottom of the sidebar, or **⌘,**. Changes apply at once. (While offline, changes to synced settings are put back with a message.)
 
-![The top of the Settings page: Appearance, Date & time, Lists and the sections below them](docs/guide/settings.jpg)
+![The top of the Settings page: a row of section names (Appearance, Date & time, Lists, Sidebar, Notifications, Data, Security, Account, About) under the title, then the Appearance and Date & time groups](docs/guide/settings.jpg)
+
+Each section is a group of settings in its own panel. The row of section names under the title stays at the top while you scroll: choose one to jump to it, and it marks the section you're in. On a phone, swipe the row sideways to see them all, and settings with buttons or choices put them under their name so the text keeps the full width.
 
 The page has these sections, from top to bottom.
 
@@ -1122,7 +1124,7 @@ The page has these sections, from top to bottom.
 
 - **Text size:** Small, Default, Large, Larger. This device only, so you can use larger text on your phone than on your computer. On a computer you can also drag the sidebar's edge to resize it.
 - **Long task titles:** **Wrap** (the default) shows the whole title in your lists, on as many lines as it needs. **One line** keeps each title on a single line ending in "…". An open task always shows its whole title and every checklist item in full. Saved with your account, so it's the same on all your devices.
-- **Full width:** off by default, so lists sit in a centered column that's easy to read. Turn it on to let every list (and Task Notes) use the whole window. The **↔** button at the top of the page does the same. Saved with your account. On a phone, lists always use the whole screen.
+- **Full width:** off by default, so lists sit in a centered column that's easy to read. Turn it on to let every list (and Task Notes) use the whole window. The **↔** button at the top of the page does the same. Saved with your account. On a phone, lists always use the whole screen, so this setting isn't shown there.
 
 ### 16.2 Date & time
 
@@ -1140,22 +1142,22 @@ The page has these sections, from top to bottom.
 
 ### 16.4 Sidebar
 
-![Sidebar settings: "Inbox, Today, Logbook and Trash always show. Every view can be found with search, shown here or not.", switches for Show Upcoming, Show Anytime, Show Someday and Show Overdue (on) and Show Deadlines and Show Task Notes (off), and a "Reset sidebar to default" button](docs/guide/settings-sidebar.jpg)
+![Sidebar settings: "Inbox, Today, Logbook and Trash always show. Every view can be found with search, shown here or not.", switches with each view's icon for Show Upcoming, Show Anytime, Show Someday and Show Overdue (on) and Show Deadlines and Show Task Notes (off), and "Reset sidebar to default" with a Reset button](docs/guide/settings-sidebar.jpg)
 
 Choose which views the [sidebar](#21-the-sidebar) shows:
 
 - **Inbox**, **Today**, **Logbook** and **Trash** always show.
 - **Show Upcoming**, **Show Anytime**, **Show Someday** and **Show Overdue** are on to start with.
 - **Show Deadlines** and **Show Task Notes** are off to start with. Turned on, they sit after Overdue.
-- **Reset sidebar to default** goes back to the usual set.
+- **Reset sidebar to default** (the **Reset** button) goes back to the usual set. It's greyed out while the sidebar already shows the defaults.
 
 Saved with your account, so the sidebar is the same on all your devices. Every view, shown or not, can always be opened from [Quick Find](#12-finding-things-quick-find) by typing its name.
 
 ### 16.5 Notifications
 
-![Notifications settings: "Reminders can notify you on this device" with a Turn on button](docs/guide/settings-notifications.jpg)
+![Notifications settings: "Reminders on this device" with a grey dot, "Reminders can notify you on this device", and a Turn on button](docs/guide/settings-notifications.jpg)
 
-Shows whether this browser can show [reminders](#63-reminders), with **Turn on** to allow them. On iPhone and iPad, install the app to your Home Screen first.
+**Reminders on this device** shows whether this browser can show [reminders](#63-reminders): a green dot when they're on, red when the browser blocks them, grey when you haven't decided yet, with **Turn on** to allow them. On iPhone and iPad, install the app to your Home Screen first.
 
 ### 16.6 Data
 
@@ -1169,19 +1171,19 @@ Shows whether this browser can show [reminders](#63-reminders), with **Turn on**
 
 ### 16.8 Account
 
-![Account settings: Signed in as sam@example.com with Sign out, a Name field with Save, Change password…, and Sign out of all devices…](docs/guide/settings-account.jpg)
+![Account settings: Signed in as sam@example.com with Sign out, a Name field with Save, Password with Change password…, and Sign out of all devices with a red "Sign out everywhere…" button](docs/guide/settings-account.jpg)
 
 - **Signed in as** your email, with **Sign out**.
-- **Name:** change it and choose **Save**. Leave it empty to remove your name.
+- **Name:** change it and choose **Save** (greyed out until you've changed something). Leave it empty to remove your name.
 - **Change password…:** asks for your current password and the new one; other devices are signed out. With encryption on, your tasks stay readable with the new password.
-- **Sign out of all devices…**, including this one.
+- **Sign out of all devices:** **Sign out everywhere…** signs out every device, including this one, after you confirm.
 
 ### 16.9 About
 
-![About: "mythings version 2.1.0" with What's new, and Legal links to the Privacy Policy and Terms of Service](docs/guide/settings-about.jpg)
+![About: the Version number, then What's new, Privacy Policy and Terms of Service, each a row with an arrow](docs/guide/settings-about.jpg)
 
-- The app version, with **What's new** (the changelog).
-- Links to the **Privacy Policy** and **Terms of Service**.
+- The app **Version**.
+- **What's new** (the changelog), the **Privacy Policy** and the **Terms of Service**: choose a row to open it.
 
 ---
 

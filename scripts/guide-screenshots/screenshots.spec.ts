@@ -215,14 +215,6 @@ test("guide screenshots", async ({ page, browser }) => {
 		await bar.getByRole("button", { name: "Clear filters" }).click();
 	});
 
-	await step(page, "sidebar settings", async () => {
-		await open(page, "/settings");
-		await page
-			.getByRole("heading", { name: "Sidebar" })
-			.scrollIntoViewIfNeeded();
-		await shot(page, "settings-sidebar");
-	});
-
 	await step(page, "today grouped", async () => {
 		await open(page, "/settings");
 		await page
@@ -581,6 +573,7 @@ test("guide screenshots", async ({ page, browser }) => {
 			["settings-appearance", "Appearance"],
 			["settings-date-time", "Date & time"],
 			["settings-lists", "Lists"],
+			["settings-sidebar", "Sidebar"],
 			["settings-notifications", "Notifications"],
 			["settings-data", "Data"],
 			["settings-account", "Account"],
