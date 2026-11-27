@@ -3,6 +3,7 @@
 // runs its own instance should replace the operator and contact details.
 
 import { type ReactNode, useEffect } from "react";
+import { buttonClass } from "../components/ui";
 
 export const LEGAL_CONTACT = "dutta@dynocoder.com";
 /** When the policies last changed. Update it with any change to their text. */
@@ -14,7 +15,10 @@ const updated = new Date(`${LEGAL_UPDATED}T12:00:00Z`).toLocaleDateString(
 );
 
 const Mail = () => (
-	<a href={`mailto:${LEGAL_CONTACT}`} className="text-accent underline">
+	<a
+		href={`mailto:${LEGAL_CONTACT}`}
+		className="rounded text-accent underline underline-offset-2 hover:no-underline"
+	>
 		{LEGAL_CONTACT}
 	</a>
 );
@@ -32,31 +36,28 @@ function LegalPage({
 		document.title = `${title} · mythings`;
 	}, [title]);
 	return (
-		<main className="mx-auto w-full max-w-[680px] px-4 py-12 md:px-8">
+		<main className="mx-auto w-full max-w-[42rem] px-[max(1rem,env(safe-area-inset-left))] py-12 md:px-8">
 			<header className="flex items-center gap-3">
 				<a href="/" className="shrink-0 rounded-xl">
 					<img src="/favicon.svg" alt="mythings home" className="size-9" />
 				</a>
-				<div className="flex-1">
+				<div className="min-w-0 flex-1">
 					<h1 className="text-2xl font-bold">{title}</h1>
 					<p className="text-sm text-[var(--fg-muted)]">
 						Last updated {updated}
 					</p>
 				</div>
-				<a
-					href="/today"
-					className="shrink-0 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-on-accent hover:opacity-90"
-				>
+				<a href="/today" className={buttonClass}>
 					Open mythings
 				</a>
 			</header>
-			<div className="mt-8 leading-relaxed [&_h2]:mt-10 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:mt-1.5 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
+			<div className="mt-8 leading-relaxed [&_h2]:mt-10 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:mt-1.5 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5 [&_code]:rounded [&_code]:bg-[var(--hover)] [&_code]:px-1 [&_code]:text-[0.9em]">
 				<p>{intro}</p>
 				{children}
 			</div>
 			<nav
 				aria-label="Legal"
-				className="mt-12 flex flex-wrap gap-4 border-t border-[var(--border)] pt-6 text-sm text-[var(--fg-muted)]"
+				className="mt-12 flex flex-wrap gap-4 border-t border-[var(--border)] pt-6 text-sm text-[var(--fg-muted)] [&_a]:rounded [&_a]:transition-colors [&_a]:duration-150 pointer-coarse:[&_a]:py-2"
 			>
 				<a href="/privacy" className="hover:text-[var(--fg)]">
 					Privacy Policy

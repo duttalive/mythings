@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { releases } from "../changelog";
+import { buttonClass } from "../components/ui";
 
 const formatDate = (date: string) =>
 	new Date(`${date}T12:00:00Z`).toLocaleDateString(undefined, {
@@ -16,19 +17,16 @@ export function ChangelogPage() {
 		document.title = "Changelog · mythings";
 	}, []);
 	return (
-		<main className="mx-auto w-full max-w-[640px] px-4 py-12 md:px-8">
+		<main className="mx-auto w-full max-w-[42rem] px-[max(1rem,env(safe-area-inset-left))] py-12 md:px-8">
 			<header className="flex items-center gap-3">
-				<img src="/favicon.svg" alt="" className="size-9" />
-				<div className="flex-1">
+				<img src="/favicon.svg" alt="" className="size-9 shrink-0" />
+				<div className="min-w-0 flex-1">
 					<h1 className="text-2xl font-bold">What's new in mythings</h1>
 					<p className="text-sm text-[var(--fg-muted)]">
 						Every release, newest first.
 					</p>
 				</div>
-				<a
-					href="/today"
-					className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-on-accent hover:opacity-90"
-				>
+				<a href="/today" className={buttonClass}>
 					Open mythings
 				</a>
 			</header>

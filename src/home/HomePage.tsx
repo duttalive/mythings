@@ -13,15 +13,12 @@ import {
 	CloudOffIcon,
 	EyeOffIcon,
 	FlagIcon,
-	InboxIcon,
-	LayersIcon,
-	LogbookIcon,
 	NotesIcon,
 	RepeatIcon,
 	SearchIcon,
-	StarIcon,
 } from "../components/icons";
 import { Checkbox } from "../components/rows";
+import { VIEWS } from "../lib/views";
 
 const REPO_URL = "https://github.com/duttalive/mythings";
 
@@ -60,7 +57,7 @@ export function HomePage({ go }: Props) {
 	) : (
 		<a
 			{...link("/login")}
-			className="rounded-xl bg-accent px-5 py-3 font-semibold text-on-accent transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+			className="rounded-xl bg-accent px-5 py-3 font-semibold text-on-accent shadow-[0_6px_20px_-6px_var(--accent)] transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
 		>
 			Sign in
 		</a>
@@ -75,26 +72,29 @@ export function HomePage({ go }: Props) {
 			/>
 
 			<header className="relative mx-auto flex max-w-6xl items-center justify-between px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-8">
-				<a href="/" className="flex items-center gap-2.5 font-semibold">
+				<a
+					href="/"
+					className="flex items-center gap-2.5 rounded-lg font-semibold"
+				>
 					<img src="/favicon.svg" alt="" className="size-8" />
 					<span className="text-lg">mythings</span>
 				</a>
 				<nav aria-label="Site" className="flex items-center gap-1 text-sm">
 					<a
 						href="/changelog"
-						className="hidden rounded-lg px-3 py-2 text-[var(--fg-muted)] hover:text-[var(--fg)] sm:block"
+						className="hidden rounded-lg px-3 py-2 text-[var(--fg-muted)] transition-colors duration-150 hover:text-[var(--fg)] sm:block"
 					>
 						What's new
 					</a>
 					<a
 						href={REPO_URL}
-						className="hidden rounded-lg px-3 py-2 text-[var(--fg-muted)] hover:text-[var(--fg)] sm:block"
+						className="hidden rounded-lg px-3 py-2 text-[var(--fg-muted)] transition-colors duration-150 hover:text-[var(--fg)] sm:block"
 					>
 						GitHub
 					</a>
 					<a
 						{...link("/login")}
-						className="rounded-lg px-3 py-2 font-medium hover:bg-[var(--hover)]"
+						className="rounded-lg px-3 py-2 font-medium transition-colors duration-150 hover:bg-[var(--hover)] pointer-coarse:py-2.5"
 					>
 						Sign in
 					</a>
@@ -194,28 +194,22 @@ export function HomePage({ go }: Props) {
 						you can actually finish it.
 					</p>
 					<ol className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-						<Step icon={<InboxIcon className="text-accent" />} name="Inbox">
+						<Step icon={VIEWS.inbox.icon("")} name="Inbox">
 							Catch every thought
 						</Step>
-						<Step icon={<StarIcon className="text-today" />} name="Today">
+						<Step icon={VIEWS.today.icon("")} name="Today">
 							What you'll do now
 						</Step>
-						<Step
-							icon={<CalendarIcon className="text-overdue" />}
-							name="Upcoming"
-						>
+						<Step icon={VIEWS.upcoming.icon("")} name="Upcoming">
 							What's coming, by date
 						</Step>
-						<Step
-							icon={<LayersIcon className="text-teal-600" />}
-							name="Anytime"
-						>
+						<Step icon={VIEWS.anytime.icon("")} name="Anytime">
 							Ready when you are
 						</Step>
-						<Step icon={<BoxIcon className="text-amber-700" />} name="Someday">
+						<Step icon={VIEWS.someday.icon("")} name="Someday">
 							Maybe, one day
 						</Step>
-						<Step icon={<LogbookIcon className="text-done" />} name="Logbook">
+						<Step icon={VIEWS.logbook.icon("")} name="Logbook">
 							Everything you did
 						</Step>
 					</ol>
@@ -240,7 +234,10 @@ export function HomePage({ go }: Props) {
 						mythings {APP_VERSION} · Inspired by Things 3; not affiliated with
 						Cultured Code.
 					</p>
-					<nav aria-label="Footer" className="flex flex-wrap gap-x-4 gap-y-2">
+					<nav
+						aria-label="Footer"
+						className="flex flex-wrap gap-x-4 gap-y-2 [&_a]:rounded [&_a]:transition-colors [&_a]:duration-150 pointer-coarse:[&_a]:py-2"
+					>
 						<a href="/changelog" className="hover:text-[var(--fg)]">
 							Changelog
 						</a>
@@ -373,7 +370,7 @@ function TodayPreview() {
 		<figure className="relative mx-auto mt-16 max-w-4xl text-left">
 			<div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg)] shadow-[0_30px_80px_-30px_rgb(0_0_0/0.45)]">
 				<div className="flex h-9 items-center gap-1.5 border-b border-[var(--border)] bg-[var(--bg-sidebar)] px-4">
-					<span className="size-2.5 rounded-full bg-[#ff5f57]" />
+					<span aria-hidden className="size-2.5 rounded-full bg-[#ff5f57]" />
 					<span className="size-2.5 rounded-full bg-[#febc2e]" />
 					<span className="size-2.5 rounded-full bg-[#28c840]" />
 				</div>
@@ -382,28 +379,16 @@ function TodayPreview() {
 						aria-hidden
 						className="hidden w-52 shrink-0 flex-col gap-0.5 border-r border-[var(--border)] bg-[var(--bg-sidebar)] p-3 text-sm sm:flex"
 					>
-						<SideItem icon={<InboxIcon className="text-accent" />} count={3}>
+						<SideItem icon={VIEWS.inbox.icon("")} count={3}>
 							Inbox
 						</SideItem>
-						<SideItem
-							icon={<StarIcon className="text-today" />}
-							count={4}
-							active
-						>
+						<SideItem icon={VIEWS.today.icon("")} count={4} active>
 							Today
 						</SideItem>
-						<SideItem icon={<CalendarIcon className="text-overdue" />}>
-							Upcoming
-						</SideItem>
-						<SideItem icon={<LayersIcon className="text-teal-600" />}>
-							Anytime
-						</SideItem>
-						<SideItem icon={<BoxIcon className="text-amber-700" />}>
-							Someday
-						</SideItem>
-						<SideItem icon={<LogbookIcon className="text-done" />}>
-							Logbook
-						</SideItem>
+						<SideItem icon={VIEWS.upcoming.icon("")}>Upcoming</SideItem>
+						<SideItem icon={VIEWS.anytime.icon("")}>Anytime</SideItem>
+						<SideItem icon={VIEWS.someday.icon("")}>Someday</SideItem>
+						<SideItem icon={VIEWS.logbook.icon("")}>Logbook</SideItem>
 						<li className="mt-4 px-2 pb-1 text-xs font-semibold text-[var(--fg-muted)]">
 							Life Buckets
 						</li>
@@ -417,9 +402,10 @@ function TodayPreview() {
 						</SideItem>
 					</ul>
 					<div className="flex-1 px-6 py-6 sm:px-10">
-						<h2 className="flex items-center gap-2.5 text-2xl font-bold">
-							<StarIcon className="size-6 text-today" /> Today
-						</h2>
+						{/* A picture of the app, not part of this page's outline. */}
+						<p className="flex items-center gap-2.5 text-2xl font-bold">
+							{VIEWS.today.icon("size-6")} Today
+						</p>
 						<ul className="mt-4">{PREVIEW_TODOS.map((t, i) => row(t, i))}</ul>
 					</div>
 				</div>

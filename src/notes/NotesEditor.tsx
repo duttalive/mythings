@@ -166,7 +166,7 @@ export default function NotesEditor({
 							type="button"
 							onMouseDown={(e) => e.preventDefault()}
 							onClick={run}
-							className="rounded-md border border-[var(--border)] px-2 py-0.5 text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:py-2"
+							className="rounded-md border border-[var(--border)] px-2 py-0.5 text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] pointer-coarse:min-h-11 pointer-coarse:px-3"
 						>
 							{title}
 						</button>
@@ -178,7 +178,7 @@ export default function NotesEditor({
 					role="listbox"
 					aria-label="Insert a block"
 					data-popover-content
-					className="absolute z-40 max-h-72 w-64 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--card)] p-1 text-sm shadow-[var(--card-shadow)]"
+					className="absolute z-40 max-h-72 w-64 animate-pop-in overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--card)] p-1 text-sm shadow-[var(--card-shadow)]"
 					style={{
 						// Stays inside the editor, even near the right edge of a phone.
 						left: Math.max(
@@ -202,7 +202,7 @@ export default function NotesEditor({
 								onMouseDown={(e) => e.preventDefault()}
 								onMouseEnter={() => setActive(index)}
 								onClick={() => slash.select(item)}
-								className={`flex w-full flex-col items-start rounded-md px-2 py-1 text-left ${
+								className={`flex w-full flex-col items-start rounded-md px-2 py-1 text-left pointer-coarse:py-2.5 ${
 									index === active ? "bg-[var(--hover)]" : ""
 								}`}
 							>

@@ -82,7 +82,7 @@ export function TaskNotesPage() {
 			description={VIEWS.notes.description}
 			filterable
 		>
-			<label className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 focus-within:border-accent">
+			<label className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 transition-shadow duration-150 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30 pointer-coarse:py-2.5">
 				<SearchIcon className="size-4 shrink-0 text-[var(--fg-muted)]" />
 				<input
 					type="search"
@@ -90,6 +90,8 @@ export function TaskNotesPage() {
 					onChange={(e) => setQuery(e.target.value)}
 					placeholder="Search notes"
 					aria-label="Search notes"
+					enterKeyHint="search"
+					autoComplete="off"
 					className="min-w-0 flex-1 bg-transparent text-sm outline-none"
 				/>
 			</label>
@@ -109,7 +111,7 @@ export function TaskNotesPage() {
 								<Link
 									to="/notes/$todoId"
 									params={{ todoId: todo.id }}
-									className="block rounded-lg px-3 py-2.5 hover:bg-[var(--hover)]"
+									className="block rounded-lg px-3 py-2.5 transition-colors duration-150 hover:bg-[var(--hover)] focus-visible:-outline-offset-2"
 								>
 									<span className="flex items-baseline gap-2">
 										<span
@@ -222,14 +224,17 @@ function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 			}
 			header={
 				<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--fg-muted)]">
-					<Link to="/notes" className="hover:text-[var(--fg)] hover:underline">
+					<Link
+						to="/notes"
+						className="rounded underline-offset-2 transition-colors duration-150 hover:text-[var(--fg)] hover:underline pointer-coarse:py-2"
+					>
 						Task Notes
 					</Link>
 					<span aria-hidden>·</span>
 					<Link
 						to={back.to as never}
 						params={back.params as never}
-						className="hover:text-[var(--fg)] hover:underline"
+						className="rounded underline-offset-2 transition-colors duration-150 hover:text-[var(--fg)] hover:underline pointer-coarse:py-2"
 					>
 						{todo.deletedAt !== null ? "In Trash" : place || "Show in list"}
 					</Link>
@@ -242,7 +247,7 @@ function TaskNoteEditor({ todo, today }: { todo: Todo; today: string }) {
 									flush();
 									focus.open(todo.id);
 								}}
-								className="flex items-center gap-1 text-accent hover:underline"
+								className="flex items-center gap-1 rounded text-accent underline-offset-2 hover:underline pointer-coarse:py-2"
 							>
 								<FocusIcon className="size-3.5" />
 								Focus
@@ -292,7 +297,7 @@ function TaskChecklist({
 			<button
 				type="button"
 				onClick={() => void add()}
-				className="mb-4 flex items-center gap-2 rounded-md px-1.5 py-1 text-sm text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:py-2.5"
+				className="mb-4 flex items-center gap-2 rounded-md px-1.5 py-1 text-sm text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:py-3"
 			>
 				<ChecklistIcon className="size-4" />
 				Add checklist
@@ -323,7 +328,7 @@ function TaskChecklist({
 				<button
 					type="button"
 					onClick={() => void add()}
-					className="mt-1 ml-3.5 rounded-md px-1.5 py-1 text-sm text-[var(--fg-muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:py-2.5"
+					className="mt-1 ml-3.5 rounded-md px-1.5 py-1 text-sm text-[var(--fg-muted)] transition-colors duration-150 hover:bg-[var(--hover)] hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:py-3"
 				>
 					+ Add item
 				</button>
