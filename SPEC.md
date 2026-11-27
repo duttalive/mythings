@@ -548,11 +548,14 @@ Implementation notes (milestone 10):
 
 - Light and dark themes following `prefers-color-scheme`, with a manual toggle.
 - Neutral background, generous whitespace, 15px base text, a system font stack.
-- One accent color for selection and focus; yellow star for Today; indigo moon for Evening; red for overdue deadlines; green for completed progress.
+- One accent color for selection and focus; yellow star for Today (with a darker edge on light backgrounds); blue for Upcoming; teal for Anytime; amber for Someday; red only for overdue items, deadlines and due counts; green for completed progress. View icon colors are theme variables (`--done`, `--someday`, `--anytime`, `--today-edge`) picked to stand out at least 3:1 from the page, sidebar and selected row in both themes.
 - Rounded square checkboxes; round progress rings for projects.
 - Subtle 150–200ms transitions; respect `prefers-reduced-motion`.
 - Max content width ~720px, centered.
 - Accessible: full keyboard operation, visible focus rings, ARIA roles on lists, rows and popovers, and contrast of at least 4.5:1.
+- Focus (2.9.4): one accent outline for everything that takes keyboard focus, from a base-layer rule in `src/styles.css` that any component's own outline utilities override; menu options show it inset, so focus doesn't look like hover.
+- Shared styles (2.9.4): buttons, fields, links and centred dialogs take their classes from `src/components/ui.ts`, and Settings rows from `src/components/SettingsRows.tsx`, so screens can't drift apart. Controls are at least 44px to tap on touch screens; small ones (chips, switches, checkboxes) keep their look and extend the tap area instead.
+- Anything that can hold a popover (the phone drawer, the selection bar, top-anchored dialogs) is positioned without a transform, so the popover's bottom sheet spans the screen.
 
 ### 10.9 Settings
 

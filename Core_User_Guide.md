@@ -110,6 +110,7 @@ Go to `/login` (or choose **Sign in** on the home page), enter your **Email** an
 - **New here? Create an account** switches to [sign-up](#12-creating-an-account).
 - After several unsuccessful attempts you'll be asked to wait before trying again, or to reset your password.
 - After a long time you'll be asked to sign in again, even on a device you use every day.
+- While it's working, the button says what it's doing (**Signing in…**), and the same goes for creating an account, saving a new password and unlocking.
 - If your account uses [end-to-end encryption](#17-encryption-and-passcode), signing in also unlocks your tasks on that device: there's nothing else to type.
 
 **Signing out**
@@ -192,6 +193,8 @@ From top to bottom:
 | **+ New List** | Creates a project, an area or a Life Bucket. |
 | **Footer** | The [sync status](#15-sync-offline-and-devices) (**Synced**, **Syncing** or **Offline**), your email, the **Settings** gear and **Sign out**. |
 
+**Icons and colours.** Each view has its own icon: a yellow star for Today, a blue calendar for Upcoming, teal layers for Anytime, an amber box for Someday and a green notebook for the Logbook. Red is kept for what needs attention: Overdue, Deadlines and counts of what's due. The colours are tuned so they stay easy to see in both light and dark.
+
 **Choosing which views show.** Inbox, Today, Logbook and Trash are always there. Upcoming, Anytime, Someday and Overdue show to start with, and Deadlines and Task Notes don't; turn any of these six on or off in [Settings → Sidebar](#164-sidebar). The choice is saved to your account, so all your devices match. A view you hide is still there: open it from [Quick Find](#12-finding-things-quick-find) by typing its name.
 
 On a computer you can drag the sidebar's right edge to make it wider or narrower (double-click the edge to reset it); the width is remembered on that device. The **sidebar button** at the top left of the main pane hides or shows the sidebar.
@@ -202,7 +205,7 @@ On a computer you can drag the sidebar's right edge to make it wider or narrower
 - **The title** of the list, with its icon. Titles of projects, areas, Life Buckets and tags can be edited by clicking them; long titles wrap onto more lines. Under the title of each built-in view (Inbox, Today, Upcoming and the rest) is one line saying what it holds, such as "Tasks planned for today."
 - **Header details,** for projects, areas, Life Buckets and tags: notes, the Life Bucket a project or area belongs to, a project's When and deadline, tag chips and a **⋯** menu.
 - **The filter bar:** dropdowns for **Life Bucket**, **Area**, **Project** and **Tag** that narrow the list ([filtering a list](#410-filtering-a-list)). Every built-in view except the Inbox has it; a project's, area's or Life Bucket's page offers just **Tag**.
-- **The items,** in sections where the list has them (for example days in Upcoming, or headings in a project).
+- **The items,** in sections where the list has them (for example days in Upcoming, or headings in a project). An empty view shows its icon, faded, with a line such as "Nothing planned for today."
 - **The floating +** at the bottom right: adds a task to the list you're looking at.
 
 ### 2.3 Tabs (desktop)
@@ -1012,6 +1015,8 @@ Press **?** to see the list in the app:
 
 ⌘ means Ctrl on Windows and Linux. Shortcuts don't fire while you're typing in a field (except Alt+Space).
 
+**Tab** moves through buttons, links and fields, and **Shift+Tab** goes back. Whatever has keyboard focus shows the same blue outline everywhere, including inside menus, so you can always see where you are.
+
 | Action                                   | Keys                                   |
 | ---------------------------------------- | -------------------------------------- |
 | New task (below the selection)          | Space or Alt+N                         |
@@ -1085,8 +1090,8 @@ mythings works just as well on a phone. Install it to your home screen for the b
 - **Checklist items** move by dragging their handle (⠿) on the left; no need to hold first.
 - On a phone, a row with tags, a checklist or dates shows them on a line under its title, so a long title keeps the full width.
 - **Focus Mode** fills the screen; **Minimize** leaves a small timer pill at the bottom left, beside the **+** button.
-- Popovers (When, Tags, Deadline…) open as **sheets** from the bottom of the screen.
-- Buttons and rows are finger-sized, and text fields are large enough that your phone doesn't zoom in.
+- Popovers (When, Tags, Deadline…) open as **sheets** from the bottom of the screen and span its full width, wherever you open them from: a task, the sidebar drawer, the selection bar or Quick Entry.
+- Buttons, rows, chips and menu options are finger-sized (small ones have a tap area larger than they look), and text fields are large enough that your phone doesn't zoom in.
 - **Text size** (Settings → Appearance) can be set separately on each device.
 
 ---
@@ -1272,7 +1277,7 @@ Security then shows the passcode controls:
 
 - **Lock after** sets how soon it locks when you're away: **Right away** (as soon as you leave the app), **1 min**, **5 min** (the default) or **15 min** without a tap, click or key press. Reloading the page or reopening the app also asks for the passcode.
 - **Lock now** locks it straight away.
-- **Change passcode…** and **Remove** change or remove it.
+- **Change passcode…** and **Remove** change or remove it. **Remove**, like **Turn off…** for encryption, is outlined in red because it takes protection away.
 
 **The lock screen**
 
