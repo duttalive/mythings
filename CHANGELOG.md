@@ -2,6 +2,10 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.9.1 — 2026-11-27
+
+- The sync status no longer shows "Synced" while a change is still being saved
+
 ## Version 2.9.0 — 2026-11-27
 
 Filter any list, choose your sidebar, and to-dos are now tasks.
