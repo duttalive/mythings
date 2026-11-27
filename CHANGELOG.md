@@ -2,6 +2,20 @@
 
 Versions are `MAJOR.MINOR.PATCH`: a new major (v1, v2) for big upgrades, minor (1.1.0) for features and bug fixes, patch (1.0.1) for small changes. This file is shown at [/changelog](https://mythings.dynocoder.com/changelog); `pnpm release` adds each new entry (see CLAUDE.md).
 
+## Version 2.9.4 — 2026-11-27
+
+A polish pass across the whole app. Nothing works differently; it just looks and feels more consistent.
+
+- **Clearer keyboard focus.** Whatever you tab to shows the same blue outline everywhere, including inside menus, where it used to look just like hovering.
+- **Icons that are easier to see.** The Today star keeps its yellow and gains a darker edge on light backgrounds. Anytime, Someday and the Logbook have colours tuned for both light and dark, and Upcoming is now blue, so red means only overdue, deadlines and what's due.
+- **The same buttons and fields everywhere.** Sign-in, the lock and unlock screens, Settings, Security and the confirmation dialogs now share one look, with greyed-out buttons when there's nothing to do yet. Security's rows match the rest of Settings, and "Turn off…" and "Remove" are outlined in red.
+- **Buttons say what they're doing.** Instead of "…", you'll see "Signing in…", "Unlocking…" or "Saving…".
+- **Smoother and steadier.** Highlights fade in when you hover, and a task no longer shifts or changes weight when you open it.
+- **Empty lists** show their view's icon, faded, above the message.
+- **On phones:** more buttons, chips and menu options are easier to tap. Menus opened from the sidebar, the selection bar or Quick Entry now open as a sheet across the whole screen instead of a squeezed one, and messages no longer sit on top of the selection bar.
+- **Text size:** checkboxes, icons and the page width now scale with the Text size you pick.
+- Long names wrap in Trash and in the "Complete project" dialog, and Quick Find no longer squeezes a title next to a long path.
+
 ## Version 2.9.3 — 2026-11-27
 
 - **Filters work top to bottom.** Pick one or more Life Buckets first; the Area and Project dropdowns then list only what's in them, grouped by bucket. Picking an area or project narrows just its own Life Bucket, so other buckets you picked stay whole. Unticking a Life Bucket clears what you picked inside it. Tags still work on their own.
